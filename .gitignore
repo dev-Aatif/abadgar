@@ -44,6 +44,13 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-.env.example
+# Environment and Secrets
+.env
 
+# Local Databases
+*.db
+*.db-shm
+*.db-wal
+
+# Supabase
 supabase/migrations/*

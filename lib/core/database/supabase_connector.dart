@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:powersync/powersync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -12,11 +13,10 @@ class SupabaseConnector extends PowerSyncBackendConnector {
     if (session == null) return null;
 
     final token = session.accessToken;
-    // Note: In a production app, you might want to fetch a specific PowerSync JWT 
-    // from a Supabase Edge Function if you are using PowerSync Cloud.
-    // For now, we assume the Supabase token is sufficient for direct auth if configured.
+    final powersyncUrl = dotenv.env['POWERSYNC_URL'] ?? 'http://localhost:8080';
+
     return PowerSyncCredentials(
-      endpoint: 'YOUR_POWERSYNC_URL', // This should be loaded from env or passed in
+      endpoint: powersyncUrl,
       token: token,
     );
   }
