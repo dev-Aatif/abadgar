@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
@@ -25,9 +24,6 @@ Future<PowerSyncDatabase> powerSyncDatabase(PowerSyncDatabaseRef ref) async {
   // Connect to Supabase
   final supabase = Supabase.instance.client;
   final connector = SupabaseConnector(supabase);
-  
-  // PowerSync Cloud endpoint from .env
-  final powersyncUrl = dotenv.env['POWERSYNC_URL'] ?? 'http://localhost:8080';
   
   // Connect background sync
   db.connect(connector: connector);

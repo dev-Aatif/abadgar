@@ -1,25 +1,26 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'database_provider.dart';
+part of 'financial_summary_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$powerSyncDatabaseHash() => r'4667decbd92de8d92466dd880cc87fa4e4cef026';
+String _$financialSummaryHash() => r'6b1bef20af4d5ac2304ad3c4aec3f70a5157170f';
 
-/// See also [powerSyncDatabase].
-@ProviderFor(powerSyncDatabase)
-final powerSyncDatabaseProvider = FutureProvider<PowerSyncDatabase>.internal(
-  powerSyncDatabase,
-  name: r'powerSyncDatabaseProvider',
+/// See also [financialSummary].
+@ProviderFor(financialSummary)
+final financialSummaryProvider =
+    AutoDisposeProvider<FinancialSummary?>.internal(
+  financialSummary,
+  name: r'financialSummaryProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$powerSyncDatabaseHash,
+      : _$financialSummaryHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef PowerSyncDatabaseRef = FutureProviderRef<PowerSyncDatabase>;
+typedef FinancialSummaryRef = AutoDisposeProviderRef<FinancialSummary?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

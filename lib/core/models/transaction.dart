@@ -9,10 +9,12 @@ class Transaction with _$Transaction {
     required String id,
     required String seasonId,
     required double amount,
-    required String category,
+    required String type, // Expense or Revenue
     required DateTime date,
-    required String type, // 'Expense' | 'Revenue'
+    String? category, // Seed, Fertilizer, Labor, etc.
     String? notes,
+    double? quantity,
+    String? buyerName,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _Transaction;

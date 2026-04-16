@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/financial_summary_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(financialSummaryProvider);
+
     return CustomScrollView(
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(16.0),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              const _MetricCard(title: 'Revenue', value: '\$0.00', color: Colors.green),
+              _MetricCard(
+                title: 'Revenue',
+                value: '\$${summary?.totalRevenue.toStringAsFixed(2) ?? "0.00"}',
+                color: Colors.green,
+              ),
               const SizedBox(height: 16),
-              const _MetricCard(title: 'Expenses', value: '\$0.00', color: Colors.red),
+              _MetricCard(
+                title: 'Expenses',
+                value: '\$${summary?.totalExpenses.toStringAsFixed(2) ?? "0.00"}',
+                color: Colors.red,
+              ),
               const SizedBox(height: 16),
-              const _MetricCard(title: 'Profit', value: '\$0.00', color: Colors.blue),
+              _MetricCard(
+                title: 'Profit',
+                value: '\$${summary?.profit.toStringAsFixed(2) ?? "0.00"}',
+                color: Colors.blue,
+              ),
             ]),
           ),
         ),

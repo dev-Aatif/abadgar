@@ -23,11 +23,13 @@ mixin _$Transaction {
   String get id => throw _privateConstructorUsedError;
   String get seasonId => throw _privateConstructorUsedError;
   double get amount => throw _privateConstructorUsedError;
-  String get category => throw _privateConstructorUsedError;
+  String get type => throw _privateConstructorUsedError; // Expense or Revenue
   DateTime get date => throw _privateConstructorUsedError;
-  String get type =>
-      throw _privateConstructorUsedError; // 'Expense' | 'Revenue'
+  String? get category =>
+      throw _privateConstructorUsedError; // Seed, Fertilizer, Labor, etc.
   String? get notes => throw _privateConstructorUsedError;
+  double? get quantity => throw _privateConstructorUsedError;
+  String? get buyerName => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
 
@@ -47,10 +49,12 @@ abstract class $TransactionCopyWith<$Res> {
       {String id,
       String seasonId,
       double amount,
-      String category,
-      DateTime date,
       String type,
+      DateTime date,
+      String? category,
       String? notes,
+      double? quantity,
+      String? buyerName,
       DateTime createdAt,
       DateTime updatedAt});
 }
@@ -71,10 +75,12 @@ class _$TransactionCopyWithImpl<$Res, $Val extends Transaction>
     Object? id = null,
     Object? seasonId = null,
     Object? amount = null,
-    Object? category = null,
-    Object? date = null,
     Object? type = null,
+    Object? date = null,
+    Object? category = freezed,
     Object? notes = freezed,
+    Object? quantity = freezed,
+    Object? buyerName = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -91,21 +97,29 @@ class _$TransactionCopyWithImpl<$Res, $Val extends Transaction>
           ? _value.amount
           : amount // ignore: cast_nullable_to_non_nullable
               as double,
-      category: null == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
               as String,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
               as DateTime,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as String,
+      category: freezed == category
+          ? _value.category
+          : category // ignore: cast_nullable_to_non_nullable
+              as String?,
       notes: freezed == notes
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
+              as String?,
+      quantity: freezed == quantity
+          ? _value.quantity
+          : quantity // ignore: cast_nullable_to_non_nullable
+              as double?,
+      buyerName: freezed == buyerName
+          ? _value.buyerName
+          : buyerName // ignore: cast_nullable_to_non_nullable
               as String?,
       createdAt: null == createdAt
           ? _value.createdAt
@@ -131,10 +145,12 @@ abstract class _$$TransactionImplCopyWith<$Res>
       {String id,
       String seasonId,
       double amount,
-      String category,
-      DateTime date,
       String type,
+      DateTime date,
+      String? category,
       String? notes,
+      double? quantity,
+      String? buyerName,
       DateTime createdAt,
       DateTime updatedAt});
 }
@@ -153,10 +169,12 @@ class __$$TransactionImplCopyWithImpl<$Res>
     Object? id = null,
     Object? seasonId = null,
     Object? amount = null,
-    Object? category = null,
-    Object? date = null,
     Object? type = null,
+    Object? date = null,
+    Object? category = freezed,
     Object? notes = freezed,
+    Object? quantity = freezed,
+    Object? buyerName = freezed,
     Object? createdAt = null,
     Object? updatedAt = null,
   }) {
@@ -173,21 +191,29 @@ class __$$TransactionImplCopyWithImpl<$Res>
           ? _value.amount
           : amount // ignore: cast_nullable_to_non_nullable
               as double,
-      category: null == category
-          ? _value.category
-          : category // ignore: cast_nullable_to_non_nullable
+      type: null == type
+          ? _value.type
+          : type // ignore: cast_nullable_to_non_nullable
               as String,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
               as DateTime,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as String,
+      category: freezed == category
+          ? _value.category
+          : category // ignore: cast_nullable_to_non_nullable
+              as String?,
       notes: freezed == notes
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
+              as String?,
+      quantity: freezed == quantity
+          ? _value.quantity
+          : quantity // ignore: cast_nullable_to_non_nullable
+              as double?,
+      buyerName: freezed == buyerName
+          ? _value.buyerName
+          : buyerName // ignore: cast_nullable_to_non_nullable
               as String?,
       createdAt: null == createdAt
           ? _value.createdAt
@@ -208,10 +234,12 @@ class _$TransactionImpl implements _Transaction {
       {required this.id,
       required this.seasonId,
       required this.amount,
-      required this.category,
-      required this.date,
       required this.type,
+      required this.date,
+      this.category,
       this.notes,
+      this.quantity,
+      this.buyerName,
       required this.createdAt,
       required this.updatedAt});
 
@@ -225,14 +253,19 @@ class _$TransactionImpl implements _Transaction {
   @override
   final double amount;
   @override
-  final String category;
+  final String type;
+// Expense or Revenue
   @override
   final DateTime date;
   @override
-  final String type;
-// 'Expense' | 'Revenue'
+  final String? category;
+// Seed, Fertilizer, Labor, etc.
   @override
   final String? notes;
+  @override
+  final double? quantity;
+  @override
+  final String? buyerName;
   @override
   final DateTime createdAt;
   @override
@@ -240,7 +273,7 @@ class _$TransactionImpl implements _Transaction {
 
   @override
   String toString() {
-    return 'Transaction(id: $id, seasonId: $seasonId, amount: $amount, category: $category, date: $date, type: $type, notes: $notes, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Transaction(id: $id, seasonId: $seasonId, amount: $amount, type: $type, date: $date, category: $category, notes: $notes, quantity: $quantity, buyerName: $buyerName, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -252,11 +285,15 @@ class _$TransactionImpl implements _Transaction {
             (identical(other.seasonId, seasonId) ||
                 other.seasonId == seasonId) &&
             (identical(other.amount, amount) || other.amount == amount) &&
+            (identical(other.type, type) || other.type == type) &&
+            (identical(other.date, date) || other.date == date) &&
             (identical(other.category, category) ||
                 other.category == category) &&
-            (identical(other.date, date) || other.date == date) &&
-            (identical(other.type, type) || other.type == type) &&
             (identical(other.notes, notes) || other.notes == notes) &&
+            (identical(other.quantity, quantity) ||
+                other.quantity == quantity) &&
+            (identical(other.buyerName, buyerName) ||
+                other.buyerName == buyerName) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -265,8 +302,8 @@ class _$TransactionImpl implements _Transaction {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, seasonId, amount, category,
-      date, type, notes, createdAt, updatedAt);
+  int get hashCode => Object.hash(runtimeType, id, seasonId, amount, type, date,
+      category, notes, quantity, buyerName, createdAt, updatedAt);
 
   @JsonKey(ignore: true)
   @override
@@ -287,10 +324,12 @@ abstract class _Transaction implements Transaction {
       {required final String id,
       required final String seasonId,
       required final double amount,
-      required final String category,
-      required final DateTime date,
       required final String type,
+      required final DateTime date,
+      final String? category,
       final String? notes,
+      final double? quantity,
+      final String? buyerName,
       required final DateTime createdAt,
       required final DateTime updatedAt}) = _$TransactionImpl;
 
@@ -304,13 +343,17 @@ abstract class _Transaction implements Transaction {
   @override
   double get amount;
   @override
-  String get category;
-  @override
+  String get type;
+  @override // Expense or Revenue
   DateTime get date;
   @override
-  String get type;
-  @override // 'Expense' | 'Revenue'
+  String? get category;
+  @override // Seed, Fertilizer, Labor, etc.
   String? get notes;
+  @override
+  double? get quantity;
+  @override
+  String? get buyerName;
   @override
   DateTime get createdAt;
   @override

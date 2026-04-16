@@ -1,25 +1,28 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'database_provider.dart';
+part of 'transaction_repository_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$powerSyncDatabaseHash() => r'4667decbd92de8d92466dd880cc87fa4e4cef026';
+String _$transactionRepositoryHash() =>
+    r'2705b2e89e3284aded177ddae21c2ad9a99c6bc0';
 
-/// See also [powerSyncDatabase].
-@ProviderFor(powerSyncDatabase)
-final powerSyncDatabaseProvider = FutureProvider<PowerSyncDatabase>.internal(
-  powerSyncDatabase,
-  name: r'powerSyncDatabaseProvider',
+/// See also [transactionRepository].
+@ProviderFor(transactionRepository)
+final transactionRepositoryProvider =
+    AutoDisposeProvider<TransactionRepository>.internal(
+  transactionRepository,
+  name: r'transactionRepositoryProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
       ? null
-      : _$powerSyncDatabaseHash,
+      : _$transactionRepositoryHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef PowerSyncDatabaseRef = FutureProviderRef<PowerSyncDatabase>;
+typedef TransactionRepositoryRef
+    = AutoDisposeProviderRef<TransactionRepository>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

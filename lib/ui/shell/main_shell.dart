@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/active_season_provider.dart';
+import '../widgets/transaction_form/transaction_bottom_sheet.dart';
 
 class MainShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -73,35 +74,7 @@ class MainShell extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      builder: (context) => const _NewTransactionBottomSheet(),
-    );
-  }
-}
-
-class _NewTransactionBottomSheet extends StatelessWidget {
-  const _NewTransactionBottomSheet();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      height: MediaQuery.of(context).size.height * 0.6,
-      child: Column(
-        children: [
-          Text('New Transaction Form', style: Theme.of(context).textTheme.headlineMedium),
-          const Spacer(),
-          const Text('Form Inputs Placement'),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('SAVE'),
-            ),
-          ),
-        ],
-      ),
+      builder: (context) => const TransactionBottomSheet(),
     );
   }
 }
