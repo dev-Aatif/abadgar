@@ -25,7 +25,7 @@ final activeSeasonTransactionsProvider =
 typedef ActiveSeasonTransactionsRef
     = AutoDisposeStreamProviderRef<List<Transaction>>;
 String _$transactionsNotifierHash() =>
-    r'0ba5ad0c63426d51809c6769e00ffbbe7b8d97c6';
+    r'a06297f8a5e63703ec8353e245bf38eeced7fe36';
 
 /// See also [TransactionsNotifier].
 @ProviderFor(TransactionsNotifier)

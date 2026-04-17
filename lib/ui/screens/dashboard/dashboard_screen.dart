@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/financial_summary_provider.dart';
+import '../../../core/providers/active_season_provider.dart';
+import '../../../core/providers/transactions_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -8,32 +12,299 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summary = ref.watch(financialSummaryProvider);
+    final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
+    final transactions = ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
+    
+    final currencyFormat = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 0);
 
-    return CustomScrollView(
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(16.0),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              _MetricCard(
-                title: 'Revenue',
-                value: '\$${summary?.totalRevenue.toStringAsFixed(2) ?? "0.00"}',
-                color: Colors.green,
+    return Scaffold(
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // Header
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'As-salamu Alaykum',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    Text(
+                      'Farmer Dashboard',
+                      style: Theme.of(context).textTheme.headlineLarge,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              _MetricCard(
-                title: 'Expenses',
-                value: '\$${summary?.totalExpenses.toStringAsFixed(2) ?? "0.00"}',
-                color: Colors.red,
+            ),
+
+            // Active Season Card
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: _ActiveSeasonHeader(activeSeason: activeSeason),
               ),
-              const SizedBox(height: 16),
-              _MetricCard(
-                title: 'Profit',
-                value: '\$${summary?.profit.toStringAsFixed(2) ?? "0.00"}',
-                color: Colors.blue,
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+            // Metrics Grid
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 1.5,
+                ),
+                delegate: SliverChildListDelegate([
+                    _MetricCard(
+                    title: 'Revenue',
+                    value: currencyFormat.format(summary?.totalRevenue ?? 0),
+                    color: const Color(0xFF10B981), // Emerald
+                    icon: Icons.trending_up_rounded,
+                  ),
+                  _MetricCard(
+                    title: 'Expenses',
+                    value: currencyFormat.format(summary?.totalExpenses ?? 0),
+                    color: const Color(0xFFF59E0B), // Amber/Orange
+                    icon: Icons.trending_down_rounded,
+                  ),
+                ]),
               ),
-            ]),
+            ),
+            
+            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+            
+            // Profit Card
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              sliver: SliverToBoxAdapter(
+                child: _MetricCard(
+                  title: 'Net Profit',
+                  value: currencyFormat.format(summary?.profit ?? 0),
+                  color: Theme.of(context).colorScheme.primary,
+                  icon: Icons.account_balance_wallet_rounded,
+                  isWide: true,
+                ),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+            // Chart Section
+            if (summary != null && summary.expenseByCategory.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Expense Breakdown', style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            height: 200,
+                            child: PieChart(
+                              PieChartData(
+                                sectionsSpace: 4,
+                                centerSpaceRadius: 40,
+                                sections: summary.expenseByCategory.entries.map((e) {
+                                  return PieChartSectionData(
+                                    color: _getCategoryColor(e.key),
+                                    value: e.value,
+                                    title: '',
+                                    radius: 50,
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 8,
+                            children: summary.expenseByCategory.keys.map((cat) {
+                               return Row(
+                                 mainAxisSize: MainAxisSize.min,
+                                 children: [
+                                   Container(width: 12, height: 12, decoration: BoxDecoration(color: _getCategoryColor(cat), shape: BoxShape.circle)),
+                                   const SizedBox(width: 4),
+                                   Text(cat, style: const TextStyle(fontSize: 12)),
+                                 ],
+                               );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+            // Recent Transactions
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              sliver: SliverToBoxAdapter(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Recent Transactions', style: Theme.of(context).textTheme.titleLarge),
+                    TextButton(onPressed: () {}, child: const Text('See All')),
+                  ],
+                ),
+              ),
+            ),
+
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final tx = transactions[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: tx.type == 'Revenue' ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
+                          child: Icon(
+                            tx.type == 'Revenue' ? Icons.add_rounded : Icons.remove_rounded,
+                            color: tx.type == 'Revenue' ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                          ),
+                        ),
+                        title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(DateFormat.yMMMd().format(tx.date)),
+                        trailing: Text(
+                          currencyFormat.format(tx.amount),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: tx.type == 'Revenue' ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: transactions.length > 5 ? 5 : transactions.length,
+                ),
+              ),
+            ),
+            
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getCategoryColor(String category) {
+    final colors = [Colors.teal, const Color(0xFFFF6B6B), Colors.amber, Colors.indigo, Colors.brown, Colors.pink];
+    return colors[category.hashCode % colors.length];
+  }
+}
+
+class _ActiveSeasonHeader extends StatelessWidget {
+  final dynamic activeSeason;
+
+  const _ActiveSeasonHeader({this.activeSeason});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).colorScheme.primary,
+            Theme.of(context).colorScheme.primary.withBlue(150),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+             children: [
+               Icon(
+                 activeSeason?.cropType == 'Wheat' ? Icons.agriculture : Icons.eco,
+                 color: Colors.white,
+               ),
+               const SizedBox(width: 8),
+               Text(
+                 'ACTIVE SEASON',
+                 style: TextStyle(
+                   color: Colors.white.withOpacity(0.8),
+                   fontWeight: FontWeight.w800,
+                   letterSpacing: 1.2,
+                   fontSize: 12,
+                 ),
+               ),
+             ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            activeSeason?.name ?? 'No Season Active',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _HeroStat(label: 'Area', value: '${activeSeason?.landArea ?? 0} Acres'),
+              _HeroStat(
+                label: 'Status', 
+                value: activeSeason != null ? 'Growing' : 'N/A',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroStat extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _HeroStat({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+        ),
+        Text(
+          value,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ],
     );
@@ -44,23 +315,59 @@ class _MetricCard extends StatelessWidget {
   final String title;
   final String value;
   final Color color;
+  final IconData icon;
+  final bool isWide;
 
-  const _MetricCard({required this.title, required this.value, required this.color});
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.color,
+    required this.icon,
+    this.isWide = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color, width: 2),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: Theme.of(context).textTheme.bodyLarge),
-          Text(value, style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: color)),
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isWide ? 20 : 16,
+              fontWeight: FontWeight.w800,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
         ],
       ),
     );

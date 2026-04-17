@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/transaction_repository_provider.dart';
 
@@ -18,73 +19,104 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 20,
-        right: 20,
-        top: 20,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 24,
+        right: 24,
+        top: 12,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _buildHeader(),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
           const SizedBox(height: 24),
-          _buildForm(),
-          const SizedBox(height: 20),
+          _buildModeToggle(),
+          const SizedBox(height: 32),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: _buildForm(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return SegmentedButton<TransactionMode>(
-      style: SegmentedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        minimumSize: const Size(0, 56),
+  Widget _buildModeToggle() {
+    return Container(
+      height: 56,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
       ),
-      segments: const [
-        ButtonSegment(
-          value: TransactionMode.expense,
-          label: Text('EXPENSE', style: TextStyle(fontWeight: FontWeight.bold)),
-          icon: Icon(Icons.remove_circle_outline),
-        ),
-        ButtonSegment(
-          value: TransactionMode.revenue,
-          label: Text('REVENUE', style: TextStyle(fontWeight: FontWeight.bold)),
-          icon: Icon(Icons.add_circle_outline),
-        ),
-        ButtonSegment(
-          value: TransactionMode.yield,
-          label: Text('YIELD', style: TextStyle(fontWeight: FontWeight.bold)),
-          icon: Icon(Icons.agriculture),
-        ),
-      ],
-      selected: {_mode},
-      onSelectionChanged: (Set<TransactionMode> newSelection) {
-        setState(() {
-          _mode = newSelection.first;
-        });
-        HapticFeedback.lightImpact();
-      },
+      child: Row(
+        children: TransactionMode.values.map((mode) {
+          final isSelected = _mode == mode;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() => _mode = mode);
+                HapticFeedback.mediumImpact();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected ? [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ] : null,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  mode.name.toUpperCase(),
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
   Widget _buildForm() {
     switch (_mode) {
       case TransactionMode.expense:
-        return const _ExpenseForm();
+        return _ExpenseForm(key: const ValueKey('expense'));
       case TransactionMode.revenue:
-        return const _RevenueForm();
+        return _RevenueForm(key: const ValueKey('revenue'));
       case TransactionMode.yield:
-        return const _YieldForm();
+        return _YieldForm(key: const ValueKey('yield'));
     }
   }
 }
 
 class _ExpenseForm extends ConsumerStatefulWidget {
-  const _ExpenseForm();
-
+  const _ExpenseForm({super.key});
   @override
   ConsumerState<_ExpenseForm> createState() => _ExpenseFormState();
 }
@@ -102,58 +134,70 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
+        TextField(
           controller: _amountController,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 32),
-          decoration: const InputDecoration(
-            labelText: 'Enter Amount',
-            prefixText: '\$ ',
-            hintText: '0.00',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900),
+          decoration: InputDecoration(
+            hintText: '0',
+            prefixText: 'PKR ',
+            prefixStyle: TextStyle(fontSize: 20, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
           ),
-          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: 24),
-        Text('Category', style: Theme.of(context).textTheme.bodyLarge),
+        Text('Category', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 8,
+          runSpacing: 8,
           children: _categories.map((cat) {
             final isSelected = _selectedCategory == cat;
             return ChoiceChip(
               label: Text(cat),
               selected: isSelected,
-              onSelected: (selected) {
-                setState(() => _selectedCategory = selected ? cat : null);
-                HapticFeedback.selectionClick();
-              },
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              labelStyle: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : null,
-              ),
+              onSelected: (val) => setState(() => _selectedCategory = val ? cat : null),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              showCheckmark: false,
             );
           }).toList(),
         ),
         const SizedBox(height: 24),
-        ListTile(
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(width: 2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: Text('Date: ${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
-          trailing: const Icon(Icons.calendar_today),
+        InkWell(
           onTap: () async {
             final picked = await showDatePicker(
               context: context,
               initialDate: _selectedDate,
-              firstDate: DateTime(2000),
-              lastDate: DateTime(2100),
+              firstDate: DateTime(2020),
+              lastDate: DateTime.now(),
             );
             if (picked != null) setState(() => _selectedDate = picked);
           },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_rounded, size: 20),
+                const SizedBox(width: 12),
+                Text('Date: ${DateFormat.yMMMd().format(_selectedDate)}'),
+                const Spacer(),
+                const Icon(Icons.chevron_right_rounded),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _notesController,
+          decoration: const InputDecoration(labelText: 'Notes', prefixIcon: Icon(Icons.notes_rounded)),
         ),
         const SizedBox(height: 32),
         _buildSaveButton(onPressed: _save),
@@ -162,67 +206,46 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
   }
 
   void _save() async {
-    final activeSeasonId = ref.read(activeSeasonIdProvider);
-    if (activeSeasonId == null) {
-      _showError('You must select an Active Season first!');
-      return;
-    }
-
+    final seasonId = ref.read(activeSeasonIdProvider);
+    if (seasonId == null) return;
     try {
       await ref.read(transactionRepositoryProvider).saveTransaction(
-        seasonId: activeSeasonId,
+        seasonId: seasonId,
         amount: double.parse(_amountController.text),
         type: 'Expense',
         category: _selectedCategory,
         notes: _notesController.text,
         date: _selectedDate,
       );
-      _onSuccess();
+      Navigator.pop(context);
     } catch (e) {
-      _showError('Failed to save transaction');
+      debugPrint(e.toString());
     }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg, style: const TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _onSuccess() {
-    HapticFeedback.heavyImpact();
-    Navigator.pop(context);
   }
 
   Widget _buildSaveButton({required VoidCallback onPressed}) {
     final amount = double.tryParse(_amountController.text) ?? 0;
     final isValid = amount > 0 && _selectedCategory != null;
-
     return ElevatedButton(
       onPressed: isValid ? onPressed : null,
       style: ElevatedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 64),
+        minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      child: const Text('SAVE RECORD', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+      child: const Text('Save Expense', style: TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }
 
 class _RevenueForm extends ConsumerStatefulWidget {
-  const _RevenueForm();
-
+  const _RevenueForm({super.key});
   @override
   ConsumerState<_RevenueForm> createState() => _RevenueFormState();
 }
 
 class _RevenueFormState extends ConsumerState<_RevenueForm> {
   final _amountController = TextEditingController();
-  final _quantityController = TextEditingController();
+  final _qtyController = TextEditingController();
   final _buyerController = TextEditingController();
   String? _selectedCategory;
   DateTime _selectedDate = DateTime.now();
@@ -234,173 +257,133 @@ class _RevenueFormState extends ConsumerState<_RevenueForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        TextField(
+          controller: _amountController,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900),
+          decoration: const InputDecoration(hintText: '0', prefixText: 'PKR ', border: InputBorder.none),
+        ),
+        const SizedBox(height: 24),
         Row(
           children: [
-            Expanded(
-              flex: 2,
-              child: TextFormField(
-                controller: _amountController,
-                autofocus: true,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Amount Earned', prefixText: '\$ '),
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextFormField(
-                controller: _quantityController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Qty (Kg)', hintText: '0'),
-                onChanged: (_) => setState(() {}),
-              ),
-            ),
+             Expanded(
+               child: TextField(
+                 controller: _qtyController,
+                 keyboardType: TextInputType.number,
+                 decoration: const InputDecoration(labelText: 'Quantity (Kg)', prefixIcon: Icon(Icons.scale_rounded)),
+               ),
+             ),
+             const SizedBox(width: 16),
+             Expanded(
+               child: TextField(
+                 controller: _buyerController,
+                 decoration: const InputDecoration(labelText: 'Buyer', prefixIcon: Icon(Icons.person_rounded)),
+               ),
+             ),
           ],
         ),
         const SizedBox(height: 24),
-        Text('Revenue Source', style: Theme.of(context).textTheme.bodyLarge),
+        Text('Revenue Source', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 12),
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: _categories.map((cat) {
-            final isSelected = _selectedCategory == cat;
-            return ChoiceChip(
-              label: Text(cat),
-              selected: isSelected,
-              onSelected: (selected) {
-                setState(() => _selectedCategory = selected ? cat : null);
-                HapticFeedback.selectionClick();
-              },
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 24),
-        TextFormField(
-          controller: _buyerController,
-          decoration: const InputDecoration(labelText: 'Buyer Name (Optional)', hintText: 'Enter name'),
+          spacing: 8,
+          children: _categories.map((cat) => ChoiceChip(
+            label: Text(cat),
+            selected: _selectedCategory == cat,
+            onSelected: (val) => setState(() => _selectedCategory = val ? cat : null),
+          )).toList(),
         ),
         const SizedBox(height: 32),
-        _buildSaveButton(onPressed: _save),
+        ElevatedButton(
+          onPressed: _save,
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text('Save Revenue', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
       ],
     );
   }
 
   void _save() async {
-    final activeSeasonId = ref.read(activeSeasonIdProvider);
-    if (activeSeasonId == null) {
-      _showError('You must select an Active Season first!');
-      return;
-    }
-
+    final seasonId = ref.read(activeSeasonIdProvider);
+    if (seasonId == null) return;
     try {
       await ref.read(transactionRepositoryProvider).saveTransaction(
-        seasonId: activeSeasonId,
+        seasonId: seasonId,
         amount: double.parse(_amountController.text),
         type: 'Revenue',
         category: _selectedCategory,
-        quantity: double.tryParse(_quantityController.text),
+        quantity: double.tryParse(_qtyController.text),
         buyerName: _buyerController.text,
         date: _selectedDate,
       );
-      _onSuccess();
+      Navigator.pop(context);
     } catch (e) {
-      _showError('Failed to save record');
+      debugPrint(e.toString());
     }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.red),
-    );
-  }
-
-  void _onSuccess() {
-    HapticFeedback.heavyImpact();
-    Navigator.pop(context);
-  }
-
-  Widget _buildSaveButton({required VoidCallback onPressed}) {
-    final amount = double.tryParse(_amountController.text) ?? 0;
-    final qty = double.tryParse(_quantityController.text) ?? 0;
-    final isValid = amount > 0 && qty > 0 && _selectedCategory != null;
-
-    return ElevatedButton(
-      onPressed: isValid ? onPressed : null,
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(double.infinity, 64),
-      ),
-      child: const Text('SAVE REVENUE', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-    );
   }
 }
 
 class _YieldForm extends ConsumerStatefulWidget {
-  const _YieldForm();
-
+  const _YieldForm({super.key});
   @override
   ConsumerState<_YieldForm> createState() => _YieldFormState();
 }
 
 class _YieldFormState extends ConsumerState<_YieldForm> {
-  final _weightController = TextEditingController();
-  String _unit = 'Kg';
+  final _yieldController = TextEditingController();
+  String _unit = 'Mund (40kg)';
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
-          controller: _weightController,
+        TextField(
+          controller: _yieldController,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 32),
-          decoration: const InputDecoration(labelText: 'Total Weight Harvested', hintText: '0.00'),
-          onChanged: (_) => setState(() {}),
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900),
+          decoration: const InputDecoration(hintText: '0', suffixText: ' Harvested', border: InputBorder.none),
         ),
         const SizedBox(height: 24),
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'Kg', label: Text('Kgs')),
-            ButtonSegment(value: 'Tons', label: Text('Tons')),
-          ],
-          selected: {_unit},
-          onSelectionChanged: (set) => setState(() => _unit = set.first),
+        DropdownButtonFormField<String>(
+          value: _unit,
+          decoration: const InputDecoration(labelText: 'Unit', prefixIcon: Icon(Icons.straighten_rounded)),
+          items: ['Kg', 'Mund (40kg)', 'Tons'].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+          onChanged: (val) => setState(() => _unit = val!),
         ),
         const SizedBox(height: 32),
         ElevatedButton(
-          onPressed: (double.tryParse(_weightController.text) ?? 0) > 0 ? _save : null,
-          style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 64)),
-          child: const Text('SAVE YIELD LOG', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          onPressed: _save,
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: const Text('Log Yield', style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );
   }
 
   void _save() async {
-    final activeSeasonId = ref.read(activeSeasonIdProvider);
-    if (activeSeasonId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You must select an Active Season first!'), backgroundColor: Colors.red),
-      );
-      return;
-    }
-
+    final seasonId = ref.read(activeSeasonIdProvider);
+    if (seasonId == null) return;
     try {
       await ref.read(transactionRepositoryProvider).saveYieldLog(
-        seasonId: activeSeasonId,
-        totalWeight: double.parse(_weightController.text),
+        seasonId: seasonId,
+        totalWeight: double.parse(_yieldController.text),
         unit: _unit,
         date: DateTime.now(),
       );
-      HapticFeedback.heavyImpact();
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save yield'), backgroundColor: Colors.red),
-      );
+      debugPrint(e.toString());
     }
   }
 }

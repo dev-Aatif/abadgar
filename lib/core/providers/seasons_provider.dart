@@ -62,9 +62,15 @@ class SeasonsNotifier extends _$SeasonsNotifier {
 
   Future<void> updateStatus(String id, String status) async {
     final db = await ref.read(powerSyncDatabaseProvider.future);
+    final isCompleted = status == 'Completed';
     await db.execute(
-      'UPDATE seasons SET status = ?, updated_at = ? WHERE id = ?',
-      [status, DateTime.now().toIso8601String(), id],
+      'UPDATE seasons SET status = ?, updated_at = ?, end_date = ? WHERE id = ?',
+      [
+        status, 
+        DateTime.now().toIso8601String(), 
+        isCompleted ? DateTime.now().toIso8601String() : null,
+        id
+      ],
     );
   }
 }

@@ -1,0 +1,14 @@
+{
+  "appTitle": "آبادگار",
+  "dashboard": "ڈیش بورڈ",
+  "seasons": "فصلیں",
+  "ledger": "کھاتہ",
+  "settings": "سیٹنگز",
+  "activeSeason": "موجودہ فصل",
+  "totalRevenue": "کل آمدنی",
+  "totalExpenses": "کل اخراجات",
+  "netProfit": "خالص منافع",
+  "addTransaction": "نیا اندراج",
+  "save": "محفوظ کریں",
+  "cancel": "منسوخ کریں"
+}

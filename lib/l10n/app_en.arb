@@ -1,0 +1,14 @@
+{
+  "appTitle": "Abadgar",
+  "dashboard": "Dashboard",
+  "seasons": "Seasons",
+  "ledger": "Ledger",
+  "settings": "Settings",
+  "activeSeason": "Active Season",
+  "totalRevenue": "Total Revenue",
+  "totalExpenses": "Total Expenses",
+  "netProfit": "Net Profit",
+  "addTransaction": "Add Transaction",
+  "save": "Save",
+  "cancel": "Cancel"
+}

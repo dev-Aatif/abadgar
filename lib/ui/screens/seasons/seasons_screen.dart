@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
+import '../../../core/models/season.dart';
 
 class SeasonsScreen extends ConsumerWidget {
   const SeasonsScreen({super.key});
@@ -12,80 +14,94 @@ class SeasonsScreen extends ConsumerWidget {
     final activeSeasonId = ref.watch(activeSeasonIdProvider);
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Harvest Cycles'),
+        actions: [
+          IconButton(
+            onPressed: () => _showCreateSeasonSheet(context),
+            icon: const Icon(Icons.add_circle_outline_rounded),
+          ),
+        ],
+      ),
       body: seasonsAsync.when(
         data: (seasonsList) {
           if (seasonsList.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32.0),
-                child: Text(
-                  'Start your first Wheat or Rice cycle!',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-            );
+            return _buildEmptyState(context);
           }
 
-          return ListView.builder(
-            itemCount: seasonsList.length,
-            padding: const EdgeInsets.all(16),
-            itemBuilder: (context, index) {
-              final season = seasonsList[index];
-              final isActive = season.id == activeSeasonId;
+          final activeSeason = seasonsList.firstWhere(
+            (s) => s.id == activeSeasonId,
+            orElse: () => seasonsList.firstWhere((s) => s.status == 'Active', orElse: () => seasonsList.first),
+          );
+          
+          final completedSeasons = seasonsList.where((s) => s.status == 'Completed' || (s.id != activeSeason.id && s.status != 'Active')).toList();
 
-              return Card(
-                elevation: isActive ? 6 : 1,
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: isActive 
-                    ? BorderSide(color: Theme.of(context).primaryColor, width: 3)
-                    : BorderSide.none,
+          return CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('CURRENTLY ACTIVE', style: Theme.of(context).textTheme.labelLarge?.copyWith(letterSpacing: 1.5, color: Theme.of(context).colorScheme.primary)),
+                      const SizedBox(height: 16),
+                      _ActiveSeasonCard(season: activeSeason),
+                    ],
+                  ),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(20),
-                  leading: CircleAvatar(
-                    radius: 28,
-                    backgroundColor: isActive ? Theme.of(context).primaryColor : Colors.grey[200],
-                    child: Icon(
-                      season.cropType == 'Wheat' ? Icons.grass : Icons.water_drop,
-                      color: isActive ? Colors.white : Colors.grey[700],
-                      size: 32,
-                    ),
+              ),
+              if (completedSeasons.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
+                      child: Text('PREVIOUS HARVESTS', style: Theme.of(context).textTheme.labelLarge?.copyWith(letterSpacing: 1.5, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
                   ),
-                  title: Text(
-                    season.name,
-                    style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22),
-                  ),
-                  subtitle: Text(
-                    '${season.cropType} • ${season.landArea} Acres\nStarted: ${season.startDate.day}/${season.startDate.month}/${season.startDate.year}',
-                    style: const TextStyle(height: 1.5, fontWeight: FontWeight.bold),
-                  ),
-                  trailing: isActive 
-                    ? const Icon(Icons.check_circle, color: Colors.green, size: 40)
-                    : OutlinedButton(
-                        onPressed: () {
-                          ref.read(activeSeasonIdProvider.notifier).set(season.id);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        child: const Text('ACTIVATE'),
-                      ),
-                  isThreeLine: true,
                 ),
-              );
-            },
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final season = completedSeasons[index];
+                      return _CompletedSeasonTile(season: season);
+                    },
+                    childCount: completedSeasons.length,
+                  ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 100)),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(child: Text('Error: $err')),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateSeasonSheet(context),
-        label: const Text('NEW CYCLE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-        icon: const Icon(Icons.add, size: 28),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.agriculture_rounded, size: 100, color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+          const SizedBox(height: 24),
+          const Text('No agricultural cycles yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('Start your first wheat or rice crop!', style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () => _showCreateSeasonSheet(context),
+            icon: const Icon(Icons.add),
+            label: const Text('New Harvest Cycle'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -95,10 +111,110 @@ class SeasonsScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) => const CreateSeasonSheet(),
+    );
+  }
+}
+
+class _ActiveSeasonCard extends ConsumerWidget {
+  final Season season;
+  const _ActiveSeasonCard({required this.season});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isWheat = season.cropType == 'Wheat';
+    final gradient = isWheat 
+        ? const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)])
+        : const LinearGradient(colors: [Color(0xFF0D7377), Color(0xFF14B8A6)]);
+
+    return Card(
+      child: Container(
+        decoration: BoxDecoration(gradient: gradient),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                    child: Text(season.cropType.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                  ),
+                  const Icon(Icons.eco_rounded, color: Colors.white),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(season.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text('${season.landArea} Acres • Started ${DateFormat.yMMMd().format(season.startDate)}', style: TextStyle(color: Colors.white.withOpacity(0.8))),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                         final confirm = await showDialog<bool>(
+                           context: context,
+                           builder: (context) => AlertDialog(
+                             title: const Text('Complete Season?'),
+                             content: const Text('This will mark the season as finished and allow you to record the final yield.'),
+                             actions: [
+                               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                               TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Complete')),
+                             ],
+                           ),
+                         );
+                         if (confirm == true) {
+                           ref.read(seasonsNotifierProvider.notifier).updateStatus(season.id, 'Completed');
+                         }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: isWheat ? const Color(0xFFD97706) : const Color(0xFF0D7377),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Complete Season'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompletedSeasonTile extends StatelessWidget {
+  final Season season;
+  const _CompletedSeasonTile({required this.season});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          child: Icon(season.cropType == 'Wheat' ? Icons.grass_rounded : Icons.water_drop_rounded, size: 20),
+        ),
+        title: Text(season.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('${season.cropType} • ${season.landArea} Acres'),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            const Text('COMPLETED', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.grey)),
+            Text(DateFormat('MMM yyyy').format(season.startDate), style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -117,79 +233,45 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return Container(
       padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         left: 24,
         right: 24,
         top: 24,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(color: Colors.grey, borderRadius: BorderRadius.all(Radius.circular(10))),
-            ),
-          ),
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 24),
-          Text('New Harvest Cycle', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text('New Harvest Cycle', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
-          
-          Text('Select Crop', style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 12),
-          SegmentedButton<String>(
-            style: SegmentedButton.styleFrom(minimumSize: const Size(0, 64)),
-            segments: const [
-              ButtonSegment(
-                value: 'Wheat', 
-                label: Text('WHEAT', style: TextStyle(fontWeight: FontWeight.bold)),
-                icon: Icon(Icons.grass),
-              ),
-              ButtonSegment(
-                value: 'Rice', 
-                label: Text('RICE', style: TextStyle(fontWeight: FontWeight.bold)),
-                icon: Icon(Icons.water_drop),
-              ),
+          Row(
+            children: [
+              Expanded(child: _PillToggle(label: 'Wheat', icon: Icons.grass, isSelected: _cropType == 'Wheat', onTap: () => setState(() => _cropType = 'Wheat'))),
+              const SizedBox(width: 12),
+              Expanded(child: _PillToggle(label: 'Rice', icon: Icons.water_drop, isSelected: _cropType == 'Rice', onTap: () => setState(() => _cropType = 'Rice'))),
             ],
-            selected: {_cropType},
-            onSelectionChanged: (set) => setState(() => _cropType = set.first),
           ),
           const SizedBox(height: 24),
-          
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(
-              labelText: 'Season Name',
-              hintText: 'e.g. Winter 2024',
-              prefixIcon: Icon(Icons.edit),
-            ),
-          ),
+          TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Season Name (e.g. Rabi 2024)', prefixIcon: Icon(Icons.title))),
           const SizedBox(height: 16),
-          
-          TextField(
-            controller: _areaController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Land Area (Acres)',
-              hintText: '0.0',
-              prefixIcon: Icon(Icons.square_foot),
-            ),
-          ),
-          
-          const SizedBox(height: 40),
+          TextField(controller: _areaController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Total Area (Acres)', prefixIcon: Icon(Icons.square_foot))),
+          const SizedBox(height: 32),
           ElevatedButton(
             onPressed: _save,
             style: ElevatedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 72),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              minimumSize: const Size(double.infinity, 56),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: const Text('START CYCLE', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+            child: const Text('Start New Cycle'),
           ),
-          const SizedBox(height: 32),
         ],
       ),
     );
@@ -200,17 +282,41 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
     final area = double.tryParse(_areaController.text) ?? 0.0;
 
     if (name.isNotEmpty && area > 0) {
-      await ref.read(seasonsNotifierProvider.notifier).addSeason(
-        name: name,
-        cropType: _cropType,
-        landArea: area,
-        startDate: DateTime.now(),
-      );
+      await ref.read(seasonsNotifierProvider.notifier).addSeason(name: name, cropType: _cropType, landArea: area, startDate: DateTime.now());
       if (mounted) Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid name and land area')),
-      );
     }
+  }
+}
+
+class _PillToggle extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _PillToggle({required this.label, required this.icon, required this.isSelected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceVariant;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(isSelected ? 0.1 : 0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isSelected ? color : Colors.transparent, width: 2),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: isSelected ? color : Colors.grey),
+            const SizedBox(height: 8),
+            Text(label, style: TextStyle(color: isSelected ? color : Colors.grey, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -58,4 +58,15 @@ class TransactionsNotifier extends _$TransactionsNotifier {
       state = AsyncValue.error(e, st);
     }
   }
+
+  Future<void> deleteTransaction(String id) async {
+    state = const AsyncValue.loading();
+    try {
+      final db = await ref.read(powerSyncDatabaseProvider.future);
+      await db.execute('DELETE FROM transactions WHERE id = ?', [id]);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
 }

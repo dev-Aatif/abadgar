@@ -1,93 +1,113 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Light Theme Colors
-  static const Color lightPrimary = Color(0xFFFF1744); // Hot Pink/Red
-  static const Color lightBackground = Colors.white;
-  static const Color lightText = Colors.black;
-
-  // Dark Theme Colors
-  static const Color darkPrimary = Color(0xFFFFB300); // Soft Amber
-  static const Color darkBackground = Color(0xFF121212);
-  static const Color darkText = Colors.white;
+  // Brand Colors
+  static const Color primaryTeal = Color(0xFF0D7377);
+  static const Color accentCoral = Color(0xFFFF6B6B);
+  
+  // Light Palette
+  static const Color lightBg = Color(0xFFF8F9FA);
+  static const Color lightSurface = Colors.white;
+  static const Color lightText = Color(0xFF2D3436);
+  
+  // Dark Palette
+  static const Color darkBg = Color(0xFF0F0F1E);
+  static const Color darkSurface = Color(0xFF1A1A2E);
+  static const Color darkText = Color(0xFFE0E0E0);
 
   static ThemeData get light {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: lightPrimary,
-        primary: lightPrimary,
-        background: lightBackground,
-        onBackground: lightText,
-      ),
-      scaffoldBackgroundColor: lightBackground,
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontWeight: FontWeight.w900, fontSize: 32, color: lightText),
-        headlineMedium: TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: lightText),
-        bodyLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: lightText),
-        bodyMedium: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: lightText),
-      ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: lightPrimary,
-        foregroundColor: Colors.white,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: const OutlineInputBorder(
-          borderSide: BorderSide(width: 2.0, color: lightPrimary),
-        ),
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(width: 2.0, color: Colors.black),
-        ),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(width: 2.0, color: lightPrimary),
-        ),
-        labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-      ),
-      // Enforce 56x56 touch targets where possible
-      visualDensity: VisualDensity.comfortable,
-    );
+    return _base(Brightness.light);
   }
 
   static ThemeData get dark {
+    return _base(Brightness.dark);
+  }
+
+  static ThemeData _base(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final bg = isDark ? darkBg : lightBg;
+    final surface = isDark ? darkSurface : lightSurface;
+    final text = isDark ? darkText : lightText;
+    
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: brightness,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: darkPrimary,
-        primary: darkPrimary,
-        background: darkBackground,
-        onBackground: darkText,
-        brightness: Brightness.dark,
+        seedColor: primaryTeal,
+        primary: primaryTeal,
+        secondary: accentCoral,
+        surface: surface,
+        background: bg,
+        onPrimary: Colors.white,
+        onSurface: text,
+        brightness: brightness,
       ),
-      scaffoldBackgroundColor: darkBackground,
-      textTheme: const TextTheme(
-        headlineLarge: TextStyle(fontWeight: FontWeight.w900, fontSize: 32, color: darkText),
-        headlineMedium: TextStyle(fontWeight: FontWeight.w900, fontSize: 24, color: darkText),
-        bodyLarge: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: darkText),
-        bodyMedium: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: darkText),
+      scaffoldBackgroundColor: bg,
+      textTheme: GoogleFonts.interTextTheme(
+        TextTheme(
+          headlineLarge: TextStyle(fontWeight: FontWeight.w800, color: text),
+          headlineMedium: TextStyle(fontWeight: FontWeight.w700, color: text),
+          titleLarge: TextStyle(fontWeight: FontWeight.w600, color: text),
+          bodyLarge: TextStyle(color: text),
+          bodyMedium: TextStyle(color: text.withOpacity(0.8)),
+        ),
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: darkPrimary,
-        foregroundColor: Colors.black,
+      cardTheme: const CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20))),
+        clipBehavior: Clip.antiAlias,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white10,
-        border: const OutlineInputBorder(
-          borderSide: BorderSide(width: 2.0, color: darkPrimary),
+        fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
-        enabledBorder: const OutlineInputBorder(
-          borderSide: BorderSide(width: 2.0, color: Colors.white),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
-        focusedBorder: const OutlineInputBorder(
-          borderSide: BorderSide(width: 2.0, color: darkPrimary),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: primaryTeal, width: 1.5),
         ),
-        labelStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
-      visualDensity: VisualDensity.comfortable,
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surface,
+        indicatorColor: primaryTeal.withOpacity(0.1),
+        iconTheme: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.selected)) {
+            return const IconThemeData(color: primaryTeal);
+          }
+          return IconThemeData(color: text.withOpacity(0.5));
+        }),
+        labelTextStyle: MaterialStateProperty.resolveWith((states) {
+          if (states.contains(MaterialState.selected)) {
+            return const TextStyle(color: primaryTeal, fontWeight: FontWeight.w600);
+          }
+          return TextStyle(color: text.withOpacity(0.5));
+        }),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryTeal,
+        foregroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    );
+  }
+}
+
+extension Glassmorphism on Widget {
+  Widget glass({double blur = 10, double opacity = 0.5}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ColorFilter.mode(Colors.white.withOpacity(opacity), BlendMode.overlay),
+        child: this,
+      ),
     );
   }
 }

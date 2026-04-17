@@ -43,6 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/build/
+**/reports/
 
 # Environment and Secrets
 .env
@@ -51,6 +53,11 @@ app.*.map.json
 *.db
 *.db-shm
 *.db-wal
+
+# Generated files
+*.g.dart
+*.freezed.dart
+lib/l10n/generated/
 
 # Supabase
 supabase/migrations/*

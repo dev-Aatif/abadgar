@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/providers/active_season_provider.dart';
 import '../widgets/transaction_form/transaction_bottom_sheet.dart';
 
 class MainShell extends ConsumerWidget {
@@ -14,56 +13,53 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          activeSeason?.name ?? 'No Active Season',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        centerTitle: false,
-        actions: [
-          if (navigationShell.currentIndex == 1) // Ledger
-            IconButton(
-              iconSize: 32,
-              onPressed: () {},
-              icon: const Icon(Icons.filter_list),
-            ),
-        ],
-      ),
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) => navigationShell.goBranch(index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard, size: 32),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long, size: 32),
-            label: 'Ledger',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.agriculture, size: 32),
-            label: 'Seasons',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings, size: 32),
-            label: 'Settings',
-          ),
-        ],
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        child: Row(
+          children: [
+            _buildNavItem(context, 0, Icons.grid_view_rounded, 'Home'),
+            _buildNavItem(context, 1, Icons.account_balance_wallet_rounded, 'Ledger'),
+            const Spacer(),
+            _buildNavItem(context, 2, Icons.eco_rounded, 'Seasons'),
+            _buildNavItem(context, 3, Icons.settings_rounded, 'Settings'),
+          ],
+        ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Container(
-        margin: const EdgeInsets.only(top: 32),
-        height: 72,
-        width: 72,
-        child: FloatingActionButton(
-          onPressed: () => _showNewTransactionForm(context),
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add, size: 40),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showNewTransactionForm(context),
+        elevation: 4,
+        child: const Icon(Icons.add_rounded, size: 32),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(BuildContext context, int index, IconData icon, String label) {
+    final isSelected = navigationShell.currentIndex == index;
+    final color = isSelected 
+        ? Theme.of(context).colorScheme.primary 
+        : Theme.of(context).colorScheme.onSurface.withOpacity(0.5);
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => navigationShell.goBranch(index),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -74,6 +70,7 @@ class MainShell extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => const TransactionBottomSheet(),
     );
   }
