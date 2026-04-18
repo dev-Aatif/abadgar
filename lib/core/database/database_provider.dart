@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
@@ -18,7 +19,11 @@ Future<PowerSyncDatabase> powerSyncDatabase(PowerSyncDatabaseRef ref) async {
     path: path,
   );
 
-  await db.initialize();
+  try {
+    await db.initialize().timeout(const Duration(seconds: 10));
+  } catch (e) {
+    debugPrint("Database initialization failed or timed out: $e");
+  }
 
   // Connect to Supabase
   final supabase = Supabase.instance.client;

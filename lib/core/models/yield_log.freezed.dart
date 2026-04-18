@@ -23,7 +23,7 @@ mixin _$YieldLog {
   String get id => throw _privateConstructorUsedError;
   String get seasonId => throw _privateConstructorUsedError;
   double get totalWeight => throw _privateConstructorUsedError;
-  String get unit => throw _privateConstructorUsedError; // Kg or Tons
+  YieldUnit get unit => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
@@ -43,7 +43,7 @@ abstract class $YieldLogCopyWith<$Res> {
       {String id,
       String seasonId,
       double totalWeight,
-      String unit,
+      YieldUnit unit,
       DateTime date,
       DateTime createdAt,
       DateTime updatedAt});
@@ -86,7 +86,7 @@ class _$YieldLogCopyWithImpl<$Res, $Val extends YieldLog>
       unit: null == unit
           ? _value.unit
           : unit // ignore: cast_nullable_to_non_nullable
-              as String,
+              as YieldUnit,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
@@ -115,7 +115,7 @@ abstract class _$$YieldLogImplCopyWith<$Res>
       {String id,
       String seasonId,
       double totalWeight,
-      String unit,
+      YieldUnit unit,
       DateTime date,
       DateTime createdAt,
       DateTime updatedAt});
@@ -156,7 +156,7 @@ class __$$YieldLogImplCopyWithImpl<$Res>
       unit: null == unit
           ? _value.unit
           : unit // ignore: cast_nullable_to_non_nullable
-              as String,
+              as YieldUnit,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
@@ -195,8 +195,7 @@ class _$YieldLogImpl implements _YieldLog {
   @override
   final double totalWeight;
   @override
-  final String unit;
-// Kg or Tons
+  final YieldUnit unit;
   @override
   final DateTime date;
   @override
@@ -251,7 +250,7 @@ abstract class _YieldLog implements YieldLog {
       {required final String id,
       required final String seasonId,
       required final double totalWeight,
-      required final String unit,
+      required final YieldUnit unit,
       required final DateTime date,
       required final DateTime createdAt,
       required final DateTime updatedAt}) = _$YieldLogImpl;
@@ -266,8 +265,8 @@ abstract class _YieldLog implements YieldLog {
   @override
   double get totalWeight;
   @override
-  String get unit;
-  @override // Kg or Tons
+  YieldUnit get unit;
+  @override
   DateTime get date;
   @override
   DateTime get createdAt;

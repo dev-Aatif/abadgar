@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../constants/enums.dart';
 
 part 'transaction.freezed.dart';
 part 'transaction.g.dart';
@@ -9,9 +10,9 @@ class Transaction with _$Transaction {
     required String id,
     required String seasonId,
     required double amount,
-    required String type, // Expense or Revenue
+    required TransactionType type,
     required DateTime date,
-    String? category, // Seed, Fertilizer, Labor, etc.
+    String? category,
     String? notes,
     double? quantity,
     String? buyerName,
@@ -28,7 +29,7 @@ class Transaction with _$Transaction {
       amount: (row['amount'] as num).toDouble(),
       category: row['category'] as String?,
       date: DateTime.parse(row['date'] as String),
-      type: row['type'] as String,
+      type: TransactionType.fromString(row['type'] as String),
       notes: row['notes'] as String?,
       quantity: row['quantity'] != null ? (row['quantity'] as num).toDouble() : null,
       buyerName: row['buyer_name'] as String?,
@@ -44,7 +45,7 @@ class Transaction with _$Transaction {
       'amount': transaction.amount,
       'category': transaction.category,
       'date': transaction.date.toIso8601String(),
-      'type': transaction.type,
+      'type': transaction.type.value,
       'notes': transaction.notes,
       'quantity': transaction.quantity,
       'buyer_name': transaction.buyerName,

@@ -66,4 +66,8 @@ class TransactionRepository {
       ],
     );
   }
+
+  Future<void> deleteTransaction(String id) async {
+    await _db.execute('DELETE FROM transactions WHERE id = ?', [id]);
+  }
 }

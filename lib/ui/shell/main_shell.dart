@@ -14,17 +14,21 @@ class MainShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
+      extendBody: true, // This makes the body flow behind the FAB and navbar
       body: navigationShell,
       bottomNavigationBar: BottomAppBar(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
+        notchMargin: 10,
+        color: Theme.of(context).colorScheme.surface,
+        elevation: 0,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(context, 0, Icons.grid_view_rounded, 'Home'),
             _buildNavItem(context, 1, Icons.account_balance_wallet_rounded, 'Ledger'),
-            const Spacer(),
-            _buildNavItem(context, 4, Icons.auto_graph_rounded, 'Insights'),
-            _buildNavItem(context, 2, Icons.eco_rounded, 'Seasons'),
+            const SizedBox(width: 48), // Space for the FAB
+            _buildNavItem(context, 2, Icons.auto_graph_rounded, 'Insights'),
             _buildNavItem(context, 3, Icons.settings_rounded, 'Settings'),
           ],
         ),

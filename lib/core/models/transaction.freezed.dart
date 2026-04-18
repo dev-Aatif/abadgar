@@ -23,10 +23,9 @@ mixin _$Transaction {
   String get id => throw _privateConstructorUsedError;
   String get seasonId => throw _privateConstructorUsedError;
   double get amount => throw _privateConstructorUsedError;
-  String get type => throw _privateConstructorUsedError; // Expense or Revenue
+  TransactionType get type => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
-  String? get category =>
-      throw _privateConstructorUsedError; // Seed, Fertilizer, Labor, etc.
+  String? get category => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
   double? get quantity => throw _privateConstructorUsedError;
   String? get buyerName => throw _privateConstructorUsedError;
@@ -49,7 +48,7 @@ abstract class $TransactionCopyWith<$Res> {
       {String id,
       String seasonId,
       double amount,
-      String type,
+      TransactionType type,
       DateTime date,
       String? category,
       String? notes,
@@ -100,7 +99,7 @@ class _$TransactionCopyWithImpl<$Res, $Val extends Transaction>
       type: null == type
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
-              as String,
+              as TransactionType,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
@@ -145,7 +144,7 @@ abstract class _$$TransactionImplCopyWith<$Res>
       {String id,
       String seasonId,
       double amount,
-      String type,
+      TransactionType type,
       DateTime date,
       String? category,
       String? notes,
@@ -194,7 +193,7 @@ class __$$TransactionImplCopyWithImpl<$Res>
       type: null == type
           ? _value.type
           : type // ignore: cast_nullable_to_non_nullable
-              as String,
+              as TransactionType,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
@@ -253,13 +252,11 @@ class _$TransactionImpl implements _Transaction {
   @override
   final double amount;
   @override
-  final String type;
-// Expense or Revenue
+  final TransactionType type;
   @override
   final DateTime date;
   @override
   final String? category;
-// Seed, Fertilizer, Labor, etc.
   @override
   final String? notes;
   @override
@@ -324,7 +321,7 @@ abstract class _Transaction implements Transaction {
       {required final String id,
       required final String seasonId,
       required final double amount,
-      required final String type,
+      required final TransactionType type,
       required final DateTime date,
       final String? category,
       final String? notes,
@@ -343,12 +340,12 @@ abstract class _Transaction implements Transaction {
   @override
   double get amount;
   @override
-  String get type;
-  @override // Expense or Revenue
+  TransactionType get type;
+  @override
   DateTime get date;
   @override
   String? get category;
-  @override // Seed, Fertilizer, Labor, etc.
+  @override
   String? get notes;
   @override
   double? get quantity;

@@ -57,7 +57,7 @@ class LedgerScreen extends ConsumerWidget {
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final tx = transactions[index];
-              final isRevenue = tx.type == TransactionType.revenue.value || tx.type == TransactionType.yield_.value;
+              final isRevenue = tx.type == TransactionType.revenue || tx.type == TransactionType.yield_;
               final color = isRevenue ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
               return Dismissible(

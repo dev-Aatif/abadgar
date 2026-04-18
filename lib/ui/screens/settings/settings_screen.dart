@@ -31,14 +31,14 @@ class SettingsScreen extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.dark_mode_rounded),
                   title: Text(AppLocalizations.of(context)!.themeMode, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(themeMode.name.toUpperCase(), overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  subtitle: Text(themeMode.value?.name.toUpperCase() ?? '...', overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                   onTap: () => _showThemeDialog(context, ref),
                 ),
                 const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
                   title: Text(AppLocalizations.of(context)!.language, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(_getLocaleName(locale), overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                  subtitle: Text(_getLocaleName(locale.value ?? const Locale('en')), overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                   onTap: () => _showLanguageDialog(context, ref),
                 ),
               ],
@@ -177,7 +177,7 @@ class SettingsScreen extends ConsumerWidget {
              return RadioListTile<ThemeMode>(
                title: Text(mode.name.toUpperCase()),
                value: mode,
-               groupValue: ref.watch(themeModeNotifierProvider),
+               groupValue: ref.watch(themeModeNotifierProvider).value,
                onChanged: (val) {
                  ref.read(themeModeNotifierProvider.notifier).setThemeMode(val!);
                  Navigator.pop(context);
@@ -218,7 +218,7 @@ class _LanguageOption extends ConsumerWidget {
     return RadioListTile<Locale>(
       title: Text(label),
       value: locale,
-      groupValue: ref.watch(localeNotifierProvider),
+      groupValue: ref.watch(localeNotifierProvider).value,
       onChanged: (val) {
         ref.read(localeNotifierProvider.notifier).setLocale(val!);
         Navigator.pop(context);

@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/providers/financial_summary_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/transactions_provider.dart';
 import '../../../core/constants/enums.dart';
 import '../../../core/models/season.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
+
+import '../../../core/providers/auth_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -17,6 +20,7 @@ class DashboardScreen extends ConsumerWidget {
     final summary = ref.watch(financialSummaryProvider);
     final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
     final transactions = ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
+    final isAuthenticated = ref.watch(authStateProvider) != null;
     
     final currencyFormat = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 0);
 
@@ -29,23 +33,72 @@ class DashboardScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsetsDirectional.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'As-salamu Alaykum', // Standard greeting, keep for now or localize
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'As-salamu Alaykum',
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        Text(
+                          AppLocalizations.of(context)!.dashboard,
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                      ],
                     ),
-                    Text(
-                      AppLocalizations.of(context)!.dashboard,
-                      style: Theme.of(context).textTheme.headlineLarge,
+                    IconButton.filledTonal(
+                      onPressed: () => context.push('/seasons'),
+                      icon: const Icon(Icons.eco_rounded),
                     ),
                   ],
                 ),
               ),
             ),
+
+            if (!isAuthenticated)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Data Not Backed Up',
+                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.brown),
+                              ),
+                              Text(
+                                'Sign in to sync your farming data to the cloud.',
+                                style: TextStyle(fontSize: 12, color: Colors.brown),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pushNamed('/auth'),
+                          child: const Text('SYNC NOW'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
             // Active Season Card
             SliverToBoxAdapter(
@@ -180,10 +233,10 @@ class DashboardScreen extends ConsumerWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: tx.type == TransactionType.revenue.value ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
+                          backgroundColor: tx.type == TransactionType.revenue ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
                           child: Icon(
-                            tx.type == TransactionType.revenue.value ? Icons.add_rounded : Icons.remove_rounded,
-                            color: tx.type == TransactionType.revenue.value ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                            tx.type == TransactionType.revenue ? Icons.add_rounded : Icons.remove_rounded,
+                            color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                           ),
                         ),
                         title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -192,7 +245,7 @@ class DashboardScreen extends ConsumerWidget {
                           currencyFormat.format(tx.amount),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: tx.type == TransactionType.revenue.value ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                            color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                           ),
                         ),
                       ),
@@ -250,7 +303,7 @@ class _ActiveSeasonHeader extends StatelessWidget {
           Row(
              children: [
                Icon(
-                 activeSeason?.cropType == CropType.wheat.value ? Icons.agriculture : Icons.eco,
+                 activeSeason?.cropType == CropType.wheat ? Icons.agriculture : Icons.eco,
                  color: Colors.white,
                ),
                const SizedBox(width: 8),

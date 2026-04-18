@@ -11,7 +11,7 @@ _$TransactionImpl _$$TransactionImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       seasonId: json['seasonId'] as String,
       amount: (json['amount'] as num).toDouble(),
-      type: json['type'] as String,
+      type: $enumDecode(_$TransactionTypeEnumMap, json['type']),
       date: DateTime.parse(json['date'] as String),
       category: json['category'] as String?,
       notes: json['notes'] as String?,
@@ -26,7 +26,7 @@ Map<String, dynamic> _$$TransactionImplToJson(_$TransactionImpl instance) =>
       'id': instance.id,
       'seasonId': instance.seasonId,
       'amount': instance.amount,
-      'type': instance.type,
+      'type': _$TransactionTypeEnumMap[instance.type]!,
       'date': instance.date.toIso8601String(),
       'category': instance.category,
       'notes': instance.notes,
@@ -35,3 +35,9 @@ Map<String, dynamic> _$$TransactionImplToJson(_$TransactionImpl instance) =>
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };
+
+const _$TransactionTypeEnumMap = {
+  TransactionType.expense: 'expense',
+  TransactionType.revenue: 'revenue',
+  TransactionType.yield_: 'yield_',
+};

@@ -45,10 +45,11 @@ void main() {
 
       expect(find.textContaining('12,000'), findsWidgets); 
     });
-  group('Analytics Verification', () {
-    testWidgets('Check if metrics adjust after multiple logs', (tester) async {
-      // Future analytics tests
+
+    group('Analytics Verification', () {
+      testWidgets('Check if metrics adjust after multiple logs', (tester) async {
+        // Future analytics tests
+      });
     });
   });
-});
 }

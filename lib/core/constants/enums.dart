@@ -46,3 +46,19 @@ enum CropType {
     );
   }
 }
+
+enum YieldUnit {
+  kg('Kg'),
+  mund('Mund (40kg)'),
+  tons('Tons');
+
+  final String value;
+  const YieldUnit(this.value);
+
+  static YieldUnit fromString(String s) {
+    return YieldUnit.values.firstWhere(
+      (e) => e.value == s,
+      orElse: () => YieldUnit.kg,
+    );
+  }
+}

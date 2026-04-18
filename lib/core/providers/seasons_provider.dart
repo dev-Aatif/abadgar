@@ -22,7 +22,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
 
   Future<void> addSeason({
     required String name,
-    required String cropType,
+    required CropType cropType,
     required double landArea,
     required DateTime startDate,
   }) async {
@@ -38,7 +38,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
         cropType: cropType,
         landArea: landArea,
         startDate: startDate,
-        status: SeasonStatus.active.value,
+        status: SeasonStatus.active,
         createdAt: now,
         updatedAt: now,
       );
@@ -48,10 +48,10 @@ class SeasonsNotifier extends _$SeasonsNotifier {
         [
           season.id,
           season.name,
-          season.cropType,
+          season.cropType.value,
           season.landArea,
           season.startDate.toIso8601String(),
-          season.status,
+          season.status.value,
           season.createdAt.toIso8601String(),
           season.updatedAt.toIso8601String(),
         ],
@@ -66,13 +66,13 @@ class SeasonsNotifier extends _$SeasonsNotifier {
     }
   }
 
-  Future<void> updateStatus(String id, String status) async {
+  Future<void> updateStatus(String id, SeasonStatus status) async {
     final db = await ref.read(powerSyncDatabaseProvider.future);
-    final isCompleted = status == SeasonStatus.completed.value;
+    final isCompleted = status == SeasonStatus.completed;
     await db.execute(
       'UPDATE seasons SET status = ?, updated_at = ?, end_date = ? WHERE id = ?',
       [
-        status, 
+        status.value, 
         DateTime.now().toIso8601String(), 
         isCompleted ? DateTime.now().toIso8601String() : null,
         id

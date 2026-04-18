@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import '../constants/enums.dart';
 
 part 'yield_log.freezed.dart';
 part 'yield_log.g.dart';
@@ -9,7 +10,7 @@ class YieldLog with _$YieldLog {
     required String id,
     required String seasonId,
     required double totalWeight,
-    required String unit, // Kg or Tons
+    required YieldUnit unit,
     required DateTime date,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -22,7 +23,7 @@ class YieldLog with _$YieldLog {
       id: row['id'] as String,
       seasonId: row['season_id'] as String,
       totalWeight: (row['total_weight'] as num).toDouble(),
-      unit: row['unit'] as String,
+      unit: YieldUnit.fromString(row['unit'] as String),
       date: DateTime.parse(row['date'] as String),
       createdAt: DateTime.parse(row['created_at'] as String),
       updatedAt: DateTime.parse(row['updated_at'] as String),
@@ -34,7 +35,7 @@ class YieldLog with _$YieldLog {
       'id': log.id,
       'season_id': log.seasonId,
       'total_weight': log.totalWeight,
-      'unit': log.unit,
+      'unit': log.unit.value,
       'date': log.date.toIso8601String(),
       'created_at': log.createdAt.toIso8601String(),
       'updated_at': log.updatedAt.toIso8601String(),

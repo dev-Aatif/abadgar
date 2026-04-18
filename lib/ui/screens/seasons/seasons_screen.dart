@@ -33,10 +33,10 @@ class SeasonsScreen extends ConsumerWidget {
 
           final activeSeason = seasonsList.firstWhere(
             (s) => s.id == activeSeasonId,
-            orElse: () => seasonsList.firstWhere((s) => s.status == SeasonStatus.active.value, orElse: () => seasonsList.first),
+            orElse: () => seasonsList.firstWhere((s) => s.status == SeasonStatus.active, orElse: () => seasonsList.first),
           );
           
-          final completedSeasons = seasonsList.where((s) => s.status == SeasonStatus.completed.value || (s.id != activeSeason.id && s.status != SeasonStatus.active.value)).toList();
+          final completedSeasons = seasonsList.where((s) => s.status == SeasonStatus.completed || (s.id != activeSeason.id && s.status != SeasonStatus.active)).toList();
 
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
@@ -125,7 +125,7 @@ class _ActiveSeasonCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isWheat = season.cropType == CropType.wheat.value;
+    final isWheat = season.cropType == CropType.wheat;
     final gradient = isWheat 
         ? const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)])
         : const LinearGradient(colors: [Color(0xFF0D7377), Color(0xFF14B8A6)]);
@@ -144,7 +144,7 @@ class _ActiveSeasonCard extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                    child: Text(season.cropType.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                    child: Text(season.cropType.value.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
                   ),
                   const Icon(Icons.eco_rounded, color: Colors.white),
                 ],
@@ -171,7 +171,7 @@ class _ActiveSeasonCard extends ConsumerWidget {
                            ),
                          );
                          if (confirm == true) {
-                           ref.read(seasonsNotifierProvider.notifier).updateStatus(season.id, SeasonStatus.completed.value);
+                           ref.read(seasonsNotifierProvider.notifier).updateStatus(season.id, SeasonStatus.completed);
                          }
                       },
                       style: ElevatedButton.styleFrom(
@@ -211,14 +211,14 @@ class _CompletedSeasonTile extends ConsumerWidget {
             color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(season.cropType == CropType.wheat.value ? Icons.grass_rounded : Icons.water_drop_rounded, color: Theme.of(context).colorScheme.primary),
+          child: Icon(season.cropType == CropType.wheat ? Icons.grass_rounded : Icons.water_drop_rounded, color: Theme.of(context).colorScheme.primary),
         ),
         title: Text(season.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${season.cropType} • ${season.landArea} Acres'),
-            if (season.status == SeasonStatus.completed.value)
+            Text('${season.cropType.value} • ${season.landArea} Acres'),
+            if (season.status == SeasonStatus.completed)
                Text('Finished: ${DateFormat.yMMMd().format(season.endDate ?? season.startDate)}', style: const TextStyle(fontSize: 11)),
           ],
         ),
@@ -248,7 +248,7 @@ class CreateSeasonSheet extends ConsumerStatefulWidget {
 class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
   final _nameController = TextEditingController();
   final _areaController = TextEditingController();
-  String _cropType = 'Wheat';
+  CropType _cropType = CropType.wheat;
 
   @override
   Widget build(BuildContext context) {
@@ -273,9 +273,9 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _PillToggle(label: 'Wheat', icon: Icons.grass, isSelected: _cropType == 'Wheat', onTap: () => setState(() => _cropType = 'Wheat'))),
+              Expanded(child: _PillToggle(label: 'Wheat', icon: Icons.grass, isSelected: _cropType == CropType.wheat, onTap: () => setState(() => _cropType = CropType.wheat))),
               const SizedBox(width: 12),
-              Expanded(child: _PillToggle(label: 'Rice', icon: Icons.water_drop, isSelected: _cropType == 'Rice', onTap: () => setState(() => _cropType = 'Rice'))),
+              Expanded(child: _PillToggle(label: 'Rice', icon: Icons.water_drop, isSelected: _cropType == CropType.rice, onTap: () => setState(() => _cropType = CropType.rice))),
             ],
           ),
           const SizedBox(height: 24),

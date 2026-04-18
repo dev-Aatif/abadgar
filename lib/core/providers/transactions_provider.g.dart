@@ -41,7 +41,7 @@ final allTransactionsProvider =
 
 typedef AllTransactionsRef = AutoDisposeStreamProviderRef<List<Transaction>>;
 String _$transactionsNotifierHash() =>
-    r'a06297f8a5e63703ec8353e245bf38eeced7fe36';
+    r'0b9054f985d91950017987b308fee29769483ec6';
 
 /// See also [TransactionsNotifier].
 @ProviderFor(TransactionsNotifier)

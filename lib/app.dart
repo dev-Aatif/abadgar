@@ -12,8 +12,8 @@ class AbadgarApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeNotifierProvider);
-    final locale = ref.watch(localeNotifierProvider);
+    final themeMode = ref.watch(themeModeNotifierProvider).value ?? ThemeMode.system;
+    final locale = ref.watch(localeNotifierProvider).value ?? const Locale('en');
 
     return MaterialApp.router(
       title: 'Abadgar',

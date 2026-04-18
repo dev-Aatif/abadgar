@@ -6,7 +6,7 @@ part of 'database_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$powerSyncDatabaseHash() => r'4667decbd92de8d92466dd880cc87fa4e4cef026';
+String _$powerSyncDatabaseHash() => r'f04a15737f80890b9683834f1aa792170b19cdd5';
 
 /// See also [powerSyncDatabase].
 @ProviderFor(powerSyncDatabase)

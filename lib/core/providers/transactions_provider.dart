@@ -1,8 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:uuid/uuid.dart';
 import '../models/transaction.dart';
 import '../database/database_provider.dart';
 import 'active_season_provider.dart';
+import 'transaction_repository_provider.dart';
 
 part 'transactions_provider.g.dart';
 
@@ -43,23 +43,13 @@ class TransactionsNotifier extends _$TransactionsNotifier {
   }) async {
     state = const AsyncValue.loading();
     try {
-      final db = await ref.read(powerSyncDatabaseProvider.future);
-      final id = const Uuid().v4();
-      final now = DateTime.now();
-
-      await db.execute(
-        'INSERT INTO transactions(id, season_id, amount, category, date, type, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          id,
-          seasonId,
-          amount,
-          category,
-          date.toIso8601String(),
-          type,
-          notes,
-          now.toIso8601String(),
-          now.toIso8601String(),
-        ],
+      await ref.read(transactionRepositoryProvider).saveTransaction(
+        seasonId: seasonId,
+        amount: amount,
+        category: category,
+        date: date,
+        type: type,
+        notes: notes,
       );
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -70,8 +60,7 @@ class TransactionsNotifier extends _$TransactionsNotifier {
   Future<void> deleteTransaction(String id) async {
     state = const AsyncValue.loading();
     try {
-      final db = await ref.read(powerSyncDatabaseProvider.future);
-      await db.execute('DELETE FROM transactions WHERE id = ?', [id]);
+      await ref.read(transactionRepositoryProvider).deleteTransaction(id);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

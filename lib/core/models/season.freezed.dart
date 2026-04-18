@@ -22,12 +22,11 @@ Season _$SeasonFromJson(Map<String, dynamic> json) {
 mixin _$Season {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
-  String get cropType => throw _privateConstructorUsedError; // 'Rice' | 'Wheat'
+  CropType get cropType => throw _privateConstructorUsedError;
   double get landArea => throw _privateConstructorUsedError;
   DateTime get startDate => throw _privateConstructorUsedError;
   DateTime? get endDate => throw _privateConstructorUsedError;
-  String get status =>
-      throw _privateConstructorUsedError; // 'Planned' | 'Active' | 'Completed'
+  SeasonStatus get status => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
 
@@ -44,11 +43,11 @@ abstract class $SeasonCopyWith<$Res> {
   $Res call(
       {String id,
       String name,
-      String cropType,
+      CropType cropType,
       double landArea,
       DateTime startDate,
       DateTime? endDate,
-      String status,
+      SeasonStatus status,
       DateTime createdAt,
       DateTime updatedAt});
 }
@@ -88,7 +87,7 @@ class _$SeasonCopyWithImpl<$Res, $Val extends Season>
       cropType: null == cropType
           ? _value.cropType
           : cropType // ignore: cast_nullable_to_non_nullable
-              as String,
+              as CropType,
       landArea: null == landArea
           ? _value.landArea
           : landArea // ignore: cast_nullable_to_non_nullable
@@ -104,7 +103,7 @@ class _$SeasonCopyWithImpl<$Res, $Val extends Season>
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
-              as String,
+              as SeasonStatus,
       createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -127,11 +126,11 @@ abstract class _$$SeasonImplCopyWith<$Res> implements $SeasonCopyWith<$Res> {
   $Res call(
       {String id,
       String name,
-      String cropType,
+      CropType cropType,
       double landArea,
       DateTime startDate,
       DateTime? endDate,
-      String status,
+      SeasonStatus status,
       DateTime createdAt,
       DateTime updatedAt});
 }
@@ -169,7 +168,7 @@ class __$$SeasonImplCopyWithImpl<$Res>
       cropType: null == cropType
           ? _value.cropType
           : cropType // ignore: cast_nullable_to_non_nullable
-              as String,
+              as CropType,
       landArea: null == landArea
           ? _value.landArea
           : landArea // ignore: cast_nullable_to_non_nullable
@@ -185,7 +184,7 @@ class __$$SeasonImplCopyWithImpl<$Res>
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
-              as String,
+              as SeasonStatus,
       createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -220,8 +219,7 @@ class _$SeasonImpl implements _Season {
   @override
   final String name;
   @override
-  final String cropType;
-// 'Rice' | 'Wheat'
+  final CropType cropType;
   @override
   final double landArea;
   @override
@@ -229,8 +227,7 @@ class _$SeasonImpl implements _Season {
   @override
   final DateTime? endDate;
   @override
-  final String status;
-// 'Planned' | 'Active' | 'Completed'
+  final SeasonStatus status;
   @override
   final DateTime createdAt;
   @override
@@ -285,11 +282,11 @@ abstract class _Season implements Season {
   const factory _Season(
       {required final String id,
       required final String name,
-      required final String cropType,
+      required final CropType cropType,
       required final double landArea,
       required final DateTime startDate,
       final DateTime? endDate,
-      required final String status,
+      required final SeasonStatus status,
       required final DateTime createdAt,
       required final DateTime updatedAt}) = _$SeasonImpl;
 
@@ -300,16 +297,16 @@ abstract class _Season implements Season {
   @override
   String get name;
   @override
-  String get cropType;
-  @override // 'Rice' | 'Wheat'
+  CropType get cropType;
+  @override
   double get landArea;
   @override
   DateTime get startDate;
   @override
   DateTime? get endDate;
   @override
-  String get status;
-  @override // 'Planned' | 'Active' | 'Completed'
+  SeasonStatus get status;
+  @override
   DateTime get createdAt;
   @override
   DateTime get updatedAt;

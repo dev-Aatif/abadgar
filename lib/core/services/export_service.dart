@@ -11,7 +11,7 @@ class ExportService {
 
   ExportService(this.db);
 
-  Future<Map<String, dynamic>> _prepareData() async {
+  Future<Map<String, dynamic>> prepareData() async {
     final seasons = await db.getAll('SELECT * FROM seasons');
     final transactions = await db.getAll('SELECT * FROM transactions');
     final yieldLogs = await db.getAll('SELECT * FROM yield_logs');
@@ -25,8 +25,13 @@ class ExportService {
     };
   }
 
+  Future<String> getBackupData() async {
+    final data = await prepareData();
+    return jsonEncode(data);
+  }
+
   Future<void> exportDatabase() async {
-    final data = await _prepareData();
+    final data = await prepareData();
     final jsonString = jsonEncode(data);
     
     final tempDir = await getTemporaryDirectory();
@@ -42,7 +47,7 @@ class ExportService {
   }
 
   Future<void> downloadDatabase() async {
-    final data = await _prepareData();
+    final data = await prepareData();
     final jsonString = jsonEncode(data);
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
     
