@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/database/database_provider.dart';
@@ -24,21 +23,22 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _SectionHeader(title: 'APPEARANCE'),
+          _SectionHeader(title: AppLocalizations.of(context)!.appearance.toUpperCase()),
           Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.dark_mode_rounded),
-                  title: const Text('Theme Mode'),
-                  subtitle: Text(themeMode.name.toUpperCase()),
+                  title: Text(AppLocalizations.of(context)!.themeMode, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(themeMode.name.toUpperCase(), overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                   onTap: () => _showThemeDialog(context, ref),
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: const Icon(Icons.language_rounded),
-                  title: const Text('Language'),
-                  subtitle: Text(_getLocaleName(locale)),
+                  title: Text(AppLocalizations.of(context)!.language, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(_getLocaleName(locale), overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                   onTap: () => _showLanguageDialog(context, ref),
                 ),
               ],
@@ -46,24 +46,35 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           
-          _SectionHeader(title: 'DATA MANAGEMENT'),
+          _SectionHeader(title: AppLocalizations.of(context)!.dataManagement.toUpperCase()),
           Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.file_upload_outlined),
-                  title: const Text('Export Data (JSON)'),
-                  subtitle: const Text('Save your data to a local file'),
+                  title: Text(AppLocalizations.of(context)!.exportData, overflow: TextOverflow.ellipsis),
+                  subtitle: const Text('Share backup', overflow: TextOverflow.ellipsis),
                   onTap: () async {
                     final db = await ref.read(powerSyncDatabaseProvider.future);
                     await ExportService(db).exportDatabase();
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
+                ListTile(
+                  leading: const Icon(Icons.download_rounded),
+                  title: Text(AppLocalizations.of(context)!.downloadData, overflow: TextOverflow.ellipsis),
+                  subtitle: const Text('Save to device', overflow: TextOverflow.ellipsis),
+                  onTap: () async {
+                    final db = await ref.read(powerSyncDatabaseProvider.future);
+                    await ExportService(db).downloadDatabase();
+                  },
+                ),
+                const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: const Icon(Icons.file_download_outlined),
-                  title: const Text('Import Data (JSON)'),
-                  subtitle: const Text('Restore data from a backup'),
+                  title: Text(AppLocalizations.of(context)!.importData, overflow: TextOverflow.ellipsis),
+                  subtitle: const Text('Restore backup', overflow: TextOverflow.ellipsis),
                   onTap: () async {
                     final db = await ref.read(powerSyncDatabaseProvider.future);
                     final success = await ImportService(db).importDatabase();
@@ -72,31 +83,30 @@ class SettingsScreen extends ConsumerWidget {
                     }
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 ListTile(
                   leading: const Icon(Icons.sync_rounded),
-                  title: const Text('Manual Sync'),
+                  title: Text(AppLocalizations.of(context)!.manualSync, overflow: TextOverflow.ellipsis),
                   subtitle: dbAsync.when(
-                    data: (db) => const Text('Connected to PowerSync'),
-                    loading: () => const Text('Connecting...'),
-                    error: (_, __) => const Text('Offline / Error'),
+                    data: (db) => Text(AppLocalizations.of(context)!.connected, overflow: TextOverflow.ellipsis),
+                    loading: () => Text(AppLocalizations.of(context)!.connecting, overflow: TextOverflow.ellipsis),
+                    error: (_, __) => Text(AppLocalizations.of(context)!.offline, overflow: TextOverflow.ellipsis),
                   ),
-                  onTap: () {
-                    // PowerSync handles sync automatically
-                  },
+                  onTap: () {},
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
 
-          _SectionHeader(title: 'ABOUT'),
+          _SectionHeader(title: AppLocalizations.of(context)!.about.toUpperCase()),
           Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
                 ListTile(
                   leading: const Icon(Icons.system_update_rounded),
-                  title: const Text('Check for Updates'),
+                  title: Text(AppLocalizations.of(context)!.checkUpdates, overflow: TextOverflow.ellipsis),
                   onTap: () async {
                     try {
                       final update = await GithubUpdater.checkForUpdates();
@@ -110,14 +120,14 @@ class SettingsScreen extends ConsumerWidget {
                     }
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 FutureBuilder<PackageInfo>(
                   future: PackageInfo.fromPlatform(),
                   builder: (context, snapshot) {
                     return ListTile(
                       leading: const Icon(Icons.info_outline_rounded),
-                      title: const Text('App Version'),
-                      subtitle: Text(snapshot.data?.version ?? 'Loading...'),
+                      title: Text(AppLocalizations.of(context)!.version, overflow: TextOverflow.ellipsis),
+                      subtitle: Text(snapshot.data?.version ?? 'Loading...', overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                     );
                   },
                 ),
@@ -141,14 +151,16 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Language'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _LanguageOption(label: 'English', locale: const Locale('en'), ref: ref),
-            _LanguageOption(label: 'Urdu (اردو)', locale: const Locale('ur'), ref: ref),
-            _LanguageOption(label: 'Sindhi (سنڌي)', locale: const Locale('sd'), ref: ref),
-          ],
+        title: Text(AppLocalizations.of(context)!.language),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _LanguageOption(label: 'English', locale: const Locale('en')),
+              _LanguageOption(label: 'Urdu (اردو)', locale: const Locale('ur')),
+              _LanguageOption(label: 'Sindhi (سنڌي)', locale: const Locale('sd')),
+            ],
+          ),
         ),
       ),
     );
@@ -195,15 +207,14 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _LanguageOption extends StatelessWidget {
+class _LanguageOption extends ConsumerWidget {
   final String label;
   final Locale locale;
-  final WidgetRef ref;
 
-  const _LanguageOption({required this.label, required this.locale, required this.ref});
+  const _LanguageOption({required this.label, required this.locale});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return RadioListTile<Locale>(
       title: Text(label),
       value: locale,
@@ -223,11 +234,11 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8, top: 16),
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          color: Theme.of(context).colorScheme.primary,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
         ),

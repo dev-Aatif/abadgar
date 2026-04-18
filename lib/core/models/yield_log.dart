@@ -16,4 +16,28 @@ class YieldLog with _$YieldLog {
   }) = _YieldLog;
 
   factory YieldLog.fromJson(Map<String, dynamic> json) => _$YieldLogFromJson(json);
+
+  factory YieldLog.fromRow(Map<String, dynamic> row) {
+    return YieldLog(
+      id: row['id'] as String,
+      seasonId: row['season_id'] as String,
+      totalWeight: (row['total_weight'] as num).toDouble(),
+      unit: row['unit'] as String,
+      date: DateTime.parse(row['date'] as String),
+      createdAt: DateTime.parse(row['created_at'] as String),
+      updatedAt: DateTime.parse(row['updated_at'] as String),
+    );
+  }
+
+  static Map<String, dynamic> toRow(YieldLog log) {
+    return {
+      'id': log.id,
+      'season_id': log.seasonId,
+      'total_weight': log.totalWeight,
+      'unit': log.unit,
+      'date': log.date.toIso8601String(),
+      'created_at': log.createdAt.toIso8601String(),
+      'updated_at': log.updatedAt.toIso8601String(),
+    };
+  }
 }

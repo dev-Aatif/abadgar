@@ -1,26 +1,24 @@
+import '../constants/enums.dart';
+
 class AppCategories {
   static const expenses = [
     'Seed',
-    'Land Prep',
     'Fertilizer',
-    'Medicine/Pesticides',
-    'Irrigation',
     'Labor',
-    'Harvesting',
-    'Transport',
-    'Equipment',
-    'Misc',
+    'Fuel',
+    'Pesticide',
+    'Other',
   ];
 
   static const revenue = [
-    'Primary Crop Sale',
-    'Byproduct Sale',
-    'Subsidies',
+    'Primary Sale',
+    'Byproduct',
+    'Subsidy',
   ];
 
   static List<String> getAllForType(String type) {
-    if (type == 'Expense') return expenses;
-    if (type == 'Revenue') return revenue;
+    if (type == TransactionType.expense.value) return expenses;
+    if (type == TransactionType.revenue.value) return revenue;
     return [];
   }
 }

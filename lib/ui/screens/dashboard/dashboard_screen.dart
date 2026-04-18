@@ -5,6 +5,9 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/financial_summary_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/transactions_provider.dart';
+import '../../../core/constants/enums.dart';
+import '../../../core/models/season.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -25,18 +28,18 @@ class DashboardScreen extends ConsumerWidget {
             // Header
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(20.0),
+                padding: const EdgeInsetsDirectional.all(20.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'As-salamu Alaykum',
+                      'As-salamu Alaykum', // Standard greeting, keep for now or localize
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     Text(
-                      'Farmer Dashboard',
+                      AppLocalizations.of(context)!.dashboard,
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
                   ],
@@ -47,7 +50,7 @@ class DashboardScreen extends ConsumerWidget {
             // Active Season Card
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
                 child: _ActiveSeasonHeader(activeSeason: activeSeason),
               ),
             ),
@@ -56,23 +59,23 @@ class DashboardScreen extends ConsumerWidget {
 
             // Metrics Grid
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 1.5,
+                  childAspectRatio: 1.4, // Slightly taller for regional scripts
                 ),
                 delegate: SliverChildListDelegate([
                     _MetricCard(
-                    title: 'Revenue',
+                    title: AppLocalizations.of(context)!.totalRevenue,
                     value: currencyFormat.format(summary?.totalRevenue ?? 0),
                     color: const Color(0xFF10B981), // Emerald
                     icon: Icons.trending_up_rounded,
                   ),
                   _MetricCard(
-                    title: 'Expenses',
+                    title: AppLocalizations.of(context)!.totalExpenses,
                     value: currencyFormat.format(summary?.totalExpenses ?? 0),
                     color: const Color(0xFFF59E0B), // Amber/Orange
                     icon: Icons.trending_down_rounded,
@@ -85,10 +88,10 @@ class DashboardScreen extends ConsumerWidget {
             
             // Profit Card
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
               sliver: SliverToBoxAdapter(
                 child: _MetricCard(
-                  title: 'Net Profit',
+                  title: AppLocalizations.of(context)!.netProfit,
                   value: currencyFormat.format(summary?.profit ?? 0),
                   color: Theme.of(context).colorScheme.primary,
                   icon: Icons.account_balance_wallet_rounded,
@@ -110,7 +113,7 @@ class DashboardScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Expense Breakdown', style: Theme.of(context).textTheme.titleLarge),
+                          Text(AppLocalizations.of(context)!.totalExpenses, style: Theme.of(context).textTheme.titleLarge),
                           const SizedBox(height: 24),
                           SizedBox(
                             height: 200,
@@ -155,20 +158,20 @@ class DashboardScreen extends ConsumerWidget {
 
             // Recent Transactions
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Recent Transactions', style: Theme.of(context).textTheme.titleLarge),
-                    TextButton(onPressed: () {}, child: const Text('See All')),
+                    Text(AppLocalizations.of(context)!.ledger, style: Theme.of(context).textTheme.titleLarge),
+                    TextButton(onPressed: () {}, child: const Text('See All')), // To localize later
                   ],
                 ),
               ),
             ),
 
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
@@ -177,10 +180,10 @@ class DashboardScreen extends ConsumerWidget {
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: tx.type == 'Revenue' ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
+                          backgroundColor: tx.type == TransactionType.revenue.value ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
                           child: Icon(
-                            tx.type == 'Revenue' ? Icons.add_rounded : Icons.remove_rounded,
-                            color: tx.type == 'Revenue' ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                            tx.type == TransactionType.revenue.value ? Icons.add_rounded : Icons.remove_rounded,
+                            color: tx.type == TransactionType.revenue.value ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                           ),
                         ),
                         title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -189,7 +192,7 @@ class DashboardScreen extends ConsumerWidget {
                           currencyFormat.format(tx.amount),
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: tx.type == 'Revenue' ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                            color: tx.type == TransactionType.revenue.value ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
                           ),
                         ),
                       ),
@@ -214,14 +217,15 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 class _ActiveSeasonHeader extends StatelessWidget {
-  final dynamic activeSeason;
+  final Season? activeSeason;
 
   const _ActiveSeasonHeader({this.activeSeason});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsetsDirectional.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -246,29 +250,30 @@ class _ActiveSeasonHeader extends StatelessWidget {
           Row(
              children: [
                Icon(
-                 activeSeason?.cropType == 'Wheat' ? Icons.agriculture : Icons.eco,
+                 activeSeason?.cropType == CropType.wheat.value ? Icons.agriculture : Icons.eco,
                  color: Colors.white,
                ),
                const SizedBox(width: 8),
-               Text(
-                 'ACTIVE SEASON',
-                 style: TextStyle(
-                   color: Colors.white.withOpacity(0.8),
-                   fontWeight: FontWeight.w800,
-                   letterSpacing: 1.2,
-                   fontSize: 12,
-                 ),
-               ),
+                Text(
+                  l10n.activeSeason.toUpperCase(),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    fontSize: 10, // Reduced to avoid overflow
+                  ),
+                ),
              ],
           ),
           const SizedBox(height: 12),
           Text(
-            activeSeason?.name ?? 'No Season Active',
+            activeSeason?.name ?? l10n.seasons,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 22, // Slightly reduced
               fontWeight: FontWeight.bold,
             ),
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 16),
           Row(
@@ -329,7 +334,7 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsetsDirectional.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
@@ -349,23 +354,30 @@ class _MetricCard extends StatelessWidget {
             children: [
               Icon(icon, color: color, size: 16),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isWide ? 20 : 16,
-              fontWeight: FontWeight.w800,
-              color: Theme.of(context).colorScheme.onSurface,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: isWide ? 20 : 16,
+                fontWeight: FontWeight.w800,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
           ),
         ],

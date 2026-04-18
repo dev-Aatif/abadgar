@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/transactions_provider.dart';
+import '../../../core/constants/enums.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 class LedgerScreen extends ConsumerWidget {
   const LedgerScreen({super.key});
@@ -13,7 +15,7 @@ class LedgerScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction Ledger'),
+        title: Text(AppLocalizations.of(context)!.ledger),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list_rounded),
@@ -38,7 +40,7 @@ class LedgerScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No transactions recorded yet',
+                    AppLocalizations.of(context)!.noTransactions,
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                       fontSize: 16,
@@ -50,20 +52,20 @@ class LedgerScreen extends ConsumerWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsetsDirectional.all(16),
             physics: const BouncingScrollPhysics(),
             itemCount: transactions.length,
             itemBuilder: (context, index) {
               final tx = transactions[index];
-              final isRevenue = tx.type == 'Revenue' || tx.type == 'Yield';
+              final isRevenue = tx.type == TransactionType.revenue.value || tx.type == TransactionType.yield_.value;
               final color = isRevenue ? const Color(0xFF10B981) : const Color(0xFFEF4444);
 
               return Dismissible(
                 key: Key(tx.id),
                 direction: DismissDirection.endToStart,
                 background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
+                  alignment: AlignmentDirectional.centerEnd,
+                  padding: const EdgeInsetsDirectional.only(end: 20),
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: Colors.red.shade400,
@@ -75,17 +77,17 @@ class LedgerScreen extends ConsumerWidget {
                   return await showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Delete Transaction'),
-                      content: const Text('Are you sure you want to delete this record?'),
+                      title: Text(AppLocalizations.of(context)!.deleteTransaction),
+                      content: Text(AppLocalizations.of(context)!.deleteConfirmation),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
+                          child: Text(AppLocalizations.of(context)!.cancel),
                         ),
                         TextButton(
                           onPressed: () => Navigator.pop(context, true),
                           style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: const Text('Delete'),
+                          child: Text(AppLocalizations.of(context)!.deleteTransaction),
                         ),
                       ],
                     ),
@@ -98,8 +100,8 @@ class LedgerScreen extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 12),
                   child: Container(
                     decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: color, width: 4),
+                      border: BorderDirectional(
+                        start: BorderSide(color: color, width: 4),
                       ),
                     ),
                     child: ListTile(

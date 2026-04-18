@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'transactions_provider.dart';
+import '../constants/enums.dart';
 
 part 'financial_summary_provider.g.dart';
 
@@ -30,7 +31,7 @@ FinancialSummary? financialSummary(FinancialSummaryRef ref) {
       final Map<String, double> catExpenses = {};
       
       for (final tx in transactions) {
-        if (tx.type == 'Revenue' || tx.type == 'Yield') {
+        if (tx.type == TransactionType.revenue.value || tx.type == TransactionType.yield_.value) {
           revenue += tx.amount;
         } else {
           expenses += tx.amount;

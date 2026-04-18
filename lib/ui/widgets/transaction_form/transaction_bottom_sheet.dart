@@ -3,7 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/active_season_provider.dart';
+import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/transaction_repository_provider.dart';
+import '../../../core/constants/enums.dart';
+import '../../../core/utils/season_resolver.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 enum TransactionMode { expense, revenue, yield }
 
@@ -16,14 +20,26 @@ class TransactionBottomSheet extends ConsumerStatefulWidget {
 
 class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet> {
   TransactionMode _mode = TransactionMode.expense;
+  String? _sessionSeasonId;
+  bool _selectingSeason = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessionSeasonId = ref.read(activeSeasonIdProvider);
+    // If we already have an active season, skip selection unless clarified
+    if (_sessionSeasonId != null) {
+      _selectingSeason = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
+      padding: EdgeInsetsDirectional.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        left: 24,
-        right: 24,
+        start: 24,
+        end: 24,
         top: 12,
       ),
       decoration: BoxDecoration(
@@ -34,29 +50,85 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 24),
+          if (_selectingSeason) ...[
+            _buildSeasonSelector(),
+          ] else ...[
+            _buildHeaderNavigator(),
+            const SizedBox(height: 16),
+            _buildModeToggle(),
+            const SizedBox(height: 24),
+            SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _buildForm(seasonId: _sessionSeasonId!),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          _buildModeToggle(),
-          const SizedBox(height: 32),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _buildForm(),
-          ),
+          ],
         ],
       ),
     );
   }
 
+  Widget _buildHeaderNavigator() {
+    final seasons = ref.watch(seasonsProvider).valueOrNull ?? [];
+    final selectedSeason = seasons.firstWhere((s) => s.id == _sessionSeasonId, orElse: () => seasons.first);
+    return InkWell(
+      onTap: () => setState(() => _selectingSeason = true),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.agriculture_rounded, size: 16, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Text(selectedSeason.name, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 4),
+            const Icon(Icons.arrow_drop_down_rounded),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSeasonSelector() {
+    final seasons = ref.watch(seasonsProvider).valueOrNull ?? [];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Which crop/year is this for?', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        if (seasons.isEmpty) 
+          const Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Text('No active crops found. Please start a season first.', textAlign: TextAlign.center),
+          ),
+        ...seasons.map((s) => ListTile(
+          leading: Icon(s.cropType == 'Wheat' ? Icons.grass : Icons.water_drop, color: Theme.of(context).colorScheme.primary),
+          title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text('${s.cropType} • Started ${DateFormat.yMMMd().format(s.startDate)}'),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () {
+            ref.read(activeSeasonIdProvider.notifier).set(s.id);
+            setState(() {
+              _sessionSeasonId = s.id;
+              _selectingSeason = false;
+            });
+          },
+        )),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
   Widget _buildModeToggle() {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       height: 56,
       padding: const EdgeInsets.all(4),
@@ -67,6 +139,12 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
       child: Row(
         children: TransactionMode.values.map((mode) {
           final isSelected = _mode == mode;
+          String label;
+          switch(mode) {
+            case TransactionMode.expense: label = l10n.totalExpenses; break;
+            case TransactionMode.revenue: label = l10n.totalRevenue; break;
+            case TransactionMode.yield: label = l10n.yield; break;
+          }
           return Expanded(
             child: GestureDetector(
               onTap: () {
@@ -88,11 +166,11 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  mode.name.toUpperCase(),
+                  label.split(' ').last.toUpperCase(),
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.grey,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                 ),
               ),
@@ -103,20 +181,21 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm({required String seasonId}) {
     switch (_mode) {
       case TransactionMode.expense:
-        return _ExpenseForm(key: const ValueKey('expense'));
+        return _ExpenseForm(key: const ValueKey('expense'), seasonId: seasonId);
       case TransactionMode.revenue:
-        return _RevenueForm(key: const ValueKey('revenue'));
+        return _RevenueForm(key: const ValueKey('revenue'), seasonId: seasonId);
       case TransactionMode.yield:
-        return _YieldForm(key: const ValueKey('yield'));
+        return _YieldForm(key: const ValueKey('yield'), seasonId: seasonId);
     }
   }
 }
 
 class _ExpenseForm extends ConsumerStatefulWidget {
-  const _ExpenseForm({super.key});
+  final String seasonId;
+  const _ExpenseForm({super.key, required this.seasonId});
   @override
   ConsumerState<_ExpenseForm> createState() => _ExpenseFormState();
 }
@@ -131,6 +210,16 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final Map<String, String> categoryLabels = {
+      'Seed': l10n.categorySeed,
+      'Fertilizer': l10n.categoryFertilizer,
+      'Labor': l10n.categoryLabor,
+      'Fuel': l10n.categoryFuel,
+      'Pesticide': l10n.categoryPesticide,
+      'Other': l10n.categoryOther,
+    };
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -141,16 +230,20 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900),
           decoration: InputDecoration(
-            hintText: '0',
-            prefixText: 'PKR ',
-            prefixStyle: TextStyle(fontSize: 20, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+            hintText: '0.00',
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+            prefixIcon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('PKR', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900)),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
             focusedBorder: InputBorder.none,
           ),
         ),
         const SizedBox(height: 24),
-        Text('Category', style: Theme.of(context).textTheme.labelLarge),
+        Text(l10n.categoryOther, style: Theme.of(context).textTheme.labelLarge), // Using categoryOther for "Category" label foundation
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -158,7 +251,7 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
           children: _categories.map((cat) {
             final isSelected = _selectedCategory == cat;
             return ChoiceChip(
-              label: Text(cat),
+              label: Text(categoryLabels[cat] ?? cat),
               selected: isSelected,
               onSelected: (val) => setState(() => _selectedCategory = val ? cat : null),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -205,25 +298,46 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
     );
   }
 
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
   void _save() async {
-    final seasonId = ref.read(activeSeasonIdProvider);
-    if (seasonId == null) return;
+    final seasonId = resolveSeasonId(ref);
+    if (seasonId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an active season first'), backgroundColor: Colors.redAccent),
+        );
+      }
+      return;
+    }
     try {
+      final amount = double.tryParse(_amountController.text);
+      if (amount == null || amount <= 0) return;
+      
       await ref.read(transactionRepositoryProvider).saveTransaction(
         seasonId: seasonId,
-        amount: double.parse(_amountController.text),
-        type: 'Expense',
+        amount: amount,
+        type: TransactionType.expense.value,
         category: _selectedCategory,
         notes: _notesController.text,
         date: _selectedDate,
       );
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       debugPrint(e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
     }
   }
 
   Widget _buildSaveButton({required VoidCallback onPressed}) {
+    final l10n = AppLocalizations.of(context)!;
     final amount = double.tryParse(_amountController.text) ?? 0;
     final isValid = amount > 0 && _selectedCategory != null;
     return ElevatedButton(
@@ -232,13 +346,14 @@ class _ExpenseFormState extends ConsumerState<_ExpenseForm> {
         minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      child: const Text('Save Expense', style: TextStyle(fontWeight: FontWeight.bold)),
+      child: Text(l10n.save, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }
 
 class _RevenueForm extends ConsumerStatefulWidget {
-  const _RevenueForm({super.key});
+  final String seasonId;
+  const _RevenueForm({super.key, required this.seasonId});
   @override
   ConsumerState<_RevenueForm> createState() => _RevenueFormState();
 }
@@ -254,6 +369,7 @@ class _RevenueFormState extends ConsumerState<_RevenueForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -263,7 +379,16 @@ class _RevenueFormState extends ConsumerState<_RevenueForm> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900),
-          decoration: const InputDecoration(hintText: '0', prefixText: 'PKR ', border: InputBorder.none),
+          decoration: InputDecoration(
+            hintText: '0.00',
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+            prefixIcon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('PKR', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w900)),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+            border: InputBorder.none,
+          ),
         ),
         const SizedBox(height: 24),
         Row(
@@ -272,20 +397,20 @@ class _RevenueFormState extends ConsumerState<_RevenueForm> {
                child: TextField(
                  controller: _qtyController,
                  keyboardType: TextInputType.number,
-                 decoration: const InputDecoration(labelText: 'Quantity (Kg)', prefixIcon: Icon(Icons.scale_rounded)),
+                 decoration: InputDecoration(labelText: '${l10n.categoryOther} (Kg)', prefixIcon: const Icon(Icons.scale_rounded)),
                ),
              ),
              const SizedBox(width: 16),
              Expanded(
                child: TextField(
                  controller: _buyerController,
-                 decoration: const InputDecoration(labelText: 'Buyer', prefixIcon: Icon(Icons.person_rounded)),
+                 decoration: const InputDecoration(labelText: 'Buyer', prefixIcon: Icon(Icons.person_rounded)), // Localize Buyer later
                ),
              ),
           ],
         ),
         const SizedBox(height: 24),
-        Text('Revenue Source', style: Theme.of(context).textTheme.labelLarge),
+        Text(l10n.totalRevenue, style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -302,34 +427,56 @@ class _RevenueFormState extends ConsumerState<_RevenueForm> {
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          child: const Text('Save Revenue', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(l10n.save, style: const TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );
   }
 
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _qtyController.dispose();
+    _buyerController.dispose();
+    super.dispose();
+  }
+
   void _save() async {
-    final seasonId = ref.read(activeSeasonIdProvider);
-    if (seasonId == null) return;
+    final seasonId = resolveSeasonId(ref);
+    if (seasonId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an active season first'), backgroundColor: Colors.redAccent),
+        );
+      }
+      return;
+    }
     try {
+      final amount = double.tryParse(_amountController.text);
+      if (amount == null || amount <= 0) return;
+
       await ref.read(transactionRepositoryProvider).saveTransaction(
         seasonId: seasonId,
-        amount: double.parse(_amountController.text),
-        type: 'Revenue',
+        amount: amount,
+        type: TransactionType.revenue.value,
         category: _selectedCategory,
         quantity: double.tryParse(_qtyController.text),
         buyerName: _buyerController.text,
         date: _selectedDate,
       );
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       debugPrint(e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
     }
   }
 }
 
 class _YieldForm extends ConsumerStatefulWidget {
-  const _YieldForm({super.key});
+  final String seasonId;
+  const _YieldForm({super.key, required this.seasonId});
   @override
   ConsumerState<_YieldForm> createState() => _YieldFormState();
 }
@@ -340,6 +487,7 @@ class _YieldFormState extends ConsumerState<_YieldForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -349,7 +497,15 @@ class _YieldFormState extends ConsumerState<_YieldForm> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900),
-          decoration: const InputDecoration(hintText: '0', suffixText: ' Harvested', border: InputBorder.none),
+          decoration: InputDecoration(
+            hintText: '0.0',
+            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2)),
+            suffix: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(_unit.split(' ').first, style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary.withOpacity(0.5), fontWeight: FontWeight.bold)),
+            ),
+            border: InputBorder.none,
+          ),
         ),
         const SizedBox(height: 24),
         DropdownButtonFormField<String>(
@@ -371,19 +527,38 @@ class _YieldFormState extends ConsumerState<_YieldForm> {
     );
   }
 
+  @override
+  void dispose() {
+    _yieldController.dispose();
+    super.dispose();
+  }
+
   void _save() async {
-    final seasonId = ref.read(activeSeasonIdProvider);
-    if (seasonId == null) return;
+    final seasonId = resolveSeasonId(ref);
+    if (seasonId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an active season first'), backgroundColor: Colors.redAccent),
+        );
+      }
+      return;
+    }
     try {
+      final weight = double.tryParse(_yieldController.text);
+      if (weight == null || weight <= 0) return;
+
       await ref.read(transactionRepositoryProvider).saveYieldLog(
         seasonId: seasonId,
-        totalWeight: double.parse(_yieldController.text),
+        totalWeight: weight,
         unit: _unit,
         date: DateTime.now(),
       );
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context);
     } catch (e) {
       debugPrint(e.toString());
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
     }
   }
 }

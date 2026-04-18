@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -38,7 +39,6 @@ class AppTheme {
         primary: primaryTeal,
         secondary: accentCoral,
         surface: surface,
-        background: bg,
         onPrimary: Colors.white,
         onSurface: text,
         brightness: brightness,
@@ -78,14 +78,14 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
         indicatorColor: primaryTeal.withOpacity(0.1),
-        iconTheme: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: primaryTeal);
           }
           return IconThemeData(color: text.withOpacity(0.5));
         }),
-        labelTextStyle: MaterialStateProperty.resolveWith((states) {
-          if (states.contains(MaterialState.selected)) {
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
             return const TextStyle(color: primaryTeal, fontWeight: FontWeight.w600);
           }
           return TextStyle(color: text.withOpacity(0.5));
@@ -101,12 +101,17 @@ class AppTheme {
 }
 
 extension Glassmorphism on Widget {
-  Widget glass({double blur = 10, double opacity = 0.5}) {
+  Widget glass({double blur = 10, double opacity = 0.1}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ColorFilter.mode(Colors.white.withOpacity(opacity), BlendMode.overlay),
-        child: this,
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(opacity),
+          ),
+          child: this,
+        ),
       ),
     );
   }

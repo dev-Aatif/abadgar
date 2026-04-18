@@ -2,6 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import '../models/season.dart';
 import '../database/database_provider.dart';
+import '../constants/enums.dart';
+import 'active_season_provider.dart';
 
 part 'seasons_provider.g.dart';
 
@@ -36,7 +38,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
         cropType: cropType,
         landArea: landArea,
         startDate: startDate,
-        status: 'Active',
+        status: SeasonStatus.active.value,
         createdAt: now,
         updatedAt: now,
       );
@@ -54,6 +56,10 @@ class SeasonsNotifier extends _$SeasonsNotifier {
           season.updatedAt.toIso8601String(),
         ],
       );
+      
+      // Auto-set as active
+      ref.read(activeSeasonIdProvider.notifier).set(id);
+      
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -62,7 +68,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
 
   Future<void> updateStatus(String id, String status) async {
     final db = await ref.read(powerSyncDatabaseProvider.future);
-    final isCompleted = status == 'Completed';
+    final isCompleted = status == SeasonStatus.completed.value;
     await db.execute(
       'UPDATE seasons SET status = ?, updated_at = ?, end_date = ? WHERE id = ?',
       [

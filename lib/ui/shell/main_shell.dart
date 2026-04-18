@@ -23,6 +23,7 @@ class MainShell extends ConsumerWidget {
             _buildNavItem(context, 0, Icons.grid_view_rounded, 'Home'),
             _buildNavItem(context, 1, Icons.account_balance_wallet_rounded, 'Ledger'),
             const Spacer(),
+            _buildNavItem(context, 4, Icons.auto_graph_rounded, 'Insights'),
             _buildNavItem(context, 2, Icons.eco_rounded, 'Seasons'),
             _buildNavItem(context, 3, Icons.settings_rounded, 'Settings'),
           ],
@@ -69,9 +70,12 @@ class MainShell extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const TransactionBottomSheet(),
+      builder: (context) => Wrap(
+        children: const [
+          TransactionBottomSheet(),
+        ],
+      ),
     );
   }
 }

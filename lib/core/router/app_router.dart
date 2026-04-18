@@ -7,6 +7,7 @@ import '../../ui/screens/dashboard/dashboard_screen.dart';
 import '../../ui/screens/ledger/ledger_screen.dart';
 import '../../ui/screens/seasons/seasons_screen.dart';
 import '../../ui/screens/settings/settings_screen.dart';
+import '../../ui/screens/analytics/analytics_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -61,6 +62,14 @@ GoRouter appRouter(AppRouterRef ref) {
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/analytics',
+                builder: (context, state) => const AnalyticsScreen(),
               ),
             ],
           ),

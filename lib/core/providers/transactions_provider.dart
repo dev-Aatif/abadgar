@@ -21,6 +21,14 @@ Stream<List<Transaction>> activeSeasonTransactions(ActiveSeasonTransactionsRef r
 }
 
 @riverpod
+Stream<List<Transaction>> allTransactions(AllTransactionsRef ref) async* {
+  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  yield* db
+      .watch('SELECT * FROM transactions ORDER BY date DESC')
+      .map((rows) => rows.map((row) => Transaction.fromRow(row)).toList());
+}
+
+@riverpod
 class TransactionsNotifier extends _$TransactionsNotifier {
   @override
   FutureOr<void> build() async {}

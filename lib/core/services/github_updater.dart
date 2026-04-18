@@ -29,9 +29,12 @@ class GithubUpdater {
     }
 
     final data = jsonDecode(response.body);
-    final String latestTag = data['tag_name']; // e.g. "v1.2.0"
-    final String downloadUrl = data['assets'][0]['browser_download_url'];
-    final String body = data['body'];
+    final String latestTag = data['tag_name'] ?? 'v0.0.0';
+    final assets = data['assets'] as List<dynamic>?;
+    final String downloadUrl = (assets != null && assets.isNotEmpty)
+        ? assets[0]['browser_download_url'] ?? ''
+        : data['html_url'] ?? '';
+    final String body = data['body'] ?? '';
 
     final packageInfo = await PackageInfo.fromPlatform();
     final currentVersion = 'v${packageInfo.version}';

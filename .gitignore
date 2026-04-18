@@ -18,20 +18,22 @@ migrate_working_dir/
 *.iws
 .idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# VS Code related
+.vscode/ (except extensions.json)
+!.vscode/extensions.json
+.history/
 
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
 /build/
 /coverage/
+.packages
 
 # Symbolication related
 app.*.symbols
@@ -39,15 +41,35 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
-# Android Studio will place build artifacts here
+# Android Studio related
 /android/app/debug
 /android/app/profile
 /android/app/release
 /android/build/
 **/reports/
+*.keystore
+*.jks
+android/local.properties
+android/key.properties
+android/capture_content_os_version.txt
+android/app/src/main/res/raw/google_services.json
+
+# iOS related
+ios/Runner/GeneratedPluginRegistrant.h
+ios/Runner/GeneratedPluginRegistrant.m
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/DerivedData/
+*.moved-aside
+*.xcuserstate
 
 # Environment and Secrets
 .env
+.env.*
+!.env.example
 
 # Local Databases
 *.db
@@ -57,7 +79,10 @@ app.*.map.json
 # Generated files
 *.g.dart
 *.freezed.dart
+*.mocks.dart
 lib/l10n/generated/
 
 # Supabase
-supabase/migrations/*
+# Note: Migrations are generally committed to version control. 
+# Uncomment below if you explicitly want to ignore them.
+# supabase/migrations/*
