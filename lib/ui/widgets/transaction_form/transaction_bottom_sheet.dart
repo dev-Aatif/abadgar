@@ -5,11 +5,10 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import 'parts/expense_form.dart';
-import 'parts/revenue_form.dart';
-import 'parts/yield_form.dart';
+import 'parts/yield_form.dart'; // This will be our unified Harvest form
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
-enum TransactionMode { expense, revenue, yield }
+enum TransactionMode { expense, harvest }
 
 class TransactionBottomSheet extends ConsumerStatefulWidget {
   const TransactionBottomSheet({super.key});
@@ -72,7 +71,7 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
   }
 
   Widget _buildHeaderNavigator() {
-    final seasons = ref.watch(seasonsProvider).valueOrNull ?? [];
+    final seasons = ref.read(seasonsProvider).valueOrNull ?? [];
     final selectedSeason = seasons.firstWhere((s) => s.id == _sessionSeasonId, orElse: () => seasons.first);
     return InkWell(
       onTap: () => setState(() => _selectingSeason = true),
@@ -127,7 +126,6 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
   }
 
   Widget _buildModeToggle() {
-    final l10n = AppLocalizations.of(context)!;
     return Container(
       height: 56,
       padding: const EdgeInsets.all(4),
@@ -138,12 +136,8 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
       child: Row(
         children: TransactionMode.values.map((mode) {
           final isSelected = _mode == mode;
-          String label;
-          switch(mode) {
-            case TransactionMode.expense: label = l10n.totalExpenses; break;
-            case TransactionMode.revenue: label = l10n.totalRevenue; break;
-            case TransactionMode.yield: label = l10n.yield; break;
-          }
+          String label = mode == TransactionMode.expense ? 'EXPENSE' : 'HARVEST / YIELD';
+          
           return Expanded(
             child: GestureDetector(
               onTap: () {
@@ -155,17 +149,10 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
                 decoration: BoxDecoration(
                   color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: isSelected ? [
-                    BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    )
-                  ] : null,
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  label.split(' ').last.toUpperCase(),
+                  label,
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.grey,
                     fontWeight: FontWeight.bold,
@@ -184,10 +171,8 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
     switch (_mode) {
       case TransactionMode.expense:
         return ExpenseForm(key: const ValueKey('expense'), seasonId: seasonId);
-      case TransactionMode.revenue:
-        return RevenueForm(key: const ValueKey('revenue'), seasonId: seasonId);
-      case TransactionMode.yield:
-        return YieldForm(key: const ValueKey('yield'), seasonId: seasonId);
+      case TransactionMode.harvest:
+        return YieldForm(key: const ValueKey('harvest'), seasonId: seasonId);
     }
   }
 }

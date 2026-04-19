@@ -18,6 +18,10 @@ class Season with _$Season {
     required DateTime updatedAt,
   }) = _Season;
 
+  const Season._();
+
+  String get displayName => '${cropType.name} - ${startDate.year}';
+
   factory Season.fromJson(Map<String, dynamic> json) => _$SeasonFromJson(json);
 
   // PowerSync format: from local sqlite row

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
+import '../../../core/providers/lands_provider.dart';
 import '../../../core/models/season.dart';
+import '../../../core/models/land.dart';
 import '../../../core/constants/enums.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
@@ -246,12 +249,20 @@ class CreateSeasonSheet extends ConsumerStatefulWidget {
 }
 
 class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
-  final _nameController = TextEditingController();
-  final _areaController = TextEditingController();
+  final _yearController = TextEditingController(text: DateTime.now().year.toString());
+  Land? _selectedLand;
   CropType _cropType = CropType.wheat;
 
   @override
+  void dispose() {
+    _yearController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final landsAsync = ref.watch(landsProvider);
+
     return Container(
       padding: EdgeInsetsDirectional.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -279,21 +290,48 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
             ],
           ),
           const SizedBox(height: 24),
-          TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Season Name (e.g. Rabi 2024)', prefixIcon: Icon(Icons.title))),
-          const SizedBox(height: 16),
           TextField(
-            controller: _areaController, 
-            keyboardType: const TextInputType.numberWithOptions(decimal: true), 
-            decoration: InputDecoration(
-              labelText: AppLocalizations.of(context)!.totalArea, 
-              prefixIcon: const Icon(Icons.square_foot),
-              suffixText: 'Acres',
-              suffixStyle: const TextStyle(fontWeight: FontWeight.bold),
+            controller: _yearController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Year',
+              prefixIcon: Icon(Icons.calendar_today_rounded),
+              hintText: '2024',
             ),
+          ),
+          const SizedBox(height: 16),
+          landsAsync.when(
+            data: (lands) {
+              if (lands.isEmpty) {
+                return Column(
+                  children: [
+                    const Text('No farm land added yet.', style: TextStyle(color: Colors.red)),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        context.push('/settings'); // Or wherever land management is
+                      },
+                      child: const Text('Add Land in Settings'),
+                    ),
+                  ],
+                );
+              }
+              return DropdownButtonFormField<Land>(
+                value: _selectedLand,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context)!.totalArea,
+                  prefixIcon: const Icon(Icons.square_foot_rounded),
+                ),
+                items: lands.map((l) => DropdownMenuItem(value: l, child: Text('${l.name} (${l.area} Acres)'))).toList(),
+                onChanged: (val) => setState(() => _selectedLand = val),
+              );
+            },
+            loading: () => const LinearProgressIndicator(),
+            error: (err, _) => Text('Error loading lands: $err'),
           ),
           const SizedBox(height: 32),
           ElevatedButton(
-            onPressed: _save,
+            onPressed: (_selectedLand != null && _yearController.text.isNotEmpty) ? _save : null,
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -306,11 +344,17 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
   }
 
   void _save() async {
-    final name = _nameController.text;
-    final area = double.tryParse(_areaController.text) ?? 0.0;
+    final year = _yearController.text;
+    final land = _selectedLand;
 
-    if (name.isNotEmpty && area > 0) {
-      await ref.read(seasonsNotifierProvider.notifier).addSeason(name: name, cropType: _cropType, landArea: area, startDate: DateTime.now());
+    if (year.isNotEmpty && land != null) {
+      final seasonName = '${_cropType.name} - $year';
+      await ref.read(seasonsNotifierProvider.notifier).addSeason(
+        name: seasonName,
+        cropType: _cropType,
+        landArea: land.area,
+        startDate: DateTime(int.parse(year)),
+      );
       if (mounted) Navigator.pop(context);
     }
   }

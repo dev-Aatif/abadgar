@@ -14,7 +14,7 @@ String? resolveSeasonId(WidgetRef ref) {
   if (seasons.isEmpty) return null;
 
   final activeSeason = seasons.firstWhere(
-    (s) => s.status == SeasonStatus.active.value,
+    (s) => s.status == SeasonStatus.active,
     orElse: () => seasons.first,
   );
   seasonId = activeSeason.id;

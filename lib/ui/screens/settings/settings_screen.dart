@@ -8,6 +8,8 @@ import '../../../core/services/export_service.dart';
 import '../../../core/services/import_service.dart';
 import '../../../core/services/github_updater.dart';
 import '../../../core/providers/locale_provider.dart';
+import '../../../core/providers/lands_provider.dart';
+import '../../../core/models/land.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -23,6 +25,19 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
+          _SectionHeader(title: 'FARM PROFILE'),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: ListTile(
+              leading: const Icon(Icons.landscape_rounded),
+              title: const Text('Manage Lands'),
+              subtitle: const Text('Define your farm area'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => _showManageLandsSheet(context, ref),
+            ),
+          ),
+          const SizedBox(height: 24),
+
           _SectionHeader(title: AppLocalizations.of(context)!.appearance.toUpperCase()),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -131,11 +146,22 @@ class SettingsScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                const SizedBox(height: 120),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showManageLandsSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ManageLandsContent(),
     );
   }
 
@@ -204,6 +230,98 @@ class SettingsScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+class _ManageLandsContent extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_ManageLandsContent> createState() => _ManageLandsContentState();
+}
+
+class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
+  final _nameController = TextEditingController();
+  final _areaController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    final landsAsync = ref.watch(landsProvider);
+
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 24,
+        right: 24,
+        top: 24,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+          const SizedBox(height: 16),
+          Text('Manage Lands', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          
+          // Add New Land Form
+          Card(
+            color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+            elevation: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Land Name', prefixIcon: Icon(Icons.title))),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _areaController, 
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true), 
+                    decoration: const InputDecoration(labelText: 'Area', suffixText: 'Acres', prefixIcon: Icon(Icons.square_foot)),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _add, 
+                    child: const Text('Add Land'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+          const Divider(height: 32),
+          
+          // List of Lands
+          landsAsync.when(
+            data: (lands) => Column(
+              children: lands.map((l) => ListTile(
+                leading: const Icon(Icons.landscape),
+                title: Text(l.name),
+                subtitle: Text('${l.area} Acres'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () => ref.read(landsNotifierProvider.notifier).deleteLand(l.id),
+                ),
+              )).toList(),
+            ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Text('Error: $err'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _add() {
+    final name = _nameController.text;
+    final area = double.tryParse(_areaController.text) ?? 0;
+    if (name.isNotEmpty && area > 0) {
+      ref.read(landsNotifierProvider.notifier).addLand(name: name, area: area);
+      _nameController.clear();
+      _areaController.clear();
+    }
   }
 }
 

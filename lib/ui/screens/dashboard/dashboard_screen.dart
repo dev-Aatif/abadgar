@@ -11,6 +11,7 @@ import '../../../core/models/season.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/utils/notifications.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -32,28 +33,42 @@ class DashboardScreen extends ConsumerWidget {
             // Header
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsetsDirectional.all(20.0),
+                padding: const EdgeInsets.all(20.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'As-salamu Alaykum',
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => context.push('/seasons'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Field Overview',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              activeSeason?.displayName ?? 'No Active Season',
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
-                        Text(
-                          AppLocalizations.of(context)!.dashboard,
-                          style: Theme.of(context).textTheme.headlineLarge,
-                        ),
-                      ],
+                      ),
                     ),
                     IconButton.filledTonal(
+                      tooltip: 'Manage Land',
+                      onPressed: () => _showManageLandsSheet(context, ref),
+                      icon: const Icon(Icons.landscape_rounded),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      tooltip: 'Change Season',
                       onPressed: () => context.push('/seasons'),
-                      icon: const Icon(Icons.eco_rounded),
+                      icon: const Icon(Icons.swap_horiz_rounded),
                     ),
                   ],
                 ),
@@ -67,32 +82,30 @@ class DashboardScreen extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.amber.shade200),
+                      color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                        Icon(Icons.cloud_off_rounded, color: Theme.of(context).colorScheme.error, size: 20),
                         const SizedBox(width: 12),
                         const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Data Not Backed Up',
-                                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.brown),
-                              ),
-                              Text(
-                                'Sign in to sync your farming data to the cloud.',
-                                style: TextStyle(fontSize: 12, color: Colors.brown),
-                              ),
-                            ],
+                          child: Text(
+                            'Offline Mode. Sign in for backup.',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
                           ),
                         ),
                         TextButton(
-                          onPressed: () => Navigator.of(context).pushNamed('/auth'),
-                          child: const Text('SYNC NOW'),
+                          onPressed: () => context.push('/auth'),
+                          child: const Text('SIGN IN', style: TextStyle(fontSize: 10)),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 16),
+                          onPressed: () {
+                            // In a real app we'd save this preference.
+                            // For now, we'll just implement the visual button.
+                            AppNotification.show(context, 'Alert hidden for this session.');
+                          },
                         ),
                       ],
                     ),
@@ -100,11 +113,11 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
 
-            // Active Season Card
+            // Metrics Summary
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
-                child: _ActiveSeasonHeader(activeSeason: activeSeason),
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                child: _QuickSummaryCard(activeSeason: activeSeason, summary: summary),
               ),
             ),
 
@@ -267,28 +280,69 @@ class DashboardScreen extends ConsumerWidget {
     final colors = [Colors.teal, const Color(0xFFFF6B6B), Colors.amber, Colors.indigo, Colors.brown, Colors.pink];
     return colors[category.hashCode % colors.length];
   }
+
+  void _showManageLandsSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Field Management', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              const Expanded(
+                child: Center(child: Text('Land data list will appear here.')),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Add Land Logic
+                },
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('ADD NEW FIELD'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _ActiveSeasonHeader extends StatelessWidget {
+class _QuickSummaryCard extends StatelessWidget {
   final Season? activeSeason;
+  final FinancialSummary? summary;
 
-  const _ActiveSeasonHeader({this.activeSeason});
+  const _QuickSummaryCard({this.activeSeason, this.summary});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final curFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
+    final profit = summary?.profit ?? 0;
+
     return Container(
-      padding: const EdgeInsetsDirectional.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withBlue(150),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: Theme.of(context).colorScheme.primary,
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
@@ -298,45 +352,43 @@ class _ActiveSeasonHeader extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-             children: [
-               Icon(
-                 activeSeason?.cropType == CropType.wheat ? Icons.agriculture : Icons.eco,
-                 color: Colors.white,
-               ),
-               const SizedBox(width: 8),
-                Text(
-                  l10n.activeSeason.toUpperCase(),
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    fontSize: 10, // Reduced to avoid overflow
-                  ),
-                ),
-             ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            activeSeason?.name ?? l10n.seasons,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22, // Slightly reduced
-              fontWeight: FontWeight.bold,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _HeroStat(label: 'Area', value: '${activeSeason?.landArea ?? 0} Acres'),
-              _HeroStat(
-                label: 'Status', 
-                value: activeSeason != null ? 'Growing' : 'N/A',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('SEASON PROFIT', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                  const SizedBox(height: 4),
+                  Text(
+                    curFormat.format(profit),
+                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  activeSeason?.cropType.value ?? 'N/A',
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          const Divider(color: Colors.white24, height: 1),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _MiniStat(label: 'Revenue', value: curFormat.format(summary?.totalRevenue ?? 0)),
+              _MiniStat(label: 'Expenses', value: curFormat.format(summary?.totalExpenses ?? 0)),
+              _MiniStat(label: 'Area', value: '${activeSeason?.landArea ?? 0} Acr'),
             ],
           ),
         ],
@@ -345,25 +397,19 @@ class _ActiveSeasonHeader extends StatelessWidget {
   }
 }
 
-class _HeroStat extends StatelessWidget {
+class _MiniStat extends StatelessWidget {
   final String label;
   final String value;
-
-  const _HeroStat({required this.label, required this.value});
+  const _MiniStat({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
-        ),
-        Text(
-          value,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+        const SizedBox(height: 2),
+        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
       ],
     );
   }

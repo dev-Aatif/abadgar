@@ -62,3 +62,19 @@ enum YieldUnit {
     );
   }
 }
+
+enum YieldDisposition {
+  sold('Sold'),
+  stored('Stored'),
+  personal('Personal Use');
+
+  final String value;
+  const YieldDisposition(this.value);
+
+  static YieldDisposition fromString(String s) {
+    return YieldDisposition.values.firstWhere(
+      (e) => e.value == s,
+      orElse: () => YieldDisposition.sold,
+    );
+  }
+}

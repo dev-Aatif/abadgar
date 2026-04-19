@@ -24,6 +24,9 @@ mixin _$YieldLog {
   String get seasonId => throw _privateConstructorUsedError;
   double get totalWeight => throw _privateConstructorUsedError;
   YieldUnit get unit => throw _privateConstructorUsedError;
+  YieldDisposition get disposition => throw _privateConstructorUsedError;
+  double? get salePrice => throw _privateConstructorUsedError;
+  String? get destination => throw _privateConstructorUsedError;
   DateTime get date => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime get updatedAt => throw _privateConstructorUsedError;
@@ -44,6 +47,9 @@ abstract class $YieldLogCopyWith<$Res> {
       String seasonId,
       double totalWeight,
       YieldUnit unit,
+      YieldDisposition disposition,
+      double? salePrice,
+      String? destination,
       DateTime date,
       DateTime createdAt,
       DateTime updatedAt});
@@ -66,6 +72,9 @@ class _$YieldLogCopyWithImpl<$Res, $Val extends YieldLog>
     Object? seasonId = null,
     Object? totalWeight = null,
     Object? unit = null,
+    Object? disposition = null,
+    Object? salePrice = freezed,
+    Object? destination = freezed,
     Object? date = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -87,6 +96,18 @@ class _$YieldLogCopyWithImpl<$Res, $Val extends YieldLog>
           ? _value.unit
           : unit // ignore: cast_nullable_to_non_nullable
               as YieldUnit,
+      disposition: null == disposition
+          ? _value.disposition
+          : disposition // ignore: cast_nullable_to_non_nullable
+              as YieldDisposition,
+      salePrice: freezed == salePrice
+          ? _value.salePrice
+          : salePrice // ignore: cast_nullable_to_non_nullable
+              as double?,
+      destination: freezed == destination
+          ? _value.destination
+          : destination // ignore: cast_nullable_to_non_nullable
+              as String?,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
@@ -116,6 +137,9 @@ abstract class _$$YieldLogImplCopyWith<$Res>
       String seasonId,
       double totalWeight,
       YieldUnit unit,
+      YieldDisposition disposition,
+      double? salePrice,
+      String? destination,
       DateTime date,
       DateTime createdAt,
       DateTime updatedAt});
@@ -136,6 +160,9 @@ class __$$YieldLogImplCopyWithImpl<$Res>
     Object? seasonId = null,
     Object? totalWeight = null,
     Object? unit = null,
+    Object? disposition = null,
+    Object? salePrice = freezed,
+    Object? destination = freezed,
     Object? date = null,
     Object? createdAt = null,
     Object? updatedAt = null,
@@ -157,6 +184,18 @@ class __$$YieldLogImplCopyWithImpl<$Res>
           ? _value.unit
           : unit // ignore: cast_nullable_to_non_nullable
               as YieldUnit,
+      disposition: null == disposition
+          ? _value.disposition
+          : disposition // ignore: cast_nullable_to_non_nullable
+              as YieldDisposition,
+      salePrice: freezed == salePrice
+          ? _value.salePrice
+          : salePrice // ignore: cast_nullable_to_non_nullable
+              as double?,
+      destination: freezed == destination
+          ? _value.destination
+          : destination // ignore: cast_nullable_to_non_nullable
+              as String?,
       date: null == date
           ? _value.date
           : date // ignore: cast_nullable_to_non_nullable
@@ -181,6 +220,9 @@ class _$YieldLogImpl implements _YieldLog {
       required this.seasonId,
       required this.totalWeight,
       required this.unit,
+      required this.disposition,
+      this.salePrice,
+      this.destination,
       required this.date,
       required this.createdAt,
       required this.updatedAt});
@@ -197,6 +239,12 @@ class _$YieldLogImpl implements _YieldLog {
   @override
   final YieldUnit unit;
   @override
+  final YieldDisposition disposition;
+  @override
+  final double? salePrice;
+  @override
+  final String? destination;
+  @override
   final DateTime date;
   @override
   final DateTime createdAt;
@@ -205,7 +253,7 @@ class _$YieldLogImpl implements _YieldLog {
 
   @override
   String toString() {
-    return 'YieldLog(id: $id, seasonId: $seasonId, totalWeight: $totalWeight, unit: $unit, date: $date, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'YieldLog(id: $id, seasonId: $seasonId, totalWeight: $totalWeight, unit: $unit, disposition: $disposition, salePrice: $salePrice, destination: $destination, date: $date, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -219,6 +267,12 @@ class _$YieldLogImpl implements _YieldLog {
             (identical(other.totalWeight, totalWeight) ||
                 other.totalWeight == totalWeight) &&
             (identical(other.unit, unit) || other.unit == unit) &&
+            (identical(other.disposition, disposition) ||
+                other.disposition == disposition) &&
+            (identical(other.salePrice, salePrice) ||
+                other.salePrice == salePrice) &&
+            (identical(other.destination, destination) ||
+                other.destination == destination) &&
             (identical(other.date, date) || other.date == date) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -228,8 +282,8 @@ class _$YieldLogImpl implements _YieldLog {
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, seasonId, totalWeight, unit, date, createdAt, updatedAt);
+  int get hashCode => Object.hash(runtimeType, id, seasonId, totalWeight, unit,
+      disposition, salePrice, destination, date, createdAt, updatedAt);
 
   @JsonKey(ignore: true)
   @override
@@ -251,6 +305,9 @@ abstract class _YieldLog implements YieldLog {
       required final String seasonId,
       required final double totalWeight,
       required final YieldUnit unit,
+      required final YieldDisposition disposition,
+      final double? salePrice,
+      final String? destination,
       required final DateTime date,
       required final DateTime createdAt,
       required final DateTime updatedAt}) = _$YieldLogImpl;
@@ -266,6 +323,12 @@ abstract class _YieldLog implements YieldLog {
   double get totalWeight;
   @override
   YieldUnit get unit;
+  @override
+  YieldDisposition get disposition;
+  @override
+  double? get salePrice;
+  @override
+  String? get destination;
   @override
   DateTime get date;
   @override

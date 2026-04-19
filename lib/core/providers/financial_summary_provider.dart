@@ -31,7 +31,7 @@ FinancialSummary? financialSummary(FinancialSummaryRef ref) {
       final Map<String, double> catExpenses = {};
       
       for (final tx in transactions) {
-        if (tx.type == TransactionType.revenue.value || tx.type == TransactionType.yield_.value) {
+        if (tx.type == TransactionType.revenue || tx.type == TransactionType.yield_) {
           revenue += tx.amount;
         } else {
           expenses += tx.amount;

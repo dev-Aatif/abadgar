@@ -199,7 +199,7 @@ class __$$SeasonImplCopyWithImpl<$Res>
 
 /// @nodoc
 @JsonSerializable()
-class _$SeasonImpl implements _Season {
+class _$SeasonImpl extends _Season {
   const _$SeasonImpl(
       {required this.id,
       required this.name,
@@ -209,7 +209,8 @@ class _$SeasonImpl implements _Season {
       this.endDate,
       required this.status,
       required this.createdAt,
-      required this.updatedAt});
+      required this.updatedAt})
+      : super._();
 
   factory _$SeasonImpl.fromJson(Map<String, dynamic> json) =>
       _$$SeasonImplFromJson(json);
@@ -278,7 +279,7 @@ class _$SeasonImpl implements _Season {
   }
 }
 
-abstract class _Season implements Season {
+abstract class _Season extends Season {
   const factory _Season(
       {required final String id,
       required final String name,
@@ -289,6 +290,7 @@ abstract class _Season implements Season {
       required final SeasonStatus status,
       required final DateTime createdAt,
       required final DateTime updatedAt}) = _$SeasonImpl;
+  const _Season._() : super._();
 
   factory _Season.fromJson(Map<String, dynamic> json) = _$SeasonImpl.fromJson;
 

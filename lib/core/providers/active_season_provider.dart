@@ -8,9 +8,23 @@ part 'active_season_provider.g.dart';
 class ActiveSeasonId extends _$ActiveSeasonId {
   @override
   String? build() {
-    // We can't use ref.watch(seasonsProvider) here directly as it's a stream
-    // Instead, the UI or the SeasionNotifier will set it.
+    // We try to find the most recent active season on startup
+    _initialize();
     return null;
+  }
+
+  Future<void> _initialize() async {
+    final db = await ref.watch(powerSyncDatabaseProvider.future);
+    final results = await db.getAll('SELECT id FROM seasons WHERE status = "active" ORDER BY created_at DESC LIMIT 1');
+    if (results.isNotEmpty && state == null) {
+      state = results.first['id'] as String;
+    } else if (state == null) {
+      // If no active season, just pick the last one created
+      final lastSeason = await db.getAll('SELECT id FROM seasons ORDER BY created_at DESC LIMIT 1');
+      if (lastSeason.isNotEmpty) {
+        state = lastSeason.first['id'] as String;
+      }
+    }
   }
 
   void set(String id) => state = id;

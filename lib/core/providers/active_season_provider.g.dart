@@ -20,7 +20,7 @@ final activeSeasonProvider = AutoDisposeStreamProvider<Season?>.internal(
 );
 
 typedef ActiveSeasonRef = AutoDisposeStreamProviderRef<Season?>;
-String _$activeSeasonIdHash() => r'19c5bd945755f9e9b82659570857cb9e49bb6dd8';
+String _$activeSeasonIdHash() => r'fa910b2da1719cd9a7092bc9e999ce7a1847d893';
 
 /// See also [ActiveSeasonId].
 @ProviderFor(ActiveSeasonId)

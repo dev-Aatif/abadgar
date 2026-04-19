@@ -2,142 +2,80 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/transactions_provider.dart';
+import '../../../core/providers/active_season_provider.dart';
 import '../../../core/constants/enums.dart';
-import 'package:abadgar/l10n/generated/app_localizations.dart';
+
+// State for filtering
+final ledgerFilterProvider = StateProvider<TransactionType?>((ref) => null);
 
 class LedgerScreen extends ConsumerWidget {
   const LedgerScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
     final transactionsAsync = ref.watch(activeSeasonTransactionsProvider);
-    final currencyFormat = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 0);
+    final filter = ref.watch(ledgerFilterProvider);
+    final currencyFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.ledger),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Ledger', style: TextStyle(fontWeight: FontWeight.bold)),
+            if (activeSeason != null)
+              Text(
+                activeSeason.displayName,
+                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
-            onPressed: () {
-              // TODO: Implement filter
-            },
+            icon: Icon(
+              Icons.filter_list_rounded,
+              color: filter != null ? Theme.of(context).colorScheme.primary : null,
+            ),
+            onPressed: () => _showFilterDialog(context, ref),
           ),
         ],
       ),
       body: transactionsAsync.when(
         data: (transactions) {
-          if (transactions.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.receipt_long_rounded,
-                    size: 80,
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    AppLocalizations.of(context)!.noTransactions,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            );
+          final filtered = filter == null 
+              ? transactions 
+              : transactions.where((t) => t.type == filter).toList();
+
+          if (filtered.isEmpty) {
+            return _buildEmptyState(context);
           }
 
           return ListView.builder(
-            padding: const EdgeInsetsDirectional.all(16),
-            physics: const BouncingScrollPhysics(),
-            itemCount: transactions.length,
+            padding: const EdgeInsets.all(16),
+            itemCount: filtered.length,
             itemBuilder: (context, index) {
-              final tx = transactions[index];
+              final tx = filtered[index];
               final isRevenue = tx.type == TransactionType.revenue || tx.type == TransactionType.yield_;
-              final color = isRevenue ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+              final color = isRevenue ? Colors.green : Colors.red;
 
-              return Dismissible(
-                key: Key(tx.id),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  alignment: AlignmentDirectional.centerEnd,
-                  padding: const EdgeInsetsDirectional.only(end: 20),
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade400,
-                    borderRadius: BorderRadius.circular(20),
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: CircleAvatar(
+                    backgroundColor: color.withOpacity(0.1),
+                    child: Icon(
+                      isRevenue ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                      color: color,
+                    ),
                   ),
-                  child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-                ),
-                confirmDismiss: (direction) async {
-                  return await showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(AppLocalizations.of(context)!.deleteTransaction),
-                      content: Text(AppLocalizations.of(context)!.deleteConfirmation),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: Text(AppLocalizations.of(context)!.cancel),
-                        ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: Text(AppLocalizations.of(context)!.deleteTransaction),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                onDismissed: (_) {
-                  ref.read(transactionsNotifierProvider.notifier).deleteTransaction(tx.id);
-                },
-                child: Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: BorderDirectional(
-                        start: BorderSide(color: color, width: 4),
-                      ),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      title: Text(
-                        tx.category ?? 'Other',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(DateFormat('dd MMM yyyy').format(tx.date)),
-                          if (tx.notes != null && tx.notes!.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              tx.notes!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                      trailing: Text(
-                        '${isRevenue ? "+" : "-"}${currencyFormat.format(tx.amount)}',
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
+                  title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(DateFormat('dd MMM').format(tx.date)),
+                  trailing: Text(
+                    '${isRevenue ? "+" : "-"}${currencyFormat.format(tx.amount)}',
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               );
@@ -145,7 +83,67 @@ class LedgerScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(child: Text('Error: $err')),
+      ),
+    );
+  }
+
+  void _showFilterDialog(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Filter Transactions', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              children: [
+                FilterChip(
+                  label: const Text('All'),
+                  selected: ref.watch(ledgerFilterProvider) == null,
+                  onSelected: (_) {
+                    ref.read(ledgerFilterProvider.notifier).state = null;
+                    Navigator.pop(context);
+                  },
+                ),
+                FilterChip(
+                  label: const Text('Expenses'),
+                  selected: ref.watch(ledgerFilterProvider) == TransactionType.expense,
+                  onSelected: (_) {
+                    ref.read(ledgerFilterProvider.notifier).state = TransactionType.expense;
+                    Navigator.pop(context);
+                  },
+                ),
+                FilterChip(
+                  label: const Text('Revenue'),
+                  selected: ref.watch(ledgerFilterProvider) == TransactionType.revenue,
+                  onSelected: (_) {
+                    ref.read(ledgerFilterProvider.notifier).state = TransactionType.revenue;
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.history_rounded, size: 64, color: Colors.grey.withOpacity(0.5)),
+          const SizedBox(height: 16),
+          const Text('No transactions found under this filter.', style: TextStyle(color: Colors.grey)),
+        ],
       ),
     );
   }

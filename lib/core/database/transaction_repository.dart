@@ -45,6 +45,9 @@ class TransactionRepository {
     required String seasonId,
     required double totalWeight,
     required String unit,
+    required String disposition,
+    double? salePrice,
+    String? destination,
     required DateTime date,
   }) async {
     final now = DateTime.now().toIso8601String();
@@ -52,14 +55,17 @@ class TransactionRepository {
 
     await _db.execute(
       '''
-      INSERT INTO yield_logs (id, season_id, total_weight, unit, date, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO yield_logs (id, season_id, total_weight, unit, disposition, sale_price, destination, date, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''',
       [
         id,
         seasonId,
         totalWeight,
         unit,
+        disposition,
+        salePrice,
+        destination,
         date.toIso8601String(),
         now,
         now,
