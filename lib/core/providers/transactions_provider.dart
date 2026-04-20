@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/transaction.dart';
+import '../models/yield_log.dart';
 import '../database/database_provider.dart';
 import 'active_season_provider.dart';
 import 'transaction_repository_provider.dart';
@@ -18,6 +19,20 @@ Stream<List<Transaction>> activeSeasonTransactions(ActiveSeasonTransactionsRef r
   yield* db
       .watch('SELECT * FROM transactions WHERE season_id = ? ORDER BY date DESC', parameters: [seasonId])
       .map((rows) => rows.map((row) => Transaction.fromRow(row)).toList());
+}
+
+@riverpod
+Stream<List<YieldLog>> activeSeasonYieldLogs(ActiveSeasonYieldLogsRef ref) async* {
+  final seasonId = ref.watch(activeSeasonIdProvider);
+  if (seasonId == null) {
+    yield [];
+    return;
+  }
+
+  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  yield* db
+      .watch('SELECT * FROM yield_logs WHERE season_id = ? ORDER BY date DESC', parameters: [seasonId])
+      .map((rows) => rows.map((row) => YieldLog.fromRow(row)).toList());
 }
 
 @riverpod
@@ -50,6 +65,32 @@ class TransactionsNotifier extends _$TransactionsNotifier {
         date: date,
         type: type,
         notes: notes,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> addYieldLog({
+    required String seasonId,
+    required double totalWeight,
+    required String unit,
+    required String disposition,
+    double? salePrice,
+    String? destination,
+    required DateTime date,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await ref.read(transactionRepositoryProvider).saveYieldLog(
+        seasonId: seasonId,
+        totalWeight: totalWeight,
+        unit: unit,
+        disposition: disposition,
+        salePrice: salePrice,
+        destination: destination,
+        date: date,
       );
       state = const AsyncValue.data(null);
     } catch (e, st) {

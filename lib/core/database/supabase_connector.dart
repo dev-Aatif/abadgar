@@ -29,24 +29,19 @@ class SupabaseConnector extends PowerSyncBackendConnector {
 
     try {
       for (var op in transaction.crud) {
-        try {
-          final table = supabase.from(op.table);
-          switch (op.op) {
-            case UpdateType.put:
-              final data = Map<String, dynamic>.from(op.opData!);
-              data['id'] = op.id;
-              await table.upsert(data);
-              break;
-            case UpdateType.patch:
-              await table.update(op.opData!).eq('id', op.id);
-              break;
-            case UpdateType.delete:
-              await table.delete().eq('id', op.id);
-              break;
-          }
-        } catch (e) {
-          debugPrint('Sync error for ${op.table}/${op.id}: $e');
-          // Continue with remaining operations instead of aborting the batch
+        final table = supabase.from(op.table);
+        switch (op.op) {
+          case UpdateType.put:
+            final data = Map<String, dynamic>.from(op.opData!);
+            data['id'] = op.id;
+            await table.upsert(data);
+            break;
+          case UpdateType.patch:
+            await table.update(op.opData!).eq('id', op.id);
+            break;
+          case UpdateType.delete:
+            await table.delete().eq('id', op.id);
+            break;
         }
       }
       await transaction.complete();

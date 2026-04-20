@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
-import '../../../../core/providers/transaction_repository_provider.dart';
+import '../../../../core/providers/transactions_provider.dart';
+import '../../../../core/utils/notifications.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/utils/season_resolver.dart';
 import 'form_shared.dart';
@@ -32,24 +33,39 @@ class _ExpenseFormState extends ConsumerState<ExpenseForm> {
 
   void _save() async {
     final seasonId = resolveSeasonId(ref);
-    if (seasonId == null) return;
+    if (seasonId == null) {
+      AppNotification.show(context, 'No active season selected.', isError: true);
+      return;
+    }
 
     try {
       final amount = double.tryParse(_amountController.text);
-      if (amount == null || amount <= 0) return;
+      if (amount == null || amount <= 0) {
+        AppNotification.show(context, 'Please enter a valid amount.', isError: true);
+        return;
+      }
 
-      await ref.read(transactionRepositoryProvider).saveTransaction(
+      if (_selectedCategory == null) {
+        AppNotification.show(context, 'Please select a category.', isError: true);
+        return;
+      }
+
+      await ref.read(transactionsNotifierProvider.notifier).addTransaction(
         seasonId: seasonId,
         amount: amount,
         type: TransactionType.expense.value,
-        category: _selectedCategory,
+        category: _selectedCategory!,
         notes: _notesController.text,
         date: _selectedDate,
       );
-      if (mounted) Navigator.pop(context);
+      
+      if (mounted) {
+        AppNotification.show(context, 'Expense saved successfully!');
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        AppNotification.show(context, 'Failed to save expense: $e', isError: true);
       }
     }
   }
@@ -125,8 +141,8 @@ class _ExpenseFormState extends ConsumerState<ExpenseForm> {
         ),
         const SizedBox(height: 32),
         SharedSaveButton(
-          onPressed: isValid ? _save : null,
-          label: l10n.save,
+          onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _save : null,
+          label: ref.watch(transactionsNotifierProvider).isLoading ? 'Saving...' : l10n.save,
         ),
       ],
     );

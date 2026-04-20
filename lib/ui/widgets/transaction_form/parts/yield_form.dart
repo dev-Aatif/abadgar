@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/providers/transaction_repository_provider.dart';
+import '../../../../core/providers/transactions_provider.dart';
 import '../../../../core/utils/season_resolver.dart';
 import '../../../../core/utils/notifications.dart';
 import 'form_shared.dart';
@@ -60,7 +60,8 @@ class _YieldFormState extends ConsumerState<YieldForm> {
 
       final totalSalePrice = _disposition == YieldDisposition.sold ? _totalPrice : null;
 
-      await ref.read(transactionRepositoryProvider).saveYieldLog(
+      // 1. Add the Yield Log (Harvest tracking)
+      await ref.read(transactionsNotifierProvider.notifier).addYieldLog(
         seasonId: seasonId,
         totalWeight: weight,
         unit: _unit.value,
@@ -69,6 +70,18 @@ class _YieldFormState extends ConsumerState<YieldForm> {
         destination: _disposition == YieldDisposition.stored ? _destinationController.text : null,
         date: DateTime.now(),
       );
+
+      // 2. If sold, automatically create a Revenue transaction for the ledger
+      if (_disposition == YieldDisposition.sold && totalSalePrice != null && totalSalePrice > 0) {
+        await ref.read(transactionsNotifierProvider.notifier).addTransaction(
+          seasonId: seasonId,
+          amount: totalSalePrice,
+          category: 'Harvest Sale',
+          date: DateTime.now(),
+          type: TransactionType.revenue.value,
+          notes: 'Yield: $weight ${_unit.value}',
+        );
+      }
 
       // Successfully saved
       if (mounted) {
@@ -178,8 +191,8 @@ class _YieldFormState extends ConsumerState<YieldForm> {
         ],
         const SizedBox(height: 32),
         SharedSaveButton(
-          onPressed: isValid ? _save : null,
-          label: 'Save Harvest',
+          onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _save : null,
+          label: ref.watch(transactionsNotifierProvider).isLoading ? 'Logging Harvest...' : 'Save Harvest',
         ),
       ],
     );

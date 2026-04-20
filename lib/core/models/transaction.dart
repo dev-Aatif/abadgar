@@ -26,15 +26,15 @@ class Transaction with _$Transaction {
     return Transaction(
       id: row['id'] as String,
       seasonId: row['season_id'] as String,
-      amount: (row['amount'] as num).toDouble(),
+      amount: (row['amount'] as num?)?.toDouble() ?? 0.0,
       category: row['category'] as String?,
-      date: DateTime.parse(row['date'] as String),
-      type: TransactionType.fromString(row['type'] as String),
+      date: DateTime.tryParse(row['date'] as String? ?? '') ?? DateTime.now(),
+      type: TransactionType.fromString(row['type'] as String? ?? 'Expense'),
       notes: row['notes'] as String?,
-      quantity: row['quantity'] != null ? (row['quantity'] as num).toDouble() : null,
+      quantity: (row['quantity'] as num?)?.toDouble(),
       buyerName: row['buyer_name'] as String?,
-      createdAt: DateTime.parse(row['created_at'] as String),
-      updatedAt: DateTime.parse(row['updated_at'] as String),
+      createdAt: DateTime.tryParse(row['created_at'] as String? ?? '') ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(row['updated_at'] as String? ?? '') ?? DateTime.now(),
     );
   }
 

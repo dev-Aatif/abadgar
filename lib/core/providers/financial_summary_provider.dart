@@ -1,5 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'transactions_provider.dart';
+import '../models/transaction.dart';
+import '../models/yield_log.dart';
 import '../constants/enums.dart';
 
 part 'financial_summary_provider.g.dart';
@@ -23,30 +25,36 @@ class FinancialSummary {
 @riverpod
 FinancialSummary? financialSummary(FinancialSummaryRef ref) {
   final transactionsAsync = ref.watch(activeSeasonTransactionsProvider);
+  final yieldLogsAsync = ref.watch(activeSeasonYieldLogsProvider);
   
-  return transactionsAsync.when(
-    data: (transactions) {
-      double revenue = 0;
-      double expenses = 0;
-      final Map<String, double> catExpenses = {};
-      
-      for (final tx in transactions) {
-        if (tx.type == TransactionType.revenue || tx.type == TransactionType.yield_) {
-          revenue += tx.amount;
-        } else {
-          expenses += tx.amount;
-          catExpenses[tx.category ?? 'Other'] = (catExpenses[tx.category ?? 'Other'] ?? 0) + tx.amount;
-        }
-      }
-      
-      return FinancialSummary(
-        totalRevenue: revenue,
-        totalExpenses: expenses,
-        expenseByCategory: catExpenses,
-        transactionCount: transactions.length,
-      );
-    },
-    loading: () => null,
-    error: (_, __) => null,
+  if (transactionsAsync is! AsyncData || yieldLogsAsync is! AsyncData) {
+    return null;
+  }
+
+  final List<Transaction> transactions = transactionsAsync.value ?? [];
+  final List<YieldLog> yieldLogs = yieldLogsAsync.value ?? [];
+
+  double revenue = 0;
+  double expenses = 0;
+  final Map<String, double> catExpenses = {};
+  
+  for (final tx in transactions) {
+    if (tx.type == TransactionType.revenue || tx.type == TransactionType.yield_) {
+      revenue += tx.amount;
+    } else {
+      expenses += tx.amount;
+      catExpenses[tx.category ?? 'Other'] = (catExpenses[tx.category ?? 'Other'] ?? 0) + tx.amount;
+    }
+  }
+
+  // NOTE: We no longer add yieldLogs.salePrice here because the Log Harvest workflow 
+  // already creates a corresponding 'revenue' transaction to ensure ledger consistency.
+  // YieldLogs are now strictly for physical harvest tracking.
+  
+  return FinancialSummary(
+    totalRevenue: revenue,
+    totalExpenses: expenses,
+    expenseByCategory: catExpenses,
+    transactionCount: transactions.length + yieldLogs.length,
   );
 }

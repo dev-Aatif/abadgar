@@ -24,6 +24,23 @@ final activeSeasonTransactionsProvider =
 
 typedef ActiveSeasonTransactionsRef
     = AutoDisposeStreamProviderRef<List<Transaction>>;
+String _$activeSeasonYieldLogsHash() =>
+    r'64a091a59c37efc68aa619b237482ebb06f2f270';
+
+/// See also [activeSeasonYieldLogs].
+@ProviderFor(activeSeasonYieldLogs)
+final activeSeasonYieldLogsProvider =
+    AutoDisposeStreamProvider<List<YieldLog>>.internal(
+  activeSeasonYieldLogs,
+  name: r'activeSeasonYieldLogsProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$activeSeasonYieldLogsHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+typedef ActiveSeasonYieldLogsRef = AutoDisposeStreamProviderRef<List<YieldLog>>;
 String _$allTransactionsHash() => r'2ea4ac34b72cf02be8771f056b10256af0fca8f3';
 
 /// See also [allTransactions].
@@ -41,7 +58,7 @@ final allTransactionsProvider =
 
 typedef AllTransactionsRef = AutoDisposeStreamProviderRef<List<Transaction>>;
 String _$transactionsNotifierHash() =>
-    r'0b9054f985d91950017987b308fee29769483ec6';
+    r'fb7c6eb80f8fe9faa6438eb253f0e5fdcbcd654d';
 
 /// See also [TransactionsNotifier].
 @ProviderFor(TransactionsNotifier)

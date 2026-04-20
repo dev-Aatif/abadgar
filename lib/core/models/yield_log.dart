@@ -22,18 +22,31 @@ class YieldLog with _$YieldLog {
   factory YieldLog.fromJson(Map<String, dynamic> json) => _$YieldLogFromJson(json);
 
   factory YieldLog.fromRow(Map<String, dynamic> row) {
-    return YieldLog(
-      id: row['id'] as String,
-      seasonId: row['season_id'] as String,
-      totalWeight: (row['total_weight'] as num).toDouble(),
-      unit: YieldUnit.fromString(row['unit'] as String),
-      disposition: YieldDisposition.fromString(row['disposition'] as String? ?? 'sold'),
-      salePrice: row['sale_price'] != null ? (row['sale_price'] as num).toDouble() : null,
-      destination: row['destination'] as String?,
-      date: DateTime.parse(row['date'] as String),
-      createdAt: DateTime.parse(row['created_at'] as String),
-      updatedAt: DateTime.parse(row['updated_at'] as String),
-    );
+    try {
+      return YieldLog(
+        id: row['id'] as String,
+        seasonId: row['season_id'] as String,
+        totalWeight: (row['total_weight'] as num?)?.toDouble() ?? 0.0,
+        unit: YieldUnit.fromString(row['unit'] as String? ?? 'Kg'),
+        disposition: YieldDisposition.fromString(row['disposition'] as String? ?? 'Sold'),
+        salePrice: (row['sale_price'] as num?)?.toDouble(),
+        destination: row['destination'] as String?,
+        date: DateTime.tryParse(row['date'] as String? ?? '') ?? DateTime.now(),
+        createdAt: DateTime.tryParse(row['created_at'] as String? ?? '') ?? DateTime.now(),
+        updatedAt: DateTime.tryParse(row['updated_at'] as String? ?? '') ?? DateTime.now(),
+      );
+    } catch (e) {
+      return YieldLog(
+        id: row['id'] as String? ?? 'error',
+        seasonId: row['season_id'] as String? ?? '',
+        totalWeight: 0.0,
+        unit: YieldUnit.kg,
+        disposition: YieldDisposition.sold,
+        date: DateTime.now(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
   }
 
   static Map<String, dynamic> toRow(YieldLog log) {

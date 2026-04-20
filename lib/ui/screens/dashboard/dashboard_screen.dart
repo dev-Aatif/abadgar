@@ -8,9 +8,11 @@ import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/transactions_provider.dart';
 import '../../../core/constants/enums.dart';
 import '../../../core/models/season.dart';
+import '../../../core/providers/lands_provider.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/ui_state_providers.dart';
 import '../../../core/utils/notifications.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -22,6 +24,7 @@ class DashboardScreen extends ConsumerWidget {
     final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
     final transactions = ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
     final isAuthenticated = ref.watch(authStateProvider) != null;
+    final isOfflineVisible = ref.watch(isOfflineAlertVisibleProvider);
     
     final currencyFormat = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 0);
 
@@ -75,7 +78,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
 
-            if (!isAuthenticated)
+            if (!isAuthenticated && isOfflineVisible)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
@@ -102,8 +105,7 @@ class DashboardScreen extends ConsumerWidget {
                         IconButton(
                           icon: const Icon(Icons.close_rounded, size: 16),
                           onPressed: () {
-                            // In a real app we'd save this preference.
-                            // For now, we'll just implement the visual button.
+                            ref.read(isOfflineAlertVisibleProvider.notifier).state = false;
                             AppNotification.show(context, 'Alert hidden for this session.');
                           },
                         ),
@@ -286,42 +288,178 @@ class DashboardScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+      builder: (context) => const _ManageLandsSheet(),
+    );
+  }
+}
+
+class _ManageLandsSheet extends ConsumerStatefulWidget {
+  const _ManageLandsSheet();
+
+  @override
+  ConsumerState<_ManageLandsSheet> createState() => _ManageLandsSheetState();
+}
+
+class _ManageLandsSheetState extends ConsumerState<_ManageLandsSheet> {
+  final _nameController = TextEditingController();
+  final _areaController = TextEditingController();
+  bool _isAdding = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _areaController.dispose();
+    super.dispose();
+  }
+
+  void _submit() async {
+    final name = _nameController.text.trim();
+    final area = double.tryParse(_areaController.text) ?? 0;
+
+    if (name.isEmpty || area <= 0) {
+      AppNotification.show(context, 'Please enter valid name and area.', isError: true);
+      return;
+    }
+
+    try {
+      await ref.read(landsNotifierProvider.notifier).addLand(name: name, area: area);
+      if (mounted) {
+        setState(() {
+          _isAdding = false;
+          _nameController.clear();
+          _areaController.clear();
+        });
+        AppNotification.show(context, 'Field added successfully!');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppNotification.show(context, 'Failed to add field.', isError: true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final landsAsync = ref.watch(landsProvider);
+
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+        left: 24,
+        right: 24,
+        top: 24,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Field Management', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded)),
-                ],
+              Text(
+                _isAdding ? 'Add New Field' : 'Field Management',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 24),
-              const Expanded(
-                child: Center(child: Text('Land data list will appear here.')),
-              ),
-              ElevatedButton.icon(
+              IconButton(
                 onPressed: () {
-                  // Add Land Logic
+                  if (_isAdding) {
+                    setState(() => _isAdding = false);
+                  } else {
+                    Navigator.pop(context);
+                  }
                 },
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('ADD NEW FIELD'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
+                icon: Icon(_isAdding ? Icons.arrow_back_rounded : Icons.close_rounded),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 24),
+          if (_isAdding) ...[
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: 'Field Name',
+                prefixIcon: Icon(Icons.badge_rounded),
+                hintText: 'e.g. North Side 40',
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _areaController,
+              decoration: const InputDecoration(
+                labelText: 'Total Area (Acres)',
+                prefixIcon: Icon(Icons.square_foot_rounded),
+                hintText: 'e.g. 10.5',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: _submit,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('SAVE FIELD'),
+            ),
+          ] else ...[
+            Expanded(
+              child: landsAsync.when(
+                data: (lands) {
+                  if (lands.isEmpty) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.landscape_outlined, size: 64, color: Colors.grey),
+                          SizedBox(height: 16),
+                          Text('No fields added yet.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    itemCount: lands.length,
+                    itemBuilder: (context, index) {
+                      final land = lands[index];
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            child: Icon(Icons.terrain_rounded, color: Theme.of(context).colorScheme.primary),
+                          ),
+                          title: Text(land.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          subtitle: Text('${land.area} Acres'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                            onPressed: () => ref.read(landsNotifierProvider.notifier).deleteLand(land.id),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, _) => Center(child: Text('Error: $e')),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => setState(() => _isAdding = true),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('ADD NEW FIELD'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
