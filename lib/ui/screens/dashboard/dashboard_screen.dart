@@ -15,6 +15,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/ui_state_providers.dart';
 import '../../../core/utils/notifications.dart';
+import 'package:flutter/services.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -70,7 +71,14 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            HapticFeedback.lightImpact();
+            ref.invalidate(activeSeasonTransactionsProvider);
+            ref.invalidate(financialSummaryProvider);
+            await Future.delayed(const Duration(milliseconds: 800));
+          },
+          child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
             // Header
@@ -354,6 +362,7 @@ class DashboardScreen extends ConsumerWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
+        ),
       ),
     );
   }
@@ -530,11 +539,11 @@ class _ManageLandsSheetState extends ConsumerState<_ManageLandsSheet> {
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
-                                  title: const Text('Delete Field'),
-                                  content: Text('Are you sure you want to delete ${land.name}? This will not delete seasons linked to it.'),
+                                  title: Text(AppLocalizations.of(context)!.deleteLand),
+                                  content: Text(AppLocalizations.of(context)!.confirmDeleteLand),
                                   actions: [
-                                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
+                                    TextButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: Colors.red))),
                                   ],
                                 ),
                               );

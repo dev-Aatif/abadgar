@@ -64,7 +64,13 @@
   "seasonStarted": "Started",
   "seasonFinished": "Finished:",
   "switchedFocus": "Switched focus to {seasonName}",
-  "@switchedFocus": { "placeholders": { "seasonName": { "type": "String" } } },
+  "@switchedFocus": {
+    "placeholders": {
+      "seasonName": {
+        "type": "String"
+      }
+    }
+  },
   "year": "Year",
   "yearHint": "2024",
   "wheat": "Wheat",
@@ -72,15 +78,45 @@
   "noFarmLand": "No farm land added yet.",
   "addLandInSettings": "Add Land in Settings",
   "errorLoadingLands": "Error loading lands: {err}",
-  "@errorLoadingLands": { "placeholders": { "err": { "type": "String" } } },
+  "@errorLoadingLands": {
+    "placeholders": {
+      "err": {
+        "type": "String"
+      }
+    }
+  },
   "errorGeneral": "Error: {err}",
-  "@errorGeneral": { "placeholders": { "err": { "type": "String" } } },
+  "@errorGeneral": {
+    "placeholders": {
+      "err": {
+        "type": "String"
+      }
+    }
+  },
   "addAnotherSeason": "Add another season of this crop to see direct comparisons.",
   "smartComparison": "Smart Comparison",
   "profitVarianceUp": "Your profit is up by {percentage}% compared to {previousSeason}.",
-  "@profitVarianceUp": { "placeholders": { "percentage": { "type": "String" }, "previousSeason": { "type": "String" } } },
+  "@profitVarianceUp": {
+    "placeholders": {
+      "percentage": {
+        "type": "String"
+      },
+      "previousSeason": {
+        "type": "String"
+      }
+    }
+  },
   "profitVarianceDown": "Your profit is down by {percentage}% compared to {previousSeason}.",
-  "@profitVarianceDown": { "placeholders": { "percentage": { "type": "String" }, "previousSeason": { "type": "String" } } },
+  "@profitVarianceDown": {
+    "placeholders": {
+      "percentage": {
+        "type": "String"
+      },
+      "previousSeason": {
+        "type": "String"
+      }
+    }
+  },
   "expenseBreakdown": "Expense Breakdown",
   "noExpenses": "No expenses recorded yet.",
   "selectSeasonForAnalytics": "Select a season from the top menu to view analytics.",
@@ -107,7 +143,13 @@
   "updateAvailable": "Update Available!",
   "upToDate": "You are up to date",
   "latestVersion": "Latest version: {version}",
-  "@latestVersion": { "placeholders": { "version": { "type": "String" } } },
+  "@latestVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "upToDateContent": "You are using the latest version of Abadgar.",
   "download": "Download",
   "close": "Close",
@@ -121,6 +163,52 @@
   "account": "Account",
   "guestUser": "Guest User",
   "loggedInAs": "Logged in as {email}",
-  "@loggedInAs": { "placeholders": { "email": { "type": "String" } } },
-  "invalidLandDetails": "Please enter a valid name and area."
+  "@loggedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidLandDetails": "Please enter a valid name and area.",
+  "search": "Search...",
+  "confirmDelete": "Confirm Delete",
+  "confirmDeleteTransaction": "Are you sure you want to delete this transaction?",
+  "confirmDeleteHarvest": "Are you sure you want to delete this harvest record?",
+  "confirmDeleteLand": "Are you sure you want to delete this land? This may break existing seasons tied to it.",
+  "financials": "Financials",
+  "harvests": "Harvests",
+  "noHarvestsLogged": "No harvests logged yet.",
+  "errorLoadingHarvests": "Error loading harvests: {err}",
+  "@errorLoadingHarvests": {
+    "placeholders": {
+      "err": {
+        "type": "String"
+      }
+    }
+  },
+  "harvestDeleted": "Harvest record deleted",
+  "transactionDeleted": "Transaction deleted",
+  "totalYield": "Total Yield",
+  "pricePer": "Price per {unit}",
+  "@pricePer": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "totalEstimatedRevenue": "Total Estimated Revenue:",
+  "whereStored": "Where is it stored?",
+  "loggingHarvest": "Logging Harvest...",
+  "saveHarvest": "Save Harvest",
+  "howMuchHarvested": "HOW MUCH WAS HARVESTED?",
+  "whatDidYouDo": "WHAT DID YOU DO WITH IT?",
+  "sold": "Sold",
+  "stored": "Stored",
+  "home": "Home",
+  "revenuePerAcre": "Revenue / Acre",
+  "yieldPerAcre": "Yield / Acre",
+  "delete": "Delete",
+  "deleteLand": "Delete Land"
 }

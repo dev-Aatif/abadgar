@@ -7,6 +7,7 @@ import '../../../../core/utils/season_resolver.dart';
 import '../../../../core/utils/notifications.dart';
 import 'form_shared.dart';
 import '../../../../core/constants/enums.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 class YieldForm extends ConsumerStatefulWidget {
   final String seasonId;
@@ -129,7 +130,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('HOW MUCH WAS HARVESTED?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+        Text(AppLocalizations.of(context)!.howMuchHarvested, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +139,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
               flex: 2,
               child: SharedAmountField(
                 controller: _weightController,
-                prefix: 'Weight',
+                prefix: AppLocalizations.of(context)!.yield,
                 hint: '0.0',
               ),
             ),
@@ -157,13 +158,13 @@ class _YieldFormState extends ConsumerState<YieldForm> {
           ],
         ),
         const SizedBox(height: 24),
-        const Text('WHAT DID YOU DO WITH IT?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+        Text(AppLocalizations.of(context)!.whatDidYouDo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 12),
         SegmentedButton<YieldDisposition>(
-          segments: const [
-            ButtonSegment(value: YieldDisposition.sold, label: Text('Sold'), icon: Icon(Icons.monetization_on_rounded, size: 16)),
-            ButtonSegment(value: YieldDisposition.stored, label: Text('Stored'), icon: Icon(Icons.inventory_2_rounded, size: 16)),
-            ButtonSegment(value: YieldDisposition.personal, label: Text('Home'), icon: Icon(Icons.home_rounded, size: 16)),
+          segments: [
+            ButtonSegment(value: YieldDisposition.sold, label: Text(AppLocalizations.of(context)!.sold), icon: const Icon(Icons.monetization_on_rounded, size: 16)),
+            ButtonSegment(value: YieldDisposition.stored, label: Text(AppLocalizations.of(context)!.stored), icon: const Icon(Icons.inventory_2_rounded, size: 16)),
+            ButtonSegment(value: YieldDisposition.personal, label: Text(AppLocalizations.of(context)!.home), icon: const Icon(Icons.home_rounded, size: 16)),
           ],
           selected: {_disposition},
           onSelectionChanged: (set) => setState(() => _disposition = set.first),
@@ -175,7 +176,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
             decoration: InputDecoration(
-              labelText: 'Price per ${_unit.value}',
+              labelText: AppLocalizations.of(context)!.pricePer(_unit.value),
               prefixIcon: const Icon(Icons.attach_money_rounded),
               suffixText: 'Rs',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -192,7 +193,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Total Estimated Revenue:', style: TextStyle(fontWeight: FontWeight.w500)),
+                Text(AppLocalizations.of(context)!.totalEstimatedRevenue, style: const TextStyle(fontWeight: FontWeight.w500)),
                 Text(
                   'Rs ${_totalPrice.toStringAsFixed(0)}',
                   style: TextStyle(
@@ -209,7 +210,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
           TextField(
             controller: _destinationController,
             decoration: InputDecoration(
-              labelText: 'Where is it stored?',
+              labelText: AppLocalizations.of(context)!.whereStored,
               prefixIcon: const Icon(Icons.location_on_rounded),
               hintText: 'Home, Warehouse, etc.',
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -219,7 +220,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
         const SizedBox(height: 32),
         SharedSaveButton(
           onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _save : null,
-          label: ref.watch(transactionsNotifierProvider).isLoading ? 'Logging Harvest...' : 'Save Harvest',
+          label: ref.watch(transactionsNotifierProvider).isLoading ? AppLocalizations.of(context)!.loggingHarvest : AppLocalizations.of(context)!.saveHarvest,
         ),
       ],
     );

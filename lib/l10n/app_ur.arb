@@ -115,5 +115,45 @@
   "account": "اکاؤنٹ",
   "guestUser": "مہمان صارف",
   "loggedInAs": "{email} کے طور پر لاگ ان ہیں",
-  "invalidLandDetails": "براہ کرم درست نام اور رقبہ درج کریں۔"
+  "invalidLandDetails": "براہ کرم درست نام اور رقبہ درج کریں۔",
+  "search": "تلاش...",
+  "confirmDelete": "حذف کی تصدیق",
+  "confirmDeleteTransaction": "کیا آپ واقعی یہ ٹرانزیکشن حذف کرنا چاہتے ہیں؟",
+  "confirmDeleteHarvest": "کیا آپ واقعی یہ فصل کا ریکارڈ حذف کرنا چاہتے ہیں؟",
+  "confirmDeleteLand": "کیا آپ واقعی یہ زمین حذف کرنا چاہتے ہیں؟",
+  "financials": "مالیات",
+  "harvests": "فصلیں",
+  "noHarvestsLogged": "ابھی تک کوئی فصل درج نہیں ہوئی۔",
+  "errorLoadingHarvests": "فصلیں لوڈ کرنے میں خرابی: {err}",
+  "@errorLoadingHarvests": {
+    "placeholders": {
+      "err": {
+        "type": "String"
+      }
+    }
+  },
+  "harvestDeleted": "فصل کا ریکارڈ حذف کر دیا گیا",
+  "transactionDeleted": "ٹرانزیکشن حذف کر دی گئی",
+  "totalYield": "کل پیداوار",
+  "pricePer": "قیمت فی {unit}",
+  "@pricePer": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "totalEstimatedRevenue": "کل متوقع آمدنی:",
+  "whereStored": "یہ کہاں ذخیرہ ہے؟",
+  "loggingHarvest": "فصل درج ہو رہی ہے...",
+  "saveHarvest": "فصل محفوظ کریں",
+  "howMuchHarvested": "کتنی فصل ہوئی؟",
+  "whatDidYouDo": "آپ نے اس کے ساتھ کیا کیا؟",
+  "sold": "فروخت شدہ",
+  "stored": "ذخیرہ شدہ",
+  "home": "گھر",
+  "revenuePerAcre": "آمدنی / ایکڑ",
+  "yieldPerAcre": "پیداوار / ایکڑ",
+  "delete": "حذف کریں",
+  "deleteLand": "زمین حذف کریں"
 }

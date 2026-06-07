@@ -127,8 +127,8 @@ class AnalyticsScreen extends ConsumerWidget {
         _buildStatCard(context, AppLocalizations.of(context)!.totalExpenses, format.format(summary.totalExpenses), Icons.shopping_basket_rounded, Colors.orange),
         _buildStatCard(context, AppLocalizations.of(context)!.netProfit, format.format(summary.profit), Icons.account_balance_rounded, Colors.blue),
         _buildStatCard(context, AppLocalizations.of(context)!.costPerAcre, format.format(summary.totalExpenses / acres), Icons.landscape_rounded, Colors.brown),
-        _buildStatCard(context, 'Revenue / Acre', format.format(summary.totalRevenue / acres), Icons.monetization_on_rounded, Colors.teal),
-        _buildStatCard(context, 'Yield / Acre', '${weightFormat.format(summary.totalYieldWeight / acres)} Unit', Icons.eco_rounded, Colors.amber.shade700),
+        _buildStatCard(context, AppLocalizations.of(context)!.revenuePerAcre, format.format(summary.totalRevenue / acres), Icons.monetization_on_rounded, Colors.teal),
+        _buildStatCard(context, AppLocalizations.of(context)!.yieldPerAcre, '${weightFormat.format(summary.totalYieldWeight / acres)} Unit', Icons.eco_rounded, Colors.amber.shade700),
       ],
     );
   }

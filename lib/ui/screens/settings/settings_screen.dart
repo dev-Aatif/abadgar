@@ -401,11 +401,11 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Delete Field'),
-                        content: Text('Are you sure you want to delete ${l.name}? This will not delete seasons linked to it.'),
+                        title: Text(AppLocalizations.of(context)!.deleteLand),
+                        content: Text(AppLocalizations.of(context)!.confirmDeleteLand),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
+                          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: Colors.red))),
                         ],
                       ),
                     );

@@ -115,5 +115,45 @@
   "account": "اڪائونٽ",
   "guestUser": "مهمان واپرائيندڙ",
   "loggedInAs": "{email} جي طور تي لاگ ان آهيو",
-  "invalidLandDetails": "مهرباني ڪري صحيح نالو ۽ ايراضي لکو."
+  "invalidLandDetails": "مهرباني ڪري صحيح نالو ۽ ايراضي لکو.",
+  "search": "ڳوليو...",
+  "confirmDelete": "ڊاهڻ جي پڪ",
+  "confirmDeleteTransaction": "ڇا توهان واقعي هي ٽرانزيڪشن ڊاهڻ چاهيو ٿا؟",
+  "confirmDeleteHarvest": "ڇا توهان واقعي هي فصل جو رڪارڊ ڊاهڻ چاهيو ٿا؟",
+  "confirmDeleteLand": "ڇا توهان واقعي هي زمين ڊاهڻ چاهيو ٿا؟",
+  "financials": "ماليات",
+  "harvests": "فصلون",
+  "noHarvestsLogged": "اڃا تائين ڪوبه فصل درج ناهي ٿيو.",
+  "errorLoadingHarvests": "فصلون لوڊ ڪرڻ ۾ خرابي: {err}",
+  "@errorLoadingHarvests": {
+    "placeholders": {
+      "err": {
+        "type": "String"
+      }
+    }
+  },
+  "harvestDeleted": "فصل جو رڪارڊ ڊاهيو ويو",
+  "transactionDeleted": "ٽرانزيڪشن ڊاهي وئي",
+  "totalYield": "ڪل پيداوار",
+  "pricePer": "قيمت في {unit}",
+  "@pricePer": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "totalEstimatedRevenue": "ڪل متوقع آمدني:",
+  "whereStored": "هي ڪٿي ذخيرو آهي؟",
+  "loggingHarvest": "فصل درج ٿي رهي آهي...",
+  "saveHarvest": "فصل محفوظ ڪريو",
+  "howMuchHarvested": "ڪيترو فصل ٿيو؟",
+  "whatDidYouDo": "توهان ان سان ڇا ڪيو؟",
+  "sold": "وڪرو ٿيل",
+  "stored": "ذخيرو ٿيل",
+  "home": "گهر",
+  "revenuePerAcre": "آمدني / ايڪڙ",
+  "yieldPerAcre": "پيداوار / ايڪڙ",
+  "delete": "ڊاهيو",
+  "deleteLand": "زمين ڊاهيو"
 }

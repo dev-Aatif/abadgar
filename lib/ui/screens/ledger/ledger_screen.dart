@@ -7,9 +7,12 @@ import '../../../core/constants/enums.dart';
 import '../../../core/models/transaction.dart';
 import '../../widgets/transaction_form/transaction_bottom_sheet.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
+import 'package:flutter/services.dart';
 
-// State for filtering
+// State for filtering and searching
 final ledgerFilterProvider = StateProvider<TransactionType?>((ref) => null);
+final ledgerSearchQueryProvider = StateProvider<String>((ref) => '');
+final ledgerIsSearchingProvider = StateProvider<bool>((ref) => false);
 
 class LedgerScreen extends ConsumerWidget {
   const LedgerScreen({super.key});
@@ -21,41 +24,66 @@ class LedgerScreen extends ConsumerWidget {
     final filter = ref.watch(ledgerFilterProvider);
     final currencyFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
 
+    final isSearching = ref.watch(ledgerIsSearchingProvider);
+    final searchQuery = ref.watch(ledgerSearchQueryProvider);
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(AppLocalizations.of(context)!.ledger, style: const TextStyle(fontWeight: FontWeight.bold)),
-            if (activeSeason != null)
-              Text(
-                activeSeason.displayName,
-                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+        title: isSearching
+          ? TextField(
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context)!.search ?? 'Search...',
+                border: InputBorder.none,
+                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
               ),
-          ],
-        ),
+              onChanged: (val) => ref.read(ledgerSearchQueryProvider.notifier).state = val,
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(AppLocalizations.of(context)!.ledger, style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (activeSeason != null)
+                  Text(
+                    activeSeason.displayName,
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+              ],
+            ),
         actions: [
           IconButton(
-            icon: Icon(
-              Icons.filter_list_rounded,
-              color: filter != null ? Theme.of(context).colorScheme.primary : null,
-            ),
-            onPressed: () => _showFilterDialog(context, ref),
+            icon: Icon(isSearching ? Icons.close_rounded : Icons.search_rounded),
+            onPressed: () {
+              if (isSearching) {
+                ref.read(ledgerIsSearchingProvider.notifier).state = false;
+                ref.read(ledgerSearchQueryProvider.notifier).state = '';
+              } else {
+                ref.read(ledgerIsSearchingProvider.notifier).state = true;
+              }
+            },
           ),
+          if (!isSearching)
+            IconButton(
+              icon: Icon(
+                Icons.filter_list_rounded,
+                color: filter != null ? Theme.of(context).colorScheme.primary : null,
+              ),
+              onPressed: () => _showFilterDialog(context, ref),
+            ),
         ],
-        bottom: const TabBar(
+        bottom: TabBar(
           tabs: [
-            Tab(text: 'Financials'),
-            Tab(text: 'Harvests'),
+            Tab(text: AppLocalizations.of(context)!.financials),
+            Tab(text: AppLocalizations.of(context)!.harvests),
           ],
         ),
       ),
       body: TabBarView(
         children: [
-          _buildFinancialsTab(context, ref, transactionsAsync, filter, currencyFormat),
-          _buildHarvestsTab(context, ref),
+          _buildFinancialsTab(context, ref, transactionsAsync, filter, searchQuery, currencyFormat),
+          _buildHarvestsTab(context, ref, searchQuery),
         ],
       ),
     );
@@ -66,13 +94,21 @@ class LedgerScreen extends ConsumerWidget {
     WidgetRef ref, 
     AsyncValue<List<Transaction>> transactionsAsync, 
     TransactionType? filter, 
+    String searchQuery,
     NumberFormat currencyFormat,
   ) {
     return transactionsAsync.when(
         data: (transactions) {
-          final filtered = filter == null 
-              ? transactions 
-              : transactions.where((t) => t.type == filter).toList();
+          final filtered = transactions.where((t) {
+            if (filter != null && t.type != filter) return false;
+            if (searchQuery.isNotEmpty) {
+              final q = searchQuery.toLowerCase();
+              final matchCat = t.category?.toLowerCase().contains(q) ?? false;
+              final matchNote = t.notes?.toLowerCase().contains(q) ?? false;
+              if (!matchCat && !matchNote) return false;
+            }
+            return true;
+          }).toList();
 
           if (filtered.isEmpty) {
             return _buildEmptyState(context);
@@ -86,8 +122,14 @@ class LedgerScreen extends ConsumerWidget {
 
           final groupedEntries = grouped.entries.toList();
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+          return RefreshIndicator(
+            onRefresh: () async {
+              HapticFeedback.lightImpact();
+              ref.invalidate(activeSeasonTransactionsProvider);
+              await Future.delayed(const Duration(milliseconds: 800));
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
             itemCount: groupedEntries.length,
             itemBuilder: (context, index) {
               final entry = groupedEntries[index];
@@ -130,13 +172,13 @@ class LedgerScreen extends ConsumerWidget {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              title: const Text('Confirm Delete'),
-                              content: const Text('Are you sure you want to delete this transaction?'),
+                              title: Text(AppLocalizations.of(context)!.confirmDelete),
+                              content: Text(AppLocalizations.of(context)!.confirmDeleteTransaction),
                               actions: [
-                                TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+                                TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
                                 TextButton(
                                   onPressed: () => Navigator.of(context).pop(true), 
-                                  child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                  child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: Colors.redAccent)),
                                 ),
                               ],
                             );
@@ -146,7 +188,7 @@ class LedgerScreen extends ConsumerWidget {
                       onDismissed: (direction) {
                         ref.read(transactionsNotifierProvider.notifier).deleteTransaction(tx.id);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Transaction deleted')),
+                          SnackBar(content: Text(AppLocalizations.of(context)!.transactionDeleted)),
                         );
                       },
                       child: Card(
@@ -177,6 +219,7 @@ class LedgerScreen extends ConsumerWidget {
                 ],
               );
             },
+          ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -184,11 +227,22 @@ class LedgerScreen extends ConsumerWidget {
       );
   }
 
-  Widget _buildHarvestsTab(BuildContext context, WidgetRef ref) {
+  Widget _buildHarvestsTab(BuildContext context, WidgetRef ref, String searchQuery) {
     final yieldLogsAsync = ref.watch(activeSeasonYieldLogsProvider);
 
     return yieldLogsAsync.when(
-      data: (yieldLogs) {
+      data: (allYieldLogs) {
+        final yieldLogs = allYieldLogs.where((yl) {
+          if (searchQuery.isNotEmpty) {
+            final q = searchQuery.toLowerCase();
+            final matchDest = yl.destination?.toLowerCase().contains(q) ?? false;
+            final matchDisp = yl.disposition.value.toLowerCase().contains(q);
+            final matchUnit = yl.unit.value.toLowerCase().contains(q);
+            if (!matchDest && !matchDisp && !matchUnit) return false;
+          }
+          return true;
+        }).toList();
+
         if (yieldLogs.isEmpty) {
           return Center(
             child: Column(
@@ -196,14 +250,20 @@ class LedgerScreen extends ConsumerWidget {
               children: [
                 Icon(Icons.eco_rounded, size: 64, color: Colors.grey.withOpacity(0.5)),
                 const SizedBox(height: 16),
-                const Text('No harvests logged yet.', style: TextStyle(color: Colors.grey)),
+                Text(AppLocalizations.of(context)!.noHarvestsLogged, style: const TextStyle(color: Colors.grey)),
               ],
             ),
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
+        return RefreshIndicator(
+          onRefresh: () async {
+            HapticFeedback.lightImpact();
+            ref.invalidate(activeSeasonYieldLogsProvider);
+            await Future.delayed(const Duration(milliseconds: 800));
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
           itemCount: yieldLogs.length,
           itemBuilder: (context, index) {
             final log = yieldLogs[index];
@@ -226,13 +286,13 @@ class LedgerScreen extends ConsumerWidget {
                   context: context,
                   builder: (BuildContext context) {
                     return AlertDialog(
-                      title: const Text('Confirm Delete'),
-                      content: const Text('Are you sure you want to delete this harvest record?'),
+                      title: Text(AppLocalizations.of(context)!.confirmDelete),
+                      content: Text(AppLocalizations.of(context)!.confirmDeleteHarvest),
                       actions: [
-                        TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+                        TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(true), 
-                          child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                          child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: Colors.redAccent)),
                         ),
                       ],
                     );
@@ -242,7 +302,7 @@ class LedgerScreen extends ConsumerWidget {
               onDismissed: (direction) {
                 ref.read(transactionsNotifierProvider.notifier).deleteYieldLog(log.id);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Harvest record deleted')),
+                  SnackBar(content: Text(AppLocalizations.of(context)!.harvestDeleted)),
                 );
               },
               child: Card(
@@ -269,10 +329,11 @@ class LedgerScreen extends ConsumerWidget {
               ),
             );
           },
+        ),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error loading harvests: $err')),
+      error: (err, _) => Center(child: Text(AppLocalizations.of(context)!.errorLoadingHarvests(err.toString()))),
     );
   }
 
