@@ -12,6 +12,7 @@ import '../../../core/providers/lands_provider.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/ui_state_providers.dart';
 import '../../../core/utils/notifications.dart';
 
@@ -25,8 +26,47 @@ class DashboardScreen extends ConsumerWidget {
     final transactions = ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
     final isAuthenticated = ref.watch(authStateProvider) != null;
     final isOfflineVisible = ref.watch(isOfflineAlertVisibleProvider);
+    final seasonsList = ref.watch(seasonsProvider).valueOrNull ?? [];
     
-    final currencyFormat = NumberFormat.currency(symbol: 'PKR ', decimalDigits: 0);
+    final currencyFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
+
+    if (seasonsList.isEmpty) {
+      return Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.eco_rounded, size: 80, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(height: 24),
+                Text(
+                  'Welcome to Abadgar!',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Let\'s get started by creating your first cultivation season. Track expenses, harvest, and see your profit all in one place.',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/seasons'),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Start New Season'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -46,7 +86,7 @@ class DashboardScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Field Overview',
+                              AppLocalizations.of(context)!.fieldOverview,
                               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.bold,
@@ -55,7 +95,7 @@ class DashboardScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              activeSeason?.displayName ?? 'No Active Season',
+                              activeSeason?.displayName ?? AppLocalizations.of(context)!.noActiveSeason,
                               style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -92,21 +132,21 @@ class DashboardScreen extends ConsumerWidget {
                       children: [
                         Icon(Icons.cloud_off_rounded, color: Theme.of(context).colorScheme.error, size: 20),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Offline Mode. Sign in for backup.',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+                            AppLocalizations.of(context)!.offlineAlert,
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
                           ),
                         ),
                         TextButton(
                           onPressed: () => context.push('/auth'),
-                          child: const Text('SIGN IN', style: TextStyle(fontSize: 10)),
+                          child: Text(AppLocalizations.of(context)!.signIn, style: const TextStyle(fontSize: 10)),
                         ),
                         IconButton(
                           icon: const Icon(Icons.close_rounded, size: 16),
                           onPressed: () {
                             ref.read(isOfflineAlertVisibleProvider.notifier).state = false;
-                            AppNotification.show(context, 'Alert hidden for this session.');
+                            AppNotification.show(context, AppLocalizations.of(context)!.alertHidden);
                           },
                         ),
                       ],
@@ -232,7 +272,7 @@ class DashboardScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(AppLocalizations.of(context)!.ledger, style: Theme.of(context).textTheme.titleLarge),
-                    TextButton(onPressed: () {}, child: const Text('See All')), // To localize later
+                    TextButton(onPressed: () => context.go('/ledger'), child: const Text('See All')), // To localize later
                   ],
                 ),
               ),
@@ -244,23 +284,63 @@ class DashboardScreen extends ConsumerWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final tx = transactions[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: tx.type == TransactionType.revenue ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
-                          child: Icon(
-                            tx.type == TransactionType.revenue ? Icons.add_rounded : Icons.remove_rounded,
-                            color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
-                          ),
+                    return Dismissible(
+                      key: ValueKey(tx.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(DateFormat.yMMMd().format(tx.date)),
-                        trailing: Text(
-                          currencyFormat.format(tx.amount),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+                      ),
+                      confirmDismiss: (direction) async {
+                        return await showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('Confirm Delete'),
+                              content: const Text('Are you sure you want to delete this transaction?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(true), 
+                                  child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                      onDismissed: (direction) {
+                        ref.read(transactionsNotifierProvider.notifier).deleteTransaction(tx.id);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Transaction deleted')),
+                        );
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: InkWell(
+                          onTap: () => _showEditTransactionSheet(context, tx),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: tx.type == TransactionType.revenue ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
+                              child: Icon(
+                                tx.type == TransactionType.revenue ? Icons.add_rounded : Icons.remove_rounded,
+                                color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                              ),
+                            ),
+                            title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.w600)),
+                            subtitle: Text(DateFormat.yMMMd().format(tx.date)),
+                            trailing: Text(
+                              currencyFormat.format(tx.amount),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -289,6 +369,15 @@ class DashboardScreen extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => const _ManageLandsSheet(),
+    );
+  }
+
+  void _showEditTransactionSheet(BuildContext context, Transaction transaction) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TransactionBottomSheet(transaction: transaction),
     );
   }
 }

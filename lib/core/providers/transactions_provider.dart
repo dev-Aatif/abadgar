@@ -72,6 +72,30 @@ class TransactionsNotifier extends _$TransactionsNotifier {
     }
   }
 
+  Future<void> updateTransaction({
+    required String id,
+    required double amount,
+    required String type,
+    String? category,
+    String? notes,
+    required DateTime date,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await ref.read(transactionRepositoryProvider).updateTransaction(
+        id: id,
+        amount: amount,
+        category: category,
+        date: date,
+        type: type,
+        notes: notes,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
   Future<void> addYieldLog({
     required String seasonId,
     required double totalWeight,

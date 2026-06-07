@@ -45,6 +45,15 @@ class SupabaseConnector extends PowerSyncBackendConnector {
         }
       }
       await transaction.complete();
+    } on PostgrestException catch (e) {
+      if (e.code == '23505' || e.code == '42P01') {
+        // Persistent errors: e.g. duplicate key, undefined table -> drop transaction to unblock sync queue
+        debugPrint('Persistent sync constraint/schema error: ${e.message}. Dropping batch to unblock queue.');
+        await transaction.complete();
+      } else {
+        debugPrint('Transient sync error: ${e.message}. Will retry.');
+        rethrow;
+      }
     } catch (e) {
       debugPrint('Fatal sync error: $e');
       // Allow PowerSync to retry this batch on next cycle

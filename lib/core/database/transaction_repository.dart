@@ -41,6 +41,38 @@ class TransactionRepository {
     );
   }
 
+  Future<void> updateTransaction({
+    required String id,
+    required double amount,
+    required String type,
+    String? category,
+    String? notes,
+    double? quantity,
+    String? buyerName,
+    required DateTime date,
+  }) async {
+    final now = DateTime.now().toIso8601String();
+
+    await _db.execute(
+      '''
+      UPDATE transactions 
+      SET amount = ?, type = ?, date = ?, category = ?, notes = ?, quantity = ?, buyer_name = ?, updated_at = ?
+      WHERE id = ?
+      ''',
+      [
+        amount,
+        type,
+        date.toIso8601String(),
+        category,
+        notes,
+        quantity,
+        buyerName,
+        now,
+        id,
+      ],
+    );
+  }
+
   Future<void> saveYieldLog({
     required String seasonId,
     required double totalWeight,

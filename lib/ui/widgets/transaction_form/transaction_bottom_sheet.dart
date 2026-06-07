@@ -4,14 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
-import 'parts/expense_form.dart';
+import '../../../core/models/transaction.dart';
+import '../../../core/constants/enums.dart';
+import 'parts/generic_transaction_form.dart';
 import 'parts/yield_form.dart'; // This will be our unified Harvest form
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
-enum TransactionMode { expense, harvest }
+enum TransactionMode { expense, revenue, harvest }
 
 class TransactionBottomSheet extends ConsumerStatefulWidget {
-  const TransactionBottomSheet({super.key});
+  final Transaction? transaction;
+  
+  const TransactionBottomSheet({super.key, this.transaction});
 
   @override
   ConsumerState<TransactionBottomSheet> createState() => _TransactionBottomSheetState();
@@ -25,9 +29,15 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
   @override
   void initState() {
     super.initState();
-    _sessionSeasonId = ref.read(activeSeasonIdProvider);
-    if (_sessionSeasonId != null) {
+    if (widget.transaction != null) {
+      _sessionSeasonId = widget.transaction!.seasonId;
       _selectingSeason = false;
+      _mode = widget.transaction!.type == TransactionType.revenue ? TransactionMode.revenue : TransactionMode.expense;
+    } else {
+      _sessionSeasonId = ref.read(activeSeasonIdProvider);
+      if (_sessionSeasonId != null) {
+        _selectingSeason = false;
+      }
     }
   }
 
@@ -136,11 +146,11 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
       child: Row(
         children: TransactionMode.values.map((mode) {
           final isSelected = _mode == mode;
-          String label = mode == TransactionMode.expense ? 'EXPENSE' : 'HARVEST / YIELD';
+          String label = mode == TransactionMode.expense ? 'EXPENSE' : mode == TransactionMode.revenue ? 'REVENUE' : 'HARVEST';
           
           return Expanded(
             child: GestureDetector(
-              onTap: () {
+              onTap: widget.transaction != null ? null : () {
                 setState(() => _mode = mode);
                 HapticFeedback.mediumImpact();
               },
@@ -154,7 +164,7 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
                 child: Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.grey,
+                    color: isSelected ? Colors.white : (widget.transaction != null ? Colors.grey.withOpacity(0.5) : Colors.grey),
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
                   ),
@@ -170,7 +180,9 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
   Widget _buildForm({required String seasonId}) {
     switch (_mode) {
       case TransactionMode.expense:
-        return ExpenseForm(key: const ValueKey('expense'), seasonId: seasonId);
+        return GenericTransactionForm(key: const ValueKey('expense'), seasonId: seasonId, type: TransactionType.expense, transaction: widget.transaction);
+      case TransactionMode.revenue:
+        return GenericTransactionForm(key: const ValueKey('revenue'), seasonId: seasonId, type: TransactionType.revenue, transaction: widget.transaction);
       case TransactionMode.harvest:
         return YieldForm(key: const ValueKey('harvest'), seasonId: seasonId);
     }

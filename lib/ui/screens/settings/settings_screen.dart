@@ -10,6 +10,9 @@ import '../../../core/services/github_updater.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/lands_provider.dart';
 import '../../../core/models/land.dart';
+import '../../../core/providers/auth_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -21,136 +24,210 @@ class SettingsScreen extends ConsumerWidget {
     final dbAsync = ref.watch(powerSyncDatabaseProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      appBar: AppBar(title: Text(AppLocalizations.of(context)!.settings, style: const TextStyle(fontWeight: FontWeight.bold))),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _SectionHeader(title: 'FARM PROFILE'),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: ListTile(
-              leading: const Icon(Icons.landscape_rounded),
-              title: const Text('Manage Lands'),
-              subtitle: const Text('Define your farm area'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => _showManageLandsSheet(context, ref),
-            ),
+          _buildProfileHeader(context, ref),
+          const SizedBox(height: 32),
+
+          _SectionHeader(title: AppLocalizations.of(context)!.farmProfile.toUpperCase()),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.landscape_rounded,
+            color: Colors.green,
+            title: AppLocalizations.of(context)!.manageLands,
+            subtitle: AppLocalizations.of(context)!.defineFarmArea,
+            onTap: () => _showManageLandsSheet(context, ref),
           ),
           const SizedBox(height: 24),
 
           _SectionHeader(title: AppLocalizations.of(context)!.appearance.toUpperCase()),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.dark_mode_rounded),
-                  title: Text(AppLocalizations.of(context)!.themeMode, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(themeMode.value?.name.toUpperCase() ?? '...', overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                  onTap: () => _showThemeDialog(context, ref),
-                ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.language_rounded),
-                  title: Text(AppLocalizations.of(context)!.language, overflow: TextOverflow.ellipsis),
-                  subtitle: Text(_getLocaleName(locale.value ?? const Locale('en')), overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                  onTap: () => _showLanguageDialog(context, ref),
-                ),
-              ],
-            ),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.dark_mode_rounded,
+            color: Colors.purple,
+            title: AppLocalizations.of(context)!.themeMode,
+            subtitle: _getThemeModeName(context, themeMode.value ?? ThemeMode.system),
+            onTap: () => _showThemeDialog(context, ref),
+          ),
+          const SizedBox(height: 8),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.language_rounded,
+            color: Colors.blue,
+            title: AppLocalizations.of(context)!.language,
+            subtitle: _getLocaleName(locale.value ?? const Locale('en')),
+            onTap: () => _showLanguageDialog(context, ref),
           ),
           const SizedBox(height: 24),
           
           _SectionHeader(title: AppLocalizations.of(context)!.dataManagement.toUpperCase()),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.file_upload_outlined),
-                  title: Text(AppLocalizations.of(context)!.exportData, overflow: TextOverflow.ellipsis),
-                  subtitle: const Text('Share backup', overflow: TextOverflow.ellipsis),
-                  onTap: () async {
-                    final db = await ref.read(powerSyncDatabaseProvider.future);
-                    await ExportService(db).exportDatabase();
-                  },
-                ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.download_rounded),
-                  title: Text(AppLocalizations.of(context)!.downloadData, overflow: TextOverflow.ellipsis),
-                  subtitle: const Text('Save to device', overflow: TextOverflow.ellipsis),
-                  onTap: () async {
-                    final db = await ref.read(powerSyncDatabaseProvider.future);
-                    await ExportService(db).downloadDatabase();
-                  },
-                ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.file_download_outlined),
-                  title: Text(AppLocalizations.of(context)!.importData, overflow: TextOverflow.ellipsis),
-                  subtitle: const Text('Restore backup', overflow: TextOverflow.ellipsis),
-                  onTap: () async {
-                    final db = await ref.read(powerSyncDatabaseProvider.future);
-                    final success = await ImportService(db).importDatabase();
-                    if (success && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Import Successful!')));
-                    }
-                  },
-                ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.sync_rounded),
-                  title: Text(AppLocalizations.of(context)!.manualSync, overflow: TextOverflow.ellipsis),
-                  subtitle: dbAsync.when(
-                    data: (db) => Text(AppLocalizations.of(context)!.connected, overflow: TextOverflow.ellipsis),
-                    loading: () => Text(AppLocalizations.of(context)!.connecting, overflow: TextOverflow.ellipsis),
-                    error: (_, __) => Text(AppLocalizations.of(context)!.offline, overflow: TextOverflow.ellipsis),
-                  ),
-                  onTap: () {},
-                ),
-              ],
-            ),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.file_upload_outlined,
+            color: Colors.orange,
+            title: AppLocalizations.of(context)!.exportData,
+            subtitle: AppLocalizations.of(context)!.shareBackup,
+            onTap: () async {
+              final db = await ref.read(powerSyncDatabaseProvider.future);
+              await ExportService(db).exportDatabase();
+            },
           ),
+          const SizedBox(height: 8),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.download_rounded,
+            color: Colors.teal,
+            title: AppLocalizations.of(context)!.downloadData,
+            subtitle: AppLocalizations.of(context)!.saveToDevice,
+            onTap: () async {
+              final db = await ref.read(powerSyncDatabaseProvider.future);
+              await ExportService(db).downloadDatabase();
+            },
+          ),
+          const SizedBox(height: 8),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.file_download_outlined,
+            color: Colors.redAccent,
+            title: AppLocalizations.of(context)!.importData,
+            subtitle: AppLocalizations.of(context)!.restoreBackup,
+            onTap: () async {
+              final db = await ref.read(powerSyncDatabaseProvider.future);
+              final success = await ImportService(db).importDatabase();
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.importSuccessful)));
+              }
+            },
+          ),
+
           const SizedBox(height: 24),
 
           _SectionHeader(title: AppLocalizations.of(context)!.about.toUpperCase()),
-          Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          _buildSettingsTile(
+            context: context,
+            icon: Icons.system_update_rounded,
+            color: Colors.deepOrange,
+            title: AppLocalizations.of(context)!.checkUpdates,
+            onTap: () async {
+              try {
+                final update = await GithubUpdater.checkForUpdates();
+                if (context.mounted) {
+                  _showUpdateDialog(context, update);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.updateCheckFailed)));
+                }
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              return _buildSettingsTile(
+                context: context,
+                icon: Icons.info_outline_rounded,
+                color: Colors.blueGrey,
+                title: AppLocalizations.of(context)!.version,
+                subtitle: snapshot.data?.version ?? AppLocalizations.of(context)!.loading,
+                trailing: const SizedBox.shrink(),
+              );
+            },
+          ),
+          const SizedBox(height: 120),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+    final user = authState?.user;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            child: const Icon(Icons.person_rounded, size: 36, color: Colors.white),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.system_update_rounded),
-                  title: Text(AppLocalizations.of(context)!.checkUpdates, overflow: TextOverflow.ellipsis),
-                  onTap: () async {
-                    try {
-                      final update = await GithubUpdater.checkForUpdates();
-                      if (context.mounted) {
-                        _showUpdateDialog(context, update);
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No updates found or failed to check.')));
-                      }
-                    }
-                  },
+                Text(
+                  AppLocalizations.of(context)!.account,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const Divider(height: 1, indent: 56),
-                FutureBuilder<PackageInfo>(
-                  future: PackageInfo.fromPlatform(),
-                  builder: (context, snapshot) {
-                    return ListTile(
-                      leading: const Icon(Icons.info_outline_rounded),
-                      title: Text(AppLocalizations.of(context)!.version, overflow: TextOverflow.ellipsis),
-                      subtitle: Text(snapshot.data?.version ?? 'Loading...', overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                    );
-                  },
+                const SizedBox(height: 4),
+                Text(
+                  user?.email != null 
+                    ? AppLocalizations.of(context)!.loggedInAs(user!.email!)
+                    : AppLocalizations.of(context)!.guestUser,
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 120),
               ],
             ),
           ),
+          if (user != null)
+            IconButton(
+              icon: const Icon(Icons.logout_rounded, color: Colors.red),
+              onPressed: () {
+                ref.read(authStateProvider.notifier).signOut();
+              },
+              tooltip: AppLocalizations.of(context)!.signOut,
+            )
+          else
+            TextButton(
+              onPressed: () => context.push('/auth'),
+              child: Text(AppLocalizations.of(context)!.signIn),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required Color color,
+    String? subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        title: Text(title, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: subtitle != null ? Text(subtitle, overflow: TextOverflow.ellipsis, style: TextStyle(color: Theme.of(context).colorScheme.primary)) : null,
+        trailing: trailing ?? const Icon(Icons.chevron_right_rounded, color: Colors.grey),
+        onTap: onTap,
       ),
     );
   }
@@ -170,6 +247,14 @@ class SettingsScreen extends ConsumerWidget {
       case 'ur': return 'Urdu (اردو)';
       case 'sd': return 'Sindhi (سنڌي)';
       default: return 'English';
+    }
+  }
+
+  String _getThemeModeName(BuildContext context, ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system: return AppLocalizations.of(context)!.themeSystem;
+      case ThemeMode.light: return AppLocalizations.of(context)!.themeLight;
+      case ThemeMode.dark: return AppLocalizations.of(context)!.themeDark;
     }
   }
 
@@ -196,12 +281,12 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Theme'),
+        title: Text(AppLocalizations.of(context)!.selectTheme),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: ThemeMode.values.map((mode) {
              return RadioListTile<ThemeMode>(
-               title: Text(mode.name.toUpperCase()),
+               title: Text(_getThemeModeName(context, mode)),
                value: mode,
                groupValue: ref.watch(themeModeNotifierProvider).value,
                onChanged: (val) {
@@ -219,14 +304,17 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(update.isUpdateAvailable ? 'Update Available!' : 'You are up to date'),
+        title: Text(update.isUpdateAvailable ? AppLocalizations.of(context)!.updateAvailable : AppLocalizations.of(context)!.upToDate),
         content: Text(update.isUpdateAvailable 
-            ? 'Latest version: ${update.latestVersion}\n\n${update.releaseNotes}'
-            : 'You are using the latest version of Abadgar.'),
+            ? AppLocalizations.of(context)!.latestVersion(update.latestVersion) + '\n\n${update.releaseNotes}'
+            : AppLocalizations.of(context)!.upToDateContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.close)),
           if (update.isUpdateAvailable)
-            ElevatedButton(onPressed: () {}, child: const Text('Download')),
+            ElevatedButton(
+              onPressed: () => launchUrl(Uri.parse(update.downloadUrl)), 
+              child: Text(AppLocalizations.of(context)!.download)
+            ),
         ],
       ),
     );
@@ -241,6 +329,13 @@ class _ManageLandsContent extends ConsumerStatefulWidget {
 class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
   final _nameController = TextEditingController();
   final _areaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _areaController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +358,7 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
         children: [
           Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
           const SizedBox(height: 16),
-          Text('Manage Lands', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          Text(AppLocalizations.of(context)!.manageLands, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           
           // Add New Land Form
@@ -274,17 +369,17 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  TextField(controller: _nameController, decoration: const InputDecoration(labelText: 'Land Name', prefixIcon: Icon(Icons.title))),
+                  TextField(controller: _nameController, decoration: InputDecoration(labelText: AppLocalizations.of(context)!.landName, prefixIcon: const Icon(Icons.title))),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _areaController, 
                     keyboardType: const TextInputType.numberWithOptions(decimal: true), 
-                    decoration: const InputDecoration(labelText: 'Area', suffixText: 'Acres', prefixIcon: Icon(Icons.square_foot)),
+                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.area, suffixText: 'Acres', prefixIcon: const Icon(Icons.square_foot)),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _add, 
-                    child: const Text('Add Land'),
+                    child: Text(AppLocalizations.of(context)!.addLand),
                   ),
                 ],
               ),
@@ -307,7 +402,7 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
               )).toList(),
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Text('Error: $err'),
+            error: (err, _) => Text(AppLocalizations.of(context)!.errorGeneral(err.toString())),
           ),
         ],
       ),
@@ -321,6 +416,9 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
       ref.read(landsNotifierProvider.notifier).addLand(name: name, area: area);
       _nameController.clear();
       _areaController.clear();
+      FocusScope.of(context).unfocus();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.invalidLandDetails)));
     }
   }
 }

@@ -35,6 +35,7 @@ class ImportService {
     final seasons = data['seasons'] as List<dynamic>;
     final transactions = data['transactions'] as List<dynamic>;
     final yieldLogs = (data['yield_logs'] as List<dynamic>?) ?? [];
+    final lands = (data['lands'] as List<dynamic>?) ?? [];
 
     await db.writeTransaction((tx) async {
       for (var season in seasons) {
@@ -101,18 +102,45 @@ class ImportService {
         final seasonId = _validateString(log['season_id'], 'Season ID');
         final totalWeight = _validateNum(log['total_weight'], 'Total Weight').toDouble();
         final unit = _validateString(log['unit'], 'Unit');
+        final disposition = log['disposition']?.toString() ?? 'Sold';
+        final salePrice = log['sale_price'] != null ? _validateNum(log['sale_price'], 'Sale Price').toDouble() : null;
+        final destination = log['destination']?.toString();
         final date = _validateString(log['date'], 'Date');
         final createdAt = _validateString(log['created_at'], 'Created At');
         final updatedAt = _validateString(log['updated_at'], 'Updated At');
 
         await tx.execute(
-          'INSERT OR REPLACE INTO yield_logs(id, season_id, total_weight, unit, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          'INSERT OR REPLACE INTO yield_logs(id, season_id, total_weight, unit, disposition, sale_price, destination, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [
             id,
             seasonId,
             totalWeight,
             unit,
+            disposition,
+            salePrice,
+            destination,
             date,
+            createdAt,
+            updatedAt,
+          ],
+        );
+      }
+
+      for (var land in lands) {
+        if (land is! Map<String, dynamic>) continue;
+
+        final id = _validateString(land['id'], 'Land ID');
+        final name = _validateString(land['name'], 'Land Name');
+        final area = _validateNum(land['area'], 'Land Area').toDouble();
+        final createdAt = _validateString(land['created_at'], 'Created At');
+        final updatedAt = _validateString(land['updated_at'], 'Updated At');
+
+        await tx.execute(
+          'INSERT OR REPLACE INTO lands(id, name, area, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+          [
+            id,
+            name,
+            area,
             createdAt,
             updatedAt,
           ],

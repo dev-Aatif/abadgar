@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../../core/providers/comparison_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/analytics_selection_provider.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
@@ -22,8 +26,13 @@ class AnalyticsScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Season Insights', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(AppLocalizations.of(context)!.seasonInsights, style: const TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          if (comparisonAsync.value != null)
+            IconButton(
+              icon: const Icon(Icons.share_rounded),
+              onPressed: () => _shareReport(context, comparisonAsync.value),
+            ),
           seasonsAsync.when(
             data: (seasons) => seasons.isEmpty 
               ? const SizedBox.shrink()
@@ -56,7 +65,7 @@ class AnalyticsScreen extends ConsumerWidget {
               ? _buildNoDataState(context)
               : _buildAnalyticsBody(context, comparison, currencyFormat, ref),
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text('Error loading insights: $err')),
+            error: (err, _) => Center(child: Text(AppLocalizations.of(context)!.errorGeneral(err.toString()))),
           ),
     );
   }
@@ -72,6 +81,11 @@ class AnalyticsScreen extends ConsumerWidget {
           _buildStatsGrid(context, comparison, format),
           const SizedBox(height: 32),
           _buildComparisonCard(context, comparison, format),
+          if (comparison.previousSeason != null && comparison.previousSummary != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 32),
+              child: _buildPerformanceGraph(context, comparison, format),
+            ),
           const SizedBox(height: 32),
           _buildExpenseBreakdown(context, comparison, format),
           const SizedBox(height: 100), // Spacing for navbar
@@ -89,7 +103,7 @@ class AnalyticsScreen extends ConsumerWidget {
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         Text(
-          'Detailed performance report for this season',
+          AppLocalizations.of(context)!.detailedReport,
           style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       ],
@@ -106,10 +120,10 @@ class AnalyticsScreen extends ConsumerWidget {
       crossAxisSpacing: 16,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(context, 'Total Revenue', format.format(summary.totalRevenue), Icons.payments_rounded, Colors.green),
-        _buildStatCard(context, 'Total Expenses', format.format(summary.totalExpenses), Icons.shopping_basket_rounded, Colors.orange),
-        _buildStatCard(context, 'Net Profit', format.format(summary.profit), Icons.account_balance_rounded, Colors.blue),
-        _buildStatCard(context, 'Cost / Acre', format.format(summary.totalExpenses / (comparison.currentSeason.landArea > 0 ? comparison.currentSeason.landArea : 1)), Icons.landscape_rounded, Colors.brown),
+        _buildStatCard(context, AppLocalizations.of(context)!.totalRevenue, format.format(summary.totalRevenue), Icons.payments_rounded, Colors.green),
+        _buildStatCard(context, AppLocalizations.of(context)!.totalExpenses, format.format(summary.totalExpenses), Icons.shopping_basket_rounded, Colors.orange),
+        _buildStatCard(context, AppLocalizations.of(context)!.netProfit, format.format(summary.profit), Icons.account_balance_rounded, Colors.blue),
+        _buildStatCard(context, AppLocalizations.of(context)!.costPerAcre, format.format(summary.totalExpenses / (comparison.currentSeason.landArea > 0 ? comparison.currentSeason.landArea : 1)), Icons.landscape_rounded, Colors.brown),
       ],
     );
   }
@@ -147,11 +161,11 @@ class AnalyticsScreen extends ConsumerWidget {
           color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Row(
+        child: Row(
           children: [
-            Icon(Icons.info_outline_rounded),
-            SizedBox(width: 12),
-            Expanded(child: Text('Add another season of this crop to see direct comparisons.')),
+            const Icon(Icons.info_outline_rounded),
+            const SizedBox(width: 12),
+            Expanded(child: Text(AppLocalizations.of(context)!.addAnotherSeason)),
           ],
         ),
       );
@@ -168,16 +182,22 @@ class AnalyticsScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text('Smart Comparison', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(AppLocalizations.of(context)!.smartComparison, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 16),
           Text(
-            'Your profit is ${comparison.profitVariance >= 0 ? 'up' : 'down'} by ${(comparison.profitVariance * 100).abs().toStringAsFixed(1)}% compared to ${comparison.previousSeason!.displayName}.',
+            comparison.profitVariance >= 0
+                ? AppLocalizations.of(context)!.profitVarianceUp(
+                    (comparison.profitVariance * 100).abs().toStringAsFixed(1),
+                    comparison.previousSeason!.displayName)
+                : AppLocalizations.of(context)!.profitVarianceDown(
+                    (comparison.profitVariance * 100).abs().toStringAsFixed(1),
+                    comparison.previousSeason!.displayName),
             style: const TextStyle(color: Colors.white, fontSize: 16),
           ),
         ],
@@ -190,10 +210,10 @@ class AnalyticsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Expense Breakdown', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        Text(AppLocalizations.of(context)!.expenseBreakdown, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         const SizedBox(height: 16),
         if (expenses.isEmpty)
-           const Center(child: Text('No expenses recorded yet.'))
+           Center(child: Text(AppLocalizations.of(context)!.noExpenses))
         else
           ...expenses.entries.map((e) => _buildExpenseItem(context, e.key, e.value, comparison.currentSummary.totalExpenses, format)).toList(),
       ],
@@ -225,19 +245,148 @@ class AnalyticsScreen extends ConsumerWidget {
   }
 
   Widget _buildNoSeasonState(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.analytics_outlined, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text('Select a season from the top menu to view analytics.'),
+          const Icon(Icons.analytics_outlined, size: 64, color: Colors.grey),
+          const SizedBox(height: 16),
+          Text(AppLocalizations.of(context)!.selectSeasonForAnalytics),
         ],
       ),
     );
   }
 
   Widget _buildNoDataState(BuildContext context) {
-    return const Center(child: Text('No data found for this season.'));
+    return Center(child: Text(AppLocalizations.of(context)!.noDataFoundForSeason));
+  }
+
+  Widget _buildPerformanceGraph(BuildContext context, SeasonComparison comparison, NumberFormat format) {
+    final curSummary = comparison.currentSummary;
+    final prevSummary = comparison.previousSummary!;
+    final curName = comparison.currentSeason.displayName;
+    final prevName = comparison.previousSeason!.displayName;
+
+    final maxY = [
+      curSummary.totalRevenue,
+      curSummary.totalExpenses,
+      prevSummary.totalRevenue,
+      prevSummary.totalExpenses,
+    ].reduce((a, b) => a > b ? a : b);
+
+    // If everything is 0, don't show graph
+    if (maxY == 0) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Year-over-Year Performance', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 250,
+          child: BarChart(
+            BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              maxY: maxY * 1.2,
+              barTouchData: BarTouchData(enabled: false),
+              titlesData: FlTitlesData(
+                show: true,
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (double value, TitleMeta meta) {
+                      const style = TextStyle(fontSize: 12, fontWeight: FontWeight.bold);
+                      Widget text;
+                      switch (value.toInt()) {
+                        case 0: text = Text(prevName, style: style); break;
+                        case 1: text = Text(curName, style: style); break;
+                        default: text = const Text(''); break;
+                      }
+                      return SideTitleWidget(axisSide: meta.axisSide, child: text);
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) {
+                      if (value == 0) return const SizedBox.shrink();
+                      return Text(
+                        NumberFormat.compact().format(value),
+                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                      );
+                    },
+                  ),
+                ),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.2), strokeWidth: 1),
+              ),
+              borderData: FlBorderData(show: false),
+              barGroups: [
+                BarChartGroupData(
+                  x: 0,
+                  barRods: [
+                    BarChartRodData(toY: prevSummary.totalRevenue, color: Colors.green, width: 16, borderRadius: BorderRadius.circular(4)),
+                    BarChartRodData(toY: prevSummary.totalExpenses, color: Colors.orange, width: 16, borderRadius: BorderRadius.circular(4)),
+                  ],
+                ),
+                BarChartGroupData(
+                  x: 1,
+                  barRods: [
+                    BarChartRodData(toY: curSummary.totalRevenue, color: Colors.green, width: 16, borderRadius: BorderRadius.circular(4)),
+                    BarChartRodData(toY: curSummary.totalExpenses, color: Colors.orange, width: 16, borderRadius: BorderRadius.circular(4)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(width: 12, height: 12, color: Colors.green),
+            const SizedBox(width: 4),
+            const Text('Revenue', style: TextStyle(fontSize: 12)),
+            const SizedBox(width: 16),
+            Container(width: 12, height: 12, color: Colors.orange),
+            const SizedBox(width: 4),
+            const Text('Expenses', style: TextStyle(fontSize: 12)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _shareReport(BuildContext context, SeasonComparison? comparison) {
+    if (comparison == null) return;
+    final format = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
+    final summary = comparison.currentSummary;
+    final season = comparison.currentSeason;
+    
+    final text = '''
+*Abadgar Season Report*
+Season: ${season.displayName}
+Crop: ${season.cropType.value}
+Area: ${season.landArea} Acres
+Status: ${season.status.value}
+
+*Financial Summary*
+Total Revenue: ${format.format(summary.totalRevenue)}
+Total Expenses: ${format.format(summary.totalExpenses)}
+Net Profit: ${format.format(summary.profit)}
+
+*Expense Breakdown*
+${summary.expenseByCategory.entries.map((e) => '- ${e.key}: ${format.format(e.value)}').join('\n')}
+
+Generated via Abadgar App.
+''';
+    Share.share(text);
   }
 }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
+import '../../../core/providers/analytics_selection_provider.dart';
 import '../../../core/providers/lands_provider.dart';
 import '../../../core/models/season.dart';
 import '../../../core/models/land.dart';
@@ -81,7 +82,7 @@ class SeasonsScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(child: Text(AppLocalizations.of(context)!.errorGeneral(err.toString()))),
       ),
     );
   }
@@ -155,7 +156,7 @@ class _ActiveSeasonCard extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(season.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('${season.landArea} Acres • Started ${DateFormat.yMMMd().format(season.startDate)}', style: TextStyle(color: Colors.white.withOpacity(0.8))),
+              Text('${season.landArea} Acres • ${AppLocalizations.of(context)!.seasonStarted} ${DateFormat.yMMMd().format(season.startDate)}', style: TextStyle(color: Colors.white.withOpacity(0.8))),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -175,6 +176,8 @@ class _ActiveSeasonCard extends ConsumerWidget {
                          );
                          if (confirm == true) {
                            ref.read(seasonsNotifierProvider.notifier).updateStatus(season.id, SeasonStatus.completed);
+                           ref.read(analyticsSeasonSelectionProvider.notifier).setSeason(season.id);
+                           context.go('/analytics');
                          }
                       },
                       style: ElevatedButton.styleFrom(
@@ -222,7 +225,7 @@ class _CompletedSeasonTile extends ConsumerWidget {
           children: [
             Text('${season.cropType.value} • ${season.landArea} Acres'),
             if (season.status == SeasonStatus.completed)
-               Text('Finished: ${DateFormat.yMMMd().format(season.endDate ?? season.startDate)}', style: const TextStyle(fontSize: 11)),
+               Text('${AppLocalizations.of(context)!.seasonFinished} ${DateFormat.yMMMd().format(season.endDate ?? season.startDate)}', style: const TextStyle(fontSize: 11)),
           ],
         ),
         trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
@@ -230,7 +233,7 @@ class _CompletedSeasonTile extends ConsumerWidget {
           ref.read(activeSeasonIdProvider.notifier).set(season.id);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Switched focus to ${season.name}'),
+              content: Text(AppLocalizations.of(context)!.switchedFocus(season.name)),
               behavior: SnackBarBehavior.floating,
               backgroundColor: Theme.of(context).colorScheme.primary,
             ),
@@ -284,19 +287,19 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _PillToggle(label: 'Wheat', icon: Icons.grass, isSelected: _cropType == CropType.wheat, onTap: () => setState(() => _cropType = CropType.wheat))),
+              Expanded(child: _PillToggle(label: AppLocalizations.of(context)!.wheat, icon: Icons.grass, isSelected: _cropType == CropType.wheat, onTap: () => setState(() => _cropType = CropType.wheat))),
               const SizedBox(width: 12),
-              Expanded(child: _PillToggle(label: 'Rice', icon: Icons.water_drop, isSelected: _cropType == CropType.rice, onTap: () => setState(() => _cropType = CropType.rice))),
+              Expanded(child: _PillToggle(label: AppLocalizations.of(context)!.rice, icon: Icons.water_drop, isSelected: _cropType == CropType.rice, onTap: () => setState(() => _cropType = CropType.rice))),
             ],
           ),
           const SizedBox(height: 24),
           TextField(
             controller: _yearController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Year',
-              prefixIcon: Icon(Icons.calendar_today_rounded),
-              hintText: '2024',
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.year,
+              prefixIcon: const Icon(Icons.calendar_today_rounded),
+              hintText: AppLocalizations.of(context)!.yearHint,
             ),
           ),
           const SizedBox(height: 16),
@@ -305,13 +308,13 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
               if (lands.isEmpty) {
                 return Column(
                   children: [
-                    const Text('No farm land added yet.', style: TextStyle(color: Colors.red)),
+                    Text(AppLocalizations.of(context)!.noFarmLand, style: const TextStyle(color: Colors.red)),
                     TextButton(
                       onPressed: () {
                         Navigator.pop(context);
                         context.push('/settings'); // Or wherever land management is
                       },
-                      child: const Text('Add Land in Settings'),
+                      child: Text(AppLocalizations.of(context)!.addLandInSettings),
                     ),
                   ],
                 );
@@ -327,7 +330,7 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
               );
             },
             loading: () => const LinearProgressIndicator(),
-            error: (err, _) => Text('Error loading lands: $err'),
+            error: (err, _) => Text(AppLocalizations.of(context)!.errorLoadingLands(err.toString())),
           ),
           const SizedBox(height: 32),
           ElevatedButton(

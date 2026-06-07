@@ -9,7 +9,7 @@ class SharedAmountField extends StatelessWidget {
   const SharedAmountField({
     super.key,
     required this.controller,
-    this.prefix = 'PKR',
+    this.prefix = 'Rs',
     this.hint = '0.00',
     this.autofocus = true,
   });

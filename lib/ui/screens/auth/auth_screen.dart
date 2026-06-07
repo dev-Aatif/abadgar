@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -27,7 +28,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         );
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful! Check your email.')),
+            SnackBar(content: Text(AppLocalizations.of(context)!.registrationSuccess)),
           );
         }
       } else {
@@ -75,7 +76,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     Icon(Icons.agriculture_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(height: 16),
                     Text(
-                      'Abadgar',
+                      AppLocalizations.of(context)!.appTitle,
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.primary,
@@ -83,14 +84,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _isSignUp ? 'Create your account' : 'Welcome back',
+                      _isSignUp ? AppLocalizations.of(context)!.createAccount : AppLocalizations.of(context)!.welcomeBack,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                     ),
                     const SizedBox(height: 32),
                     TextField(
                       controller: _emailController,
                       decoration: InputDecoration(
-                        labelText: 'Email',
+                        labelText: AppLocalizations.of(context)!.email,
                         prefixIcon: const Icon(Icons.email_outlined),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -100,7 +101,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     TextField(
                       controller: _passwordController,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: AppLocalizations.of(context)!.password,
                         prefixIcon: const Icon(Icons.lock_outline),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -115,17 +116,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                       child: _isLoading 
                         ? const CircularProgressIndicator() 
-                        : Text(_isSignUp ? 'Sign Up' : 'Login'),
+                        : Text(_isSignUp ? AppLocalizations.of(context)!.signUp : AppLocalizations.of(context)!.login),
                     ),
                     const SizedBox(height: 16),
                     TextButton(
                       onPressed: () => setState(() => _isSignUp = !_isSignUp),
-                      child: Text(_isSignUp ? 'Already have an account? Login' : 'New to Abadgar? Sign Up'),
+                      child: Text(_isSignUp ? AppLocalizations.of(context)!.alreadyHaveAccount : AppLocalizations.of(context)!.newToAbadgar),
                     ),
                     const Divider(height: 32),
                     TextButton(
                       onPressed: () => context.go('/dashboard'),
-                      child: const Text('Skip for now (Local Only)', style: TextStyle(color: Colors.grey)),
+                      child: Text(AppLocalizations.of(context)!.skipAuth, style: const TextStyle(color: Colors.grey)),
                     ),
                   ],
                 ),

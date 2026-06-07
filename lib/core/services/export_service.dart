@@ -15,6 +15,7 @@ class ExportService {
     final seasons = await db.getAll('SELECT * FROM seasons');
     final transactions = await db.getAll('SELECT * FROM transactions');
     final yieldLogs = await db.getAll('SELECT * FROM yield_logs');
+    final lands = await db.getAll('SELECT * FROM lands');
 
     return {
       'version': 1,
@@ -22,6 +23,7 @@ class ExportService {
       'seasons': seasons,
       'transactions': transactions,
       'yield_logs': yieldLogs,
+      'lands': lands,
     };
   }
 

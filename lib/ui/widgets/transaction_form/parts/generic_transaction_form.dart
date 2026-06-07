@@ -6,23 +6,50 @@ import '../../../../core/providers/transactions_provider.dart';
 import '../../../../core/utils/notifications.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/utils/season_resolver.dart';
+import '../../../../core/models/transaction.dart';
 import 'form_shared.dart';
 
-class ExpenseForm extends ConsumerStatefulWidget {
+class GenericTransactionForm extends ConsumerStatefulWidget {
   final String seasonId;
-  const ExpenseForm({super.key, required this.seasonId});
+  final TransactionType type;
+  final Transaction? transaction;
+
+  const GenericTransactionForm({
+    super.key, 
+    required this.seasonId, 
+    required this.type,
+    this.transaction,
+  });
 
   @override
-  ConsumerState<ExpenseForm> createState() => _ExpenseFormState();
+  ConsumerState<GenericTransactionForm> createState() => _GenericTransactionFormState();
 }
 
-class _ExpenseFormState extends ConsumerState<ExpenseForm> {
-  final _amountController = TextEditingController();
-  final _notesController = TextEditingController();
+class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm> {
+  late final TextEditingController _amountController;
+  late final TextEditingController _notesController;
   String? _selectedCategory;
   DateTime _selectedDate = DateTime.now();
 
-  final List<String> _categories = ['Seed', 'Fertilizer', 'Labor', 'Fuel', 'Pesticide', 'Other'];
+  late final List<String> _categories;
+
+  @override
+  void initState() {
+    super.initState();
+    _categories = widget.type == TransactionType.expense 
+      ? ['Seed', 'Fertilizer', 'Labor', 'Fuel', 'Pesticide', 'Other']
+      : ['Harvest Sale', 'Subsidy', 'Other'];
+
+    if (widget.transaction != null) {
+      _amountController = TextEditingController(text: widget.transaction!.amount.toString());
+      _notesController = TextEditingController(text: widget.transaction!.notes ?? '');
+      _selectedCategory = widget.transaction!.category;
+      _selectedDate = widget.transaction!.date;
+    } else {
+      _amountController = TextEditingController();
+      _notesController = TextEditingController();
+    }
+  }
 
   @override
   void dispose() {
@@ -50,22 +77,33 @@ class _ExpenseFormState extends ConsumerState<ExpenseForm> {
         return;
       }
 
-      await ref.read(transactionsNotifierProvider.notifier).addTransaction(
-        seasonId: seasonId,
-        amount: amount,
-        type: TransactionType.expense.value,
-        category: _selectedCategory!,
-        notes: _notesController.text,
-        date: _selectedDate,
-      );
+      if (widget.transaction != null) {
+        await ref.read(transactionsNotifierProvider.notifier).updateTransaction(
+          id: widget.transaction!.id,
+          amount: amount,
+          type: widget.type.value,
+          category: _selectedCategory!,
+          notes: _notesController.text,
+          date: _selectedDate,
+        );
+      } else {
+        await ref.read(transactionsNotifierProvider.notifier).addTransaction(
+          seasonId: seasonId,
+          amount: amount,
+          type: widget.type.value,
+          category: _selectedCategory!,
+          notes: _notesController.text,
+          date: _selectedDate,
+        );
+      }
       
       if (mounted) {
-        AppNotification.show(context, 'Expense saved successfully!');
+        AppNotification.show(context, '${widget.type == TransactionType.expense ? "Expense" : "Revenue"} saved successfully!');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        AppNotification.show(context, 'Failed to save expense: $e', isError: true);
+        AppNotification.show(context, 'Failed to save transaction: $e', isError: true);
       }
     }
   }
@@ -90,7 +128,7 @@ class _ExpenseFormState extends ConsumerState<ExpenseForm> {
       children: [
         SharedAmountField(controller: _amountController),
         const SizedBox(height: 24),
-        Text(l10n.categoryOther, style: Theme.of(context).textTheme.labelLarge),
+        Text('Category', style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
