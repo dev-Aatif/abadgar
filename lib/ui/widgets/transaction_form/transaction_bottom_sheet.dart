@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/models/transaction.dart';
+import '../../../core/models/yield_log.dart';
 import '../../../core/constants/enums.dart';
 import 'parts/generic_transaction_form.dart';
 import 'parts/yield_form.dart'; // This will be our unified Harvest form
@@ -14,8 +15,9 @@ enum TransactionMode { expense, revenue, harvest }
 
 class TransactionBottomSheet extends ConsumerStatefulWidget {
   final Transaction? transaction;
+  final YieldLog? yieldLog;
   
-  const TransactionBottomSheet({super.key, this.transaction});
+  const TransactionBottomSheet({super.key, this.transaction, this.yieldLog});
 
   @override
   ConsumerState<TransactionBottomSheet> createState() => _TransactionBottomSheetState();
@@ -33,6 +35,10 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
       _sessionSeasonId = widget.transaction!.seasonId;
       _selectingSeason = false;
       _mode = widget.transaction!.type == TransactionType.revenue ? TransactionMode.revenue : TransactionMode.expense;
+    } else if (widget.yieldLog != null) {
+      _sessionSeasonId = widget.yieldLog!.seasonId;
+      _selectingSeason = false;
+      _mode = TransactionMode.harvest;
     } else {
       _sessionSeasonId = ref.read(activeSeasonIdProvider);
       if (_sessionSeasonId != null) {
@@ -150,7 +156,7 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
           
           return Expanded(
             child: GestureDetector(
-              onTap: widget.transaction != null ? null : () {
+              onTap: (widget.transaction != null || widget.yieldLog != null) ? null : () {
                 setState(() => _mode = mode);
                 HapticFeedback.mediumImpact();
               },
@@ -164,7 +170,7 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
                 child: Text(
                   label,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : (widget.transaction != null ? Colors.grey.withOpacity(0.5) : Colors.grey),
+                    color: isSelected ? Colors.white : ((widget.transaction != null || widget.yieldLog != null) ? Colors.grey.withOpacity(0.5) : Colors.grey),
                     fontWeight: FontWeight.bold,
                     fontSize: 10,
                   ),
@@ -184,7 +190,7 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
       case TransactionMode.revenue:
         return GenericTransactionForm(key: const ValueKey('revenue'), seasonId: seasonId, type: TransactionType.revenue, transaction: widget.transaction);
       case TransactionMode.harvest:
-        return YieldForm(key: const ValueKey('harvest'), seasonId: seasonId);
+        return YieldForm(key: const ValueKey('harvest'), seasonId: seasonId, yieldLog: widget.yieldLog);
     }
   }
 }

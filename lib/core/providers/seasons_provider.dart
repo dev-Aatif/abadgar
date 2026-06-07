@@ -79,4 +79,36 @@ class SeasonsNotifier extends _$SeasonsNotifier {
       ],
     );
   }
+
+  Future<void> updateSeason({
+    required String id,
+    required String name,
+    required CropType cropType,
+    required double landArea,
+    required DateTime startDate,
+  }) async {
+    final db = await ref.read(powerSyncDatabaseProvider.future);
+    await db.execute(
+      'UPDATE seasons SET name = ?, crop_type = ?, land_area = ?, start_date = ?, updated_at = ? WHERE id = ?',
+      [
+        name,
+        cropType.value,
+        landArea,
+        startDate.toIso8601String(),
+        DateTime.now().toIso8601String(),
+        id,
+      ],
+    );
+  }
+
+  Future<void> deleteSeason(String id) async {
+    final db = await ref.read(powerSyncDatabaseProvider.future);
+    await db.execute('DELETE FROM seasons WHERE id = ?', [id]);
+    
+    // Check if the deleted season was the active one
+    final activeId = ref.read(activeSeasonIdProvider);
+    if (activeId == id) {
+      ref.read(activeSeasonIdProvider.notifier).clear();
+    }
+  }
 }

@@ -4,6 +4,7 @@ import 'transactions_provider.dart';
 import 'financial_summary_provider.dart';
 import '../models/season.dart';
 import '../models/transaction.dart';
+import '../models/yield_log.dart';
 import '../database/database_provider.dart';
 import '../constants/enums.dart';
 
@@ -26,8 +27,8 @@ class SeasonComparison {
       ? (currentSummary.profit - previousSummary!.profit) / previousSummary!.profit.abs()
       : 0;
 
-  double get yieldVariance => (previousSummary != null && previousSummary!.transactionCount > 0)
-      ? (currentSummary.transactionCount - previousSummary!.transactionCount).toDouble() // Simplified for now
+  double get yieldVariance => (previousSummary != null && previousSummary!.totalYieldWeight > 0)
+      ? (currentSummary.totalYieldWeight - previousSummary!.totalYieldWeight) / previousSummary!.totalYieldWeight
       : 0;
 }
 
@@ -66,8 +67,12 @@ Future<SeasonComparison?> seasonComparison(SeasonComparisonRef ref, String seaso
 Stream<FinancialSummary> seasonSummary(SeasonSummaryRef ref, String seasonId) async* {
   final db = await ref.watch(powerSyncDatabaseProvider.future);
   
-  yield* db.watch('SELECT * FROM transactions WHERE season_id = ?', parameters: [seasonId]).map((rows) {
+  yield* db.watch('SELECT * FROM transactions WHERE season_id = ?', parameters: [seasonId]).asyncMap((rows) async {
     final transactions = rows.map((row) => Transaction.fromRow(row)).toList();
+    
+    // Also fetch yield logs for this season
+    final yieldRows = await db.getAll('SELECT * FROM yield_logs WHERE season_id = ?', [seasonId]);
+    final yieldLogs = yieldRows.map((row) => YieldLog.fromRow(row)).toList();
     
     double revenue = 0;
     double expenses = 0;
@@ -81,12 +86,18 @@ Stream<FinancialSummary> seasonSummary(SeasonSummaryRef ref, String seasonId) as
         catExpenses[tx.category ?? 'Other'] = (catExpenses[tx.category ?? 'Other'] ?? 0) + tx.amount;
       }
     }
+    
+    double totalWeight = 0;
+    for (final yl in yieldLogs) {
+      totalWeight += yl.totalWeight;
+    }
       
     return FinancialSummary(
       totalRevenue: revenue,
       totalExpenses: expenses,
       expenseByCategory: catExpenses,
-      transactionCount: transactions.length,
+      transactionCount: transactions.length + yieldLogs.length,
+      totalYieldWeight: totalWeight,
     );
   });
 }

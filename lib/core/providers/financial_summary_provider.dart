@@ -11,6 +11,7 @@ class FinancialSummary {
   final double totalExpenses;
   final Map<String, double> expenseByCategory;
   final int transactionCount;
+  final double totalYieldWeight;
   
   double get profit => totalRevenue - totalExpenses;
 
@@ -19,6 +20,7 @@ class FinancialSummary {
     required this.totalExpenses,
     required this.expenseByCategory,
     required this.transactionCount,
+    this.totalYieldWeight = 0,
   });
 }
 
@@ -51,10 +53,16 @@ FinancialSummary? financialSummary(FinancialSummaryRef ref) {
   // already creates a corresponding 'revenue' transaction to ensure ledger consistency.
   // YieldLogs are now strictly for physical harvest tracking.
   
+  double totalWeight = 0;
+  for (final yl in yieldLogs) {
+    totalWeight += yl.totalWeight;
+  }
+  
   return FinancialSummary(
     totalRevenue: revenue,
     totalExpenses: expenses,
     expenseByCategory: catExpenses,
     transactionCount: transactions.length + yieldLogs.length,
+    totalYieldWeight: totalWeight,
   );
 }

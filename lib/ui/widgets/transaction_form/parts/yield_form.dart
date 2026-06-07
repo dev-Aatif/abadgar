@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/models/yield_log.dart';
 import '../../../../core/providers/transactions_provider.dart';
 import '../../../../core/utils/season_resolver.dart';
 import '../../../../core/utils/notifications.dart';
@@ -8,7 +10,8 @@ import '../../../../core/constants/enums.dart';
 
 class YieldForm extends ConsumerStatefulWidget {
   final String seasonId;
-  const YieldForm({super.key, required this.seasonId});
+  final YieldLog? yieldLog;
+  const YieldForm({super.key, required this.seasonId, this.yieldLog});
 
   @override
   ConsumerState<YieldForm> createState() => _YieldFormState();
@@ -24,6 +27,17 @@ class _YieldFormState extends ConsumerState<YieldForm> {
   @override
   void initState() {
     super.initState();
+    if (widget.yieldLog != null) {
+      _weightController.text = widget.yieldLog!.totalWeight.toString();
+      if (widget.yieldLog!.salePrice != null) {
+        // Calculate price per unit
+        _pricePerUnitController.text = (widget.yieldLog!.salePrice! / widget.yieldLog!.totalWeight).toString();
+      }
+      _destinationController.text = widget.yieldLog!.destination ?? '';
+      _unit = widget.yieldLog!.unit;
+      _disposition = widget.yieldLog!.disposition;
+    }
+
     _weightController.addListener(_updateState);
     _pricePerUnitController.addListener(_updateState);
   }
@@ -60,27 +74,39 @@ class _YieldFormState extends ConsumerState<YieldForm> {
 
       final totalSalePrice = _disposition == YieldDisposition.sold ? _totalPrice : null;
 
-      // 1. Add the Yield Log (Harvest tracking)
-      await ref.read(transactionsNotifierProvider.notifier).addYieldLog(
-        seasonId: seasonId,
-        totalWeight: weight,
-        unit: _unit.value,
-        disposition: _disposition.value,
-        salePrice: totalSalePrice,
-        destination: _disposition == YieldDisposition.stored ? _destinationController.text : null,
-        date: DateTime.now(),
-      );
-
-      // 2. If sold, automatically create a Revenue transaction for the ledger
-      if (_disposition == YieldDisposition.sold && totalSalePrice != null && totalSalePrice > 0) {
-        await ref.read(transactionsNotifierProvider.notifier).addTransaction(
-          seasonId: seasonId,
-          amount: totalSalePrice,
-          category: 'Harvest Sale',
-          date: DateTime.now(),
-          type: TransactionType.revenue.value,
-          notes: 'Yield: $weight ${_unit.value}',
+      // 1. Add or Update the Yield Log (Harvest tracking)
+      if (widget.yieldLog != null) {
+        await ref.read(transactionsNotifierProvider.notifier).updateYieldLog(
+          id: widget.yieldLog!.id,
+          totalWeight: weight,
+          unit: _unit.value,
+          disposition: _disposition.value,
+          salePrice: totalSalePrice,
+          destination: _disposition == YieldDisposition.stored ? _destinationController.text : null,
+          date: widget.yieldLog!.date,
         );
+      } else {
+        await ref.read(transactionsNotifierProvider.notifier).addYieldLog(
+          seasonId: seasonId,
+          totalWeight: weight,
+          unit: _unit.value,
+          disposition: _disposition.value,
+          salePrice: totalSalePrice,
+          destination: _disposition == YieldDisposition.stored ? _destinationController.text : null,
+          date: DateTime.now(),
+        );
+
+        // 2. If sold, automatically create a Revenue transaction for the ledger (only on creation)
+        if (_disposition == YieldDisposition.sold && totalSalePrice != null && totalSalePrice > 0) {
+          await ref.read(transactionsNotifierProvider.notifier).addTransaction(
+            seasonId: seasonId,
+            amount: totalSalePrice,
+            category: 'Harvest Sale',
+            date: DateTime.now(),
+            type: TransactionType.revenue.value,
+            notes: 'Yield: $weight ${_unit.value}',
+          );
+        }
       }
 
       // Successfully saved
@@ -147,6 +173,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
           TextField(
             controller: _pricePerUnitController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
             decoration: InputDecoration(
               labelText: 'Price per ${_unit.value}',
               prefixIcon: const Icon(Icons.attach_money_rounded),

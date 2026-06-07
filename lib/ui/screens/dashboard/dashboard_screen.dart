@@ -289,7 +289,7 @@ class DashboardScreen extends ConsumerWidget {
                       direction: DismissDirection.endToStart,
                       background: Container(
                         alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
+                        padding: const EdgeInsetsDirectional.only(end: 20),
                         decoration: BoxDecoration(
                           color: Colors.redAccent,
                           borderRadius: BorderRadius.circular(16),
@@ -526,7 +526,22 @@ class _ManageLandsSheetState extends ConsumerState<_ManageLandsSheet> {
                           subtitle: Text('${land.area} Acres'),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                            onPressed: () => ref.read(landsNotifierProvider.notifier).deleteLand(land.id),
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete Field'),
+                                  content: Text('Are you sure you want to delete ${land.name}? This will not delete seasons linked to it.'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                ref.read(landsNotifierProvider.notifier).deleteLand(land.id);
+                              }
+                            },
                           ),
                         ),
                       );

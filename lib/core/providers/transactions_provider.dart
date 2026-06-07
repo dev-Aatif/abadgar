@@ -131,4 +131,40 @@ class TransactionsNotifier extends _$TransactionsNotifier {
       state = AsyncValue.error(e, st);
     }
   }
+
+  Future<void> updateYieldLog({
+    required String id,
+    required double totalWeight,
+    required String unit,
+    required String disposition,
+    double? salePrice,
+    String? destination,
+    required DateTime date,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      await ref.read(transactionRepositoryProvider).updateYieldLog(
+        id: id,
+        totalWeight: totalWeight,
+        unit: unit,
+        disposition: disposition,
+        salePrice: salePrice,
+        destination: destination,
+        date: date,
+      );
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> deleteYieldLog(String id) async {
+    state = const AsyncValue.loading();
+    try {
+      await ref.read(transactionRepositoryProvider).deleteYieldLog(id);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
 }

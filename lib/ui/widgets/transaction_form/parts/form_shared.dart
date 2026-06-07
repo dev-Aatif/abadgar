@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class SharedAmountField extends StatelessWidget {
   final TextEditingController controller;
@@ -20,6 +21,7 @@ class SharedAmountField extends StatelessWidget {
       controller: controller,
       autofocus: autofocus,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
       textAlign: TextAlign.center,
       style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900),
       decoration: InputDecoration(
@@ -51,7 +53,10 @@ class SharedSaveButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: onPressed,
+      onPressed: onPressed != null ? () {
+        HapticFeedback.mediumImpact();
+        onPressed!();
+      } : null,
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(double.infinity, 56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

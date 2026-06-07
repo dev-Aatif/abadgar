@@ -397,7 +397,22 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
                 subtitle: Text('${l.area} Acres'),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
-                  onPressed: () => ref.read(landsNotifierProvider.notifier).deleteLand(l.id),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Field'),
+                        content: Text('Are you sure you want to delete ${l.name}? This will not delete seasons linked to it.'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      ref.read(landsNotifierProvider.notifier).deleteLand(l.id);
+                    }
+                  },
                 ),
               )).toList(),
             ),

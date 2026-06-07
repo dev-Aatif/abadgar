@@ -112,13 +112,13 @@ class SeasonsScreen extends ConsumerWidget {
     );
   }
 
-  void _showCreateSeasonSheet(BuildContext context) {
+  void _showCreateSeasonSheet(BuildContext context, [Season? season]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const CreateSeasonSheet(),
+      builder: (context) => CreateSeasonSheet(season: season),
     );
   }
 }
@@ -150,7 +150,45 @@ class _ActiveSeasonCard extends ConsumerWidget {
                     decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
                     child: Text(season.cropType.value.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
                   ),
-                  const Icon(Icons.eco_rounded, color: Colors.white),
+                  Row(
+                    children: [
+                      const Icon(Icons.eco_rounded, color: Colors.white),
+                      const SizedBox(width: 8),
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+                        onSelected: (value) async {
+                          if (value == 'edit') {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              useSafeArea: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => CreateSeasonSheet(season: season),
+                            );
+                          } else if (value == 'delete') {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text('Delete Season'),
+                                content: Text('Are you sure you want to delete ${season.name}? This cannot be undone.'),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
+                                  TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                                ],
+                              ),
+                            );
+                            if (confirm == true) {
+                              ref.read(seasonsNotifierProvider.notifier).deleteSeason(season.id);
+                            }
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                        ],
+                      ),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -228,7 +266,45 @@ class _CompletedSeasonTile extends ConsumerWidget {
                Text('${AppLocalizations.of(context)!.seasonFinished} ${DateFormat.yMMMd().format(season.endDate ?? season.startDate)}', style: const TextStyle(fontSize: 11)),
           ],
         ),
-        trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PopupMenuButton<String>(
+              icon: Icon(Icons.more_vert_rounded, color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+              onSelected: (value) async {
+                if (value == 'edit') {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    useSafeArea: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => CreateSeasonSheet(season: season),
+                  );
+                } else if (value == 'delete') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Text('Delete Season'),
+                      content: Text('Are you sure you want to delete ${season.name}? This cannot be undone.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
+                        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    ref.read(seasonsNotifierProvider.notifier).deleteSeason(season.id);
+                  }
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+              ],
+            ),
+            Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+          ],
+        ),
         onTap: () {
           ref.read(activeSeasonIdProvider.notifier).set(season.id);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -245,20 +321,27 @@ class _CompletedSeasonTile extends ConsumerWidget {
 }
 
 class CreateSeasonSheet extends ConsumerStatefulWidget {
-  const CreateSeasonSheet({super.key});
+  final Season? season;
+  const CreateSeasonSheet({super.key, this.season});
 
   @override
   ConsumerState<CreateSeasonSheet> createState() => _CreateSeasonSheetState();
 }
 
 class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
-  final _yearController = TextEditingController(text: DateTime.now().year.toString());
+  int _selectedYear = DateTime.now().year;
   Land? _selectedLand;
-  CropType _cropType = CropType.wheat;
+  late CropType _cropType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedYear = widget.season?.startDate.year ?? DateTime.now().year;
+    _cropType = widget.season?.cropType ?? CropType.wheat;
+  }
 
   @override
   void dispose() {
-    _yearController.dispose();
     super.dispose();
   }
 
@@ -293,14 +376,17 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
             ],
           ),
           const SizedBox(height: 24),
-          TextField(
-            controller: _yearController,
-            keyboardType: TextInputType.number,
+          DropdownButtonFormField<int>(
+            value: _selectedYear,
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.year,
               prefixIcon: const Icon(Icons.calendar_today_rounded),
-              hintText: AppLocalizations.of(context)!.yearHint,
             ),
+            items: List.generate(20, (index) {
+              final year = DateTime.now().year - 5 + index;
+              return DropdownMenuItem(value: year, child: Text(year.toString()));
+            }),
+            onChanged: (val) => setState(() => _selectedYear = val!),
           ),
           const SizedBox(height: 16),
           landsAsync.when(
@@ -334,7 +420,7 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
           ),
           const SizedBox(height: 32),
           ElevatedButton(
-            onPressed: (_selectedLand != null && _yearController.text.isNotEmpty) ? _save : null,
+            onPressed: _selectedLand != null ? _save : null,
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -347,17 +433,28 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
   }
 
   void _save() async {
-    final year = _yearController.text;
+    final year = _selectedYear.toString();
     final land = _selectedLand;
 
-    if (year.isNotEmpty && land != null) {
-      final seasonName = '${_cropType.name} - $year';
-      await ref.read(seasonsNotifierProvider.notifier).addSeason(
-        name: seasonName,
-        cropType: _cropType,
-        landArea: land.area,
-        startDate: DateTime(int.parse(year)),
-      );
+    if (land != null) {
+      final seasonName = '${_cropType.name.toUpperCase()} - $year';
+      
+      if (widget.season != null) {
+        await ref.read(seasonsNotifierProvider.notifier).updateSeason(
+          id: widget.season!.id,
+          name: seasonName,
+          cropType: _cropType,
+          landArea: land.area,
+          startDate: DateTime(_selectedYear),
+        );
+      } else {
+        await ref.read(seasonsNotifierProvider.notifier).addSeason(
+          name: seasonName,
+          cropType: _cropType,
+          landArea: land.area,
+          startDate: DateTime(_selectedYear),
+        );
+      }
       if (mounted) Navigator.pop(context);
     }
   }

@@ -37,7 +37,7 @@ class AnalyticsScreen extends ConsumerWidget {
             data: (seasons) => seasons.isEmpty 
               ? const SizedBox.shrink()
               : Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsetsDirectional.only(end: 8.0),
                   child: DropdownButton<String>(
                     value: selectedSeasonId,
                     underline: const SizedBox.shrink(),
@@ -112,6 +112,9 @@ class AnalyticsScreen extends ConsumerWidget {
 
   Widget _buildStatsGrid(BuildContext context, SeasonComparison comparison, NumberFormat format) {
     final summary = comparison.currentSummary;
+    final acres = comparison.currentSeason.landArea > 0 ? comparison.currentSeason.landArea : 1.0;
+    final weightFormat = NumberFormat.decimalPattern();
+
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -123,7 +126,9 @@ class AnalyticsScreen extends ConsumerWidget {
         _buildStatCard(context, AppLocalizations.of(context)!.totalRevenue, format.format(summary.totalRevenue), Icons.payments_rounded, Colors.green),
         _buildStatCard(context, AppLocalizations.of(context)!.totalExpenses, format.format(summary.totalExpenses), Icons.shopping_basket_rounded, Colors.orange),
         _buildStatCard(context, AppLocalizations.of(context)!.netProfit, format.format(summary.profit), Icons.account_balance_rounded, Colors.blue),
-        _buildStatCard(context, AppLocalizations.of(context)!.costPerAcre, format.format(summary.totalExpenses / (comparison.currentSeason.landArea > 0 ? comparison.currentSeason.landArea : 1)), Icons.landscape_rounded, Colors.brown),
+        _buildStatCard(context, AppLocalizations.of(context)!.costPerAcre, format.format(summary.totalExpenses / acres), Icons.landscape_rounded, Colors.brown),
+        _buildStatCard(context, 'Revenue / Acre', format.format(summary.totalRevenue / acres), Icons.monetization_on_rounded, Colors.teal),
+        _buildStatCard(context, 'Yield / Acre', '${weightFormat.format(summary.totalYieldWeight / acres)} Unit', Icons.eco_rounded, Colors.amber.shade700),
       ],
     );
   }
@@ -381,6 +386,12 @@ Status: ${season.status.value}
 Total Revenue: ${format.format(summary.totalRevenue)}
 Total Expenses: ${format.format(summary.totalExpenses)}
 Net Profit: ${format.format(summary.profit)}
+
+*Performance Metrics*
+Cost / Acre: ${format.format(summary.totalExpenses / (season.landArea > 0 ? season.landArea : 1))}
+Revenue / Acre: ${format.format(summary.totalRevenue / (season.landArea > 0 ? season.landArea : 1))}
+Total Yield: ${NumberFormat.decimalPattern().format(summary.totalYieldWeight)}
+Yield / Acre: ${NumberFormat.decimalPattern().format(summary.totalYieldWeight / (season.landArea > 0 ? season.landArea : 1))}
 
 *Expense Breakdown*
 ${summary.expenseByCategory.entries.map((e) => '- ${e.key}: ${format.format(e.value)}').join('\n')}

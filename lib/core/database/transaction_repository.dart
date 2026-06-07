@@ -108,4 +108,37 @@ class TransactionRepository {
   Future<void> deleteTransaction(String id) async {
     await _db.execute('DELETE FROM transactions WHERE id = ?', [id]);
   }
+
+  Future<void> updateYieldLog({
+    required String id,
+    required double totalWeight,
+    required String unit,
+    required String disposition,
+    double? salePrice,
+    String? destination,
+    required DateTime date,
+  }) async {
+    final now = DateTime.now().toIso8601String();
+    await _db.execute(
+      '''
+      UPDATE yield_logs 
+      SET total_weight = ?, unit = ?, disposition = ?, sale_price = ?, destination = ?, date = ?, updated_at = ?
+      WHERE id = ?
+      ''',
+      [
+        totalWeight,
+        unit,
+        disposition,
+        salePrice,
+        destination,
+        date.toIso8601String(),
+        now,
+        id,
+      ],
+    );
+  }
+
+  Future<void> deleteYieldLog(String id) async {
+    await _db.execute('DELETE FROM yield_logs WHERE id = ?', [id]);
+  }
 }
