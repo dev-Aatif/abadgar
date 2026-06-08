@@ -423,7 +423,7 @@ Generated via Abadgar App.
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Multi-Year Profit Trend', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(AppLocalizations.of(context)!.multiYearTrend, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 24),
             SizedBox(
               height: 200,
@@ -492,7 +492,7 @@ Generated via Abadgar App.
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error loading trends: $e')),
+      error: (e, _) => Center(child: Text(AppLocalizations.of(context)!.errorLoadingTrends(e.toString()))),
     );
   }
 }

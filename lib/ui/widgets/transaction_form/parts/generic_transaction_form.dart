@@ -29,6 +29,7 @@ class GenericTransactionForm extends ConsumerStatefulWidget {
 class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm> {
   late TextEditingController _amountController;
   late TextEditingController _notesController;
+  final FocusNode _amountFocusNode = FocusNode();
   String? _selectedCategory;
   DateTime _selectedDate = DateTime.now();
 
@@ -56,6 +57,7 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
   void dispose() {
     _amountController.dispose();
     _notesController.dispose();
+    _amountFocusNode.dispose();
     super.dispose();
   }
 
@@ -115,7 +117,7 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
     }
   }
 
-  void _saveAndAddAnother() async {
+    void _saveAndAddAnother() async {
     final success = await _saveTransaction();
     if (success && mounted) {
       AppNotification.show(context, 'Saved! Add another.');
@@ -126,6 +128,7 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
         _selectedDate = DateTime.now();
         // Keep _selectedCategory — most likely the farmer is adding multiple items in the same category
       });
+      _amountFocusNode.requestFocus();
     }
   }
 
@@ -151,7 +154,10 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SharedAmountField(controller: _amountController),
+        SharedAmountField(
+          controller: _amountController,
+          focusNode: _amountFocusNode,
+        ),
         const SizedBox(height: 24),
         Text(l10n.category, style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 12),

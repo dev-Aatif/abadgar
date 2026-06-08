@@ -173,5 +173,7 @@
   "confirmDeleteTransactionTitle": "ڊاهڻ جي پڪ",
   "dateLabel": "تاريخ",
   "acresUnit": "ايڪڙ",
-  "acresUnitShort": "ايڪڙ"
+  "acresUnitShort": "ايڪڙ",
+  "multiYearTrend": "ڪيترن ئي سالن جي بچت جو رجحان",
+  "errorLoadingTrends": "رجحانات لوڊ ڪرڻ ۾ نقص: {error}"
 }

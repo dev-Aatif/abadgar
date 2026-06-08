@@ -173,5 +173,7 @@
   "confirmDeleteTransactionTitle": "حذف کی تصدیق",
   "dateLabel": "تاریخ",
   "acresUnit": "ایکڑ",
-  "acresUnitShort": "ایکڑ"
+  "acresUnitShort": "ایکڑ",
+  "multiYearTrend": "کئی سالہ منافع کا رجحان",
+  "errorLoadingTrends": "رجحانات لوڈ کرنے میں خرابی: {error}"
 }

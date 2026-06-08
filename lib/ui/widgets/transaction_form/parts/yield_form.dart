@@ -22,6 +22,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
   final _weightController = TextEditingController();
   final _pricePerUnitController = TextEditingController();
   final _destinationController = TextEditingController();
+  final _weightFocusNode = FocusNode();
   YieldUnit _unit = YieldUnit.mund;
   YieldDisposition _disposition = YieldDisposition.sold;
 
@@ -50,6 +51,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
     _weightController.dispose();
     _pricePerUnitController.dispose();
     _destinationController.dispose();
+    _weightFocusNode.dispose();
     super.dispose();
   }
 
@@ -135,7 +137,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
         _pricePerUnitController.clear();
         _destinationController.clear();
       });
-      FocusScope.of(context).previousFocus();
+      _weightFocusNode.requestFocus();
     }
   }
 
@@ -156,6 +158,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
               flex: 2,
               child: SharedAmountField(
                 controller: _weightController,
+                focusNode: _weightFocusNode,
                 prefix: AppLocalizations.of(context)!.yield,
                 hint: '0.0',
               ),

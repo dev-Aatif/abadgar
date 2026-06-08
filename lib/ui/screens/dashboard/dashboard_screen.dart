@@ -109,6 +109,7 @@ class DashboardScreen extends ConsumerWidget {
                               child: DropdownButton<String>(
                                 value: activeSeason.id,
                                 isDense: true,
+                                isExpanded: true,
                                 icon: Icon(Icons.arrow_drop_down_rounded, color: Theme.of(context).colorScheme.onSurface),
                                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                                 items: seasonsList.map((s) {

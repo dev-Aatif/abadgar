@@ -228,5 +228,14 @@
   "confirmDeleteTransactionTitle": "Confirm Delete",
   "dateLabel": "Date",
   "acresUnit": "Acres",
-  "acresUnitShort": "Acr"
+  "acresUnitShort": "Acr",
+  "multiYearTrend": "Multi-Year Profit Trend",
+  "errorLoadingTrends": "Error loading trends: {error}",
+  "@errorLoadingTrends": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  }
 }

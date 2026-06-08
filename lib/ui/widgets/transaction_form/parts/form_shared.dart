@@ -6,6 +6,7 @@ class SharedAmountField extends StatelessWidget {
   final String prefix;
   final String hint;
   final bool autofocus;
+  final FocusNode? focusNode;
 
   const SharedAmountField({
     super.key,
@@ -13,12 +14,14 @@ class SharedAmountField extends StatelessWidget {
     this.prefix = 'Rs',
     this.hint = '0.00',
     this.autofocus = true,
+    this.focusNode,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
       autofocus: autofocus,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
