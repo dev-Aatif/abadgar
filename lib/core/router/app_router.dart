@@ -20,7 +20,7 @@ final _settingsNavigatorKey = GlobalKey<NavigatorState>();
 @riverpod
 GoRouter appRouter(AppRouterRef ref) {
   return GoRouter(
-    initialLocation: '/auth',
+    initialLocation: '/dashboard',
     navigatorKey: _rootNavigatorKey,
     debugLogDiagnostics: true,
     routes: [

@@ -6,9 +6,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/financial_summary_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/transactions_provider.dart';
+import '../../../core/providers/comparison_provider.dart';
 import '../../../core/constants/enums.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/models/season.dart';
-import '../../../core/providers/lands_provider.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 import '../../../core/providers/auth_provider.dart';
@@ -28,6 +29,7 @@ class DashboardScreen extends ConsumerWidget {
     final isAuthenticated = ref.watch(authStateProvider) != null;
     final isOfflineVisible = ref.watch(isOfflineAlertVisibleProvider);
     final seasonsList = ref.watch(seasonsProvider).valueOrNull ?? [];
+    final comparisonAsync = activeSeason != null ? ref.watch(seasonComparisonProvider(activeSeason.id)) : null;
     
     final currencyFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
 
@@ -42,13 +44,13 @@ class DashboardScreen extends ConsumerWidget {
                 Icon(Icons.eco_rounded, size: 80, color: Theme.of(context).colorScheme.primary),
                 const SizedBox(height: 24),
                 Text(
-                  'Welcome to Abadgar!',
+                  AppLocalizations.of(context)!.welcomeTitle,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Let\'s get started by creating your first cultivation season. Track expenses, harvest, and see your profit all in one place.',
+                  AppLocalizations.of(context)!.welcomeSubtext,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -56,7 +58,7 @@ class DashboardScreen extends ConsumerWidget {
                 ElevatedButton.icon(
                   onPressed: () => context.push('/seasons'),
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Start New Season'),
+                  label: Text(AppLocalizations.of(context)!.startNewSeason),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 56),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -110,14 +112,8 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    IconButton.filledTonal(
-                      tooltip: 'Manage Land',
-                      onPressed: () => _showManageLandsSheet(context, ref),
-                      icon: const Icon(Icons.landscape_rounded),
-                    ),
-                    const SizedBox(width: 8),
                     IconButton.filled(
-                      tooltip: 'Change Season',
+                      tooltip: AppLocalizations.of(context)!.changeSeason,
                       onPressed: () => context.push('/seasons'),
                       icon: const Icon(Icons.swap_horiz_rounded),
                     ),
@@ -187,34 +183,92 @@ class DashboardScreen extends ConsumerWidget {
                     _MetricCard(
                     title: AppLocalizations.of(context)!.totalRevenue,
                     value: currencyFormat.format(summary?.totalRevenue ?? 0),
-                    color: const Color(0xFF10B981), // Emerald
+                    color: AppColors.revenue,
                     icon: Icons.trending_up_rounded,
                   ),
                   _MetricCard(
                     title: AppLocalizations.of(context)!.totalExpenses,
                     value: currencyFormat.format(summary?.totalExpenses ?? 0),
-                    color: const Color(0xFFF59E0B), // Amber/Orange
+                    color: AppColors.expense,
                     icon: Icons.trending_down_rounded,
                   ),
                 ]),
               ),
             ),
-            
+
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
-            
-            // Profit Card
-            SliverPadding(
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
-              sliver: SliverToBoxAdapter(
-                child: _MetricCard(
-                  title: AppLocalizations.of(context)!.netProfit,
-                  value: currencyFormat.format(summary?.profit ?? 0),
-                  color: Theme.of(context).colorScheme.primary,
-                  icon: Icons.account_balance_wallet_rounded,
-                  isWide: true,
+
+            // Season Comparison Card
+            if (comparisonAsync != null)
+              SliverToBoxAdapter(
+                child: comparisonAsync.when(
+                  data: (comparison) {
+                    if (comparison == null || comparison.previousSeason == null) return const SizedBox.shrink();
+                    final variance = comparison.profitVariance;
+                    final isUp = variance >= 0;
+                    final pct = (variance.abs() * 100).toStringAsFixed(1);
+                    final prevName = comparison.previousSeason!.name;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isUp
+                              ? [AppColors.revenue.withOpacity(0.08), AppColors.revenue.withOpacity(0.02)]
+                              : [AppColors.expense.withOpacity(0.08), AppColors.expense.withOpacity(0.02)],
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: (isUp ? AppColors.revenue : AppColors.expense).withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: (isUp ? AppColors.revenue : AppColors.expense).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                isUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                                color: isUp ? AppColors.revenue : AppColors.expense,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isUp
+                                      ? AppLocalizations.of(context)!.profitVarianceUp(pct, prevName)
+                                      : AppLocalizations.of(context)!.profitVarianceDown(pct, prevName),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: isUp ? AppColors.revenue : AppColors.expense,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${AppLocalizations.of(context)!.netProfit}: ${currencyFormat.format(comparison.currentSummary.profit)}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ),
-            ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
@@ -239,7 +293,7 @@ class DashboardScreen extends ConsumerWidget {
                                 centerSpaceRadius: 40,
                                 sections: summary.expenseByCategory.entries.map((e) {
                                   return PieChartSectionData(
-                                    color: _getCategoryColor(e.key),
+                                    color: AppColors.forCategory(e.key),
                                     value: e.value,
                                     title: '',
                                     radius: 50,
@@ -256,7 +310,7 @@ class DashboardScreen extends ConsumerWidget {
                                return Row(
                                  mainAxisSize: MainAxisSize.min,
                                  children: [
-                                   Container(width: 12, height: 12, decoration: BoxDecoration(color: _getCategoryColor(cat), shape: BoxShape.circle)),
+                                   Container(width: 12, height: 12, decoration: BoxDecoration(color: AppColors.forCategory(cat), shape: BoxShape.circle)),
                                    const SizedBox(width: 4),
                                    Text(cat, style: const TextStyle(fontSize: 12)),
                                  ],
@@ -280,7 +334,7 @@ class DashboardScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(AppLocalizations.of(context)!.ledger, style: Theme.of(context).textTheme.titleLarge),
-                    TextButton(onPressed: () => context.go('/ledger'), child: const Text('See All')), // To localize later
+                    TextButton(onPressed: () => context.go('/ledger'), child: Text(AppLocalizations.of(context)!.seeAll)),
                   ],
                 ),
               ),
@@ -309,13 +363,13 @@ class DashboardScreen extends ConsumerWidget {
                           context: context,
                           builder: (BuildContext context) {
                             return AlertDialog(
-                              title: const Text('Confirm Delete'),
+                              title: Text(AppLocalizations.of(context)!.confirmDeleteTransactionTitle),
                               content: const Text('Are you sure you want to delete this transaction?'),
                               actions: [
-                                TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('Cancel')),
+                                TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
                                 TextButton(
                                   onPressed: () => Navigator.of(context).pop(true), 
-                                  child: const Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                  child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: Colors.redAccent)),
                                 ),
                               ],
                             );
@@ -325,7 +379,7 @@ class DashboardScreen extends ConsumerWidget {
                       onDismissed: (direction) {
                         ref.read(transactionsNotifierProvider.notifier).deleteTransaction(tx.id);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Transaction deleted')),
+                          SnackBar(content: Text(AppLocalizations.of(context)!.transactionDeleted)),
                         );
                       },
                       child: Card(
@@ -334,10 +388,10 @@ class DashboardScreen extends ConsumerWidget {
                           onTap: () => _showEditTransactionSheet(context, tx),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: tx.type == TransactionType.revenue ? const Color(0xFF10B981).withOpacity(0.1) : const Color(0xFFF59E0B).withOpacity(0.1),
+                              backgroundColor: tx.type == TransactionType.revenue ? AppColors.revenue.withOpacity(0.1) : AppColors.expense.withOpacity(0.1),
                               child: Icon(
                                 tx.type == TransactionType.revenue ? Icons.add_rounded : Icons.remove_rounded,
-                                color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                color: tx.type == TransactionType.revenue ? AppColors.revenue : AppColors.expense,
                               ),
                             ),
                             title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -346,7 +400,7 @@ class DashboardScreen extends ConsumerWidget {
                               currencyFormat.format(tx.amount),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: tx.type == TransactionType.revenue ? const Color(0xFF10B981) : const Color(0xFFF59E0B),
+                                color: tx.type == TransactionType.revenue ? AppColors.revenue : AppColors.expense,
                               ),
                             ),
                           ),
@@ -367,19 +421,7 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Color _getCategoryColor(String category) {
-    final colors = [Colors.teal, const Color(0xFFFF6B6B), Colors.amber, Colors.indigo, Colors.brown, Colors.pink];
-    return colors[category.hashCode % colors.length];
-  }
-
-  void _showManageLandsSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const _ManageLandsSheet(),
-    );
-  }
+  // Category colors now centralized in AppColors.forCategory()
 
   void _showEditTransactionSheet(BuildContext context, Transaction transaction) {
     showModalBottomSheet(
@@ -391,192 +433,7 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _ManageLandsSheet extends ConsumerStatefulWidget {
-  const _ManageLandsSheet();
 
-  @override
-  ConsumerState<_ManageLandsSheet> createState() => _ManageLandsSheetState();
-}
-
-class _ManageLandsSheetState extends ConsumerState<_ManageLandsSheet> {
-  final _nameController = TextEditingController();
-  final _areaController = TextEditingController();
-  bool _isAdding = false;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _areaController.dispose();
-    super.dispose();
-  }
-
-  void _submit() async {
-    final name = _nameController.text.trim();
-    final area = double.tryParse(_areaController.text) ?? 0;
-
-    if (name.isEmpty || area <= 0) {
-      AppNotification.show(context, 'Please enter valid name and area.', isError: true);
-      return;
-    }
-
-    try {
-      await ref.read(landsNotifierProvider.notifier).addLand(name: name, area: area);
-      if (mounted) {
-        setState(() {
-          _isAdding = false;
-          _nameController.clear();
-          _areaController.clear();
-        });
-        AppNotification.show(context, 'Field added successfully!');
-      }
-    } catch (e) {
-      if (mounted) {
-        AppNotification.show(context, 'Failed to add field.', isError: true);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final landsAsync = ref.watch(landsProvider);
-
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        left: 24,
-        right: 24,
-        top: 24,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _isAdding ? 'Add New Field' : 'Field Management',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              IconButton(
-                onPressed: () {
-                  if (_isAdding) {
-                    setState(() => _isAdding = false);
-                  } else {
-                    Navigator.pop(context);
-                  }
-                },
-                icon: Icon(_isAdding ? Icons.arrow_back_rounded : Icons.close_rounded),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          if (_isAdding) ...[
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Field Name',
-                prefixIcon: Icon(Icons.badge_rounded),
-                hintText: 'e.g. North Side 40',
-              ),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _areaController,
-              decoration: const InputDecoration(
-                labelText: 'Total Area (Acres)',
-                prefixIcon: Icon(Icons.square_foot_rounded),
-                hintText: 'e.g. 10.5',
-              ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _submit,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: const Text('SAVE FIELD'),
-            ),
-          ] else ...[
-            Expanded(
-              child: landsAsync.when(
-                data: (lands) {
-                  if (lands.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.landscape_outlined, size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text('No fields added yet.', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    );
-                  }
-                  return ListView.builder(
-                    itemCount: lands.length,
-                    itemBuilder: (context, index) {
-                      final land = lands[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                            child: Icon(Icons.terrain_rounded, color: Theme.of(context).colorScheme.primary),
-                          ),
-                          title: Text(land.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('${land.area} Acres'),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text(AppLocalizations.of(context)!.deleteLand),
-                                  content: Text(AppLocalizations.of(context)!.confirmDeleteLand),
-                                  actions: [
-                                    TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
-                                    TextButton(onPressed: () => Navigator.pop(context, true), child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: Colors.red))),
-                                  ],
-                                ),
-                              );
-                              if (confirm == true) {
-                                ref.read(landsNotifierProvider.notifier).deleteLand(land.id);
-                              }
-                            },
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Error: $e')),
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => setState(() => _isAdding = true),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('ADD NEW FIELD'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
 
 class _QuickSummaryCard extends StatelessWidget {
   final Season? activeSeason;
@@ -637,9 +494,9 @@ class _QuickSummaryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _MiniStat(label: 'Revenue', value: curFormat.format(summary?.totalRevenue ?? 0)),
-              _MiniStat(label: 'Expenses', value: curFormat.format(summary?.totalExpenses ?? 0)),
-              _MiniStat(label: 'Area', value: '${activeSeason?.landArea ?? 0} Acr'),
+              _MiniStat(label: AppLocalizations.of(context)!.revenue, value: curFormat.format(summary?.totalRevenue ?? 0)),
+              _MiniStat(label: AppLocalizations.of(context)!.expenses, value: curFormat.format(summary?.totalExpenses ?? 0)),
+              _MiniStat(label: AppLocalizations.of(context)!.areaLabel, value: '${activeSeason?.landArea ?? 0} Acr'),
             ],
           ),
         ],

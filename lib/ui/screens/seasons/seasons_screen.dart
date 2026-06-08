@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/analytics_selection_provider.dart';
-import '../../../core/providers/lands_provider.dart';
+
 import '../../../core/models/season.dart';
-import '../../../core/models/land.dart';
+
 import '../../../core/constants/enums.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
@@ -330,25 +330,32 @@ class CreateSeasonSheet extends ConsumerStatefulWidget {
 
 class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
   int _selectedYear = DateTime.now().year;
-  Land? _selectedLand;
   late CropType _cropType;
+  final _areaController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _selectedYear = widget.season?.startDate.year ?? DateTime.now().year;
     _cropType = widget.season?.cropType ?? CropType.wheat;
+    if (widget.season != null) {
+      _areaController.text = widget.season!.landArea.toString();
+    }
   }
 
   @override
   void dispose() {
+    _areaController.dispose();
     super.dispose();
+  }
+
+  bool get _isValid {
+    final area = double.tryParse(_areaController.text);
+    return area != null && area > 0;
   }
 
   @override
   Widget build(BuildContext context) {
-    final landsAsync = ref.watch(landsProvider);
-
     return Container(
       padding: EdgeInsetsDirectional.only(
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
@@ -389,38 +396,20 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
             onChanged: (val) => setState(() => _selectedYear = val!),
           ),
           const SizedBox(height: 16),
-          landsAsync.when(
-            data: (lands) {
-              if (lands.isEmpty) {
-                return Column(
-                  children: [
-                    Text(AppLocalizations.of(context)!.noFarmLand, style: const TextStyle(color: Colors.red)),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        context.push('/settings'); // Or wherever land management is
-                      },
-                      child: Text(AppLocalizations.of(context)!.addLandInSettings),
-                    ),
-                  ],
-                );
-              }
-              return DropdownButtonFormField<Land>(
-                value: _selectedLand,
-                decoration: InputDecoration(
-                  labelText: AppLocalizations.of(context)!.totalArea,
-                  prefixIcon: const Icon(Icons.square_foot_rounded),
-                ),
-                items: lands.map((l) => DropdownMenuItem(value: l, child: Text('${l.name} (${l.area} Acres)'))).toList(),
-                onChanged: (val) => setState(() => _selectedLand = val),
-              );
-            },
-            loading: () => const LinearProgressIndicator(),
-            error: (err, _) => Text(AppLocalizations.of(context)!.errorLoadingLands(err.toString())),
+          TextField(
+            controller: _areaController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context)!.totalArea,
+              prefixIcon: const Icon(Icons.square_foot_rounded),
+              suffixText: 'Acres',
+              hintText: 'e.g. 12.5',
+            ),
           ),
           const SizedBox(height: 32),
           ElevatedButton(
-            onPressed: _selectedLand != null ? _save : null,
+            onPressed: _isValid ? _save : null,
             style: ElevatedButton.styleFrom(
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -433,32 +422,33 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
   }
 
   void _save() async {
-    final year = _selectedYear.toString();
-    final land = _selectedLand;
+    final area = double.tryParse(_areaController.text) ?? 0;
+    if (area <= 0) return;
 
-    if (land != null) {
-      final seasonName = '${_cropType.name.toUpperCase()} - $year';
-      
-      if (widget.season != null) {
-        await ref.read(seasonsNotifierProvider.notifier).updateSeason(
-          id: widget.season!.id,
-          name: seasonName,
-          cropType: _cropType,
-          landArea: land.area,
-          startDate: DateTime(_selectedYear),
-        );
-      } else {
-        await ref.read(seasonsNotifierProvider.notifier).addSeason(
-          name: seasonName,
-          cropType: _cropType,
-          landArea: land.area,
-          startDate: DateTime(_selectedYear),
-        );
-      }
-      if (mounted) Navigator.pop(context);
+    final year = _selectedYear.toString();
+    final seasonName = '${_cropType.name.toUpperCase()} - $year';
+    
+    if (widget.season != null) {
+      await ref.read(seasonsNotifierProvider.notifier).updateSeason(
+        id: widget.season!.id,
+        name: seasonName,
+        cropType: _cropType,
+        landArea: area,
+        startDate: DateTime(_selectedYear),
+      );
+    } else {
+      await ref.read(seasonsNotifierProvider.notifier).addSeason(
+        name: seasonName,
+        cropType: _cropType,
+        landArea: area,
+        startDate: DateTime(_selectedYear),
+      );
     }
+    if (mounted) Navigator.pop(context);
   }
 }
+
+
 
 class _PillToggle extends StatelessWidget {
   final String label;

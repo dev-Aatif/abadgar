@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../core/providers/comparison_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/analytics_selection_provider.dart';
+import '../../../core/constants/app_colors.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -123,12 +123,12 @@ class AnalyticsScreen extends ConsumerWidget {
       crossAxisSpacing: 16,
       childAspectRatio: 1.5,
       children: [
-        _buildStatCard(context, AppLocalizations.of(context)!.totalRevenue, format.format(summary.totalRevenue), Icons.payments_rounded, Colors.green),
-        _buildStatCard(context, AppLocalizations.of(context)!.totalExpenses, format.format(summary.totalExpenses), Icons.shopping_basket_rounded, Colors.orange),
-        _buildStatCard(context, AppLocalizations.of(context)!.netProfit, format.format(summary.profit), Icons.account_balance_rounded, Colors.blue),
+        _buildStatCard(context, AppLocalizations.of(context)!.totalRevenue, format.format(summary.totalRevenue), Icons.payments_rounded, AppColors.revenue),
+        _buildStatCard(context, AppLocalizations.of(context)!.totalExpenses, format.format(summary.totalExpenses), Icons.shopping_basket_rounded, AppColors.expense),
+        _buildStatCard(context, AppLocalizations.of(context)!.netProfit, format.format(summary.profit), Icons.account_balance_rounded, summary.profit >= 0 ? AppColors.profit : AppColors.loss),
         _buildStatCard(context, AppLocalizations.of(context)!.costPerAcre, format.format(summary.totalExpenses / acres), Icons.landscape_rounded, Colors.brown),
-        _buildStatCard(context, AppLocalizations.of(context)!.revenuePerAcre, format.format(summary.totalRevenue / acres), Icons.monetization_on_rounded, Colors.teal),
-        _buildStatCard(context, AppLocalizations.of(context)!.yieldPerAcre, '${weightFormat.format(summary.totalYieldWeight / acres)} Unit', Icons.eco_rounded, Colors.amber.shade700),
+        _buildStatCard(context, AppLocalizations.of(context)!.revenuePerAcre, format.format(summary.totalRevenue / acres), Icons.monetization_on_rounded, AppColors.revenue),
+        _buildStatCard(context, AppLocalizations.of(context)!.yieldPerAcre, '${weightFormat.format(summary.totalYieldWeight / acres)} Unit', Icons.eco_rounded, AppColors.wheat),
       ],
     );
   }
@@ -337,15 +337,15 @@ class AnalyticsScreen extends ConsumerWidget {
                 BarChartGroupData(
                   x: 0,
                   barRods: [
-                    BarChartRodData(toY: prevSummary.totalRevenue, color: Colors.green, width: 16, borderRadius: BorderRadius.circular(4)),
-                    BarChartRodData(toY: prevSummary.totalExpenses, color: Colors.orange, width: 16, borderRadius: BorderRadius.circular(4)),
+                    BarChartRodData(toY: prevSummary.totalRevenue, color: AppColors.revenue, width: 16, borderRadius: BorderRadius.circular(4)),
+                    BarChartRodData(toY: prevSummary.totalExpenses, color: AppColors.expense, width: 16, borderRadius: BorderRadius.circular(4)),
                   ],
                 ),
                 BarChartGroupData(
                   x: 1,
                   barRods: [
-                    BarChartRodData(toY: curSummary.totalRevenue, color: Colors.green, width: 16, borderRadius: BorderRadius.circular(4)),
-                    BarChartRodData(toY: curSummary.totalExpenses, color: Colors.orange, width: 16, borderRadius: BorderRadius.circular(4)),
+                    BarChartRodData(toY: curSummary.totalRevenue, color: AppColors.revenue, width: 16, borderRadius: BorderRadius.circular(4)),
+                    BarChartRodData(toY: curSummary.totalExpenses, color: AppColors.expense, width: 16, borderRadius: BorderRadius.circular(4)),
                   ],
                 ),
               ],
@@ -356,11 +356,11 @@ class AnalyticsScreen extends ConsumerWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(width: 12, height: 12, color: Colors.green),
+            Container(width: 12, height: 12, color: AppColors.revenue),
             const SizedBox(width: 4),
             const Text('Revenue', style: TextStyle(fontSize: 12)),
             const SizedBox(width: 16),
-            Container(width: 12, height: 12, color: Colors.orange),
+            Container(width: 12, height: 12, color: AppColors.expense),
             const SizedBox(width: 4),
             const Text('Expenses', style: TextStyle(fontSize: 12)),
           ],

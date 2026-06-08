@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/providers/transactions_provider.dart';
 import '../../../core/providers/active_season_provider.dart';
 import '../../../core/constants/enums.dart';
+import '../../../core/constants/app_colors.dart';
 import '../../../core/models/transaction.dart';
 import '../../widgets/transaction_form/transaction_bottom_sheet.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
@@ -152,7 +153,7 @@ class LedgerScreen extends ConsumerWidget {
                   ),
                   ...monthTransactions.map((tx) {
                     final isRevenue = tx.type == TransactionType.revenue || tx.type == TransactionType.yield_;
-                    final color = isRevenue ? Colors.green : Colors.red;
+                    final color = isRevenue ? AppColors.revenue : AppColors.expense;
 
                     return Dismissible(
                       key: ValueKey(tx.id),

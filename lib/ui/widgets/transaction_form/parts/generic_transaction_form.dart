@@ -7,6 +7,7 @@ import '../../../../core/utils/notifications.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/utils/season_resolver.dart';
 import '../../../../core/models/transaction.dart';
+import '../../../../core/constants/categories.dart';
 import 'form_shared.dart';
 
 class GenericTransactionForm extends ConsumerStatefulWidget {
@@ -26,8 +27,8 @@ class GenericTransactionForm extends ConsumerStatefulWidget {
 }
 
 class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm> {
-  late final TextEditingController _amountController;
-  late final TextEditingController _notesController;
+  late TextEditingController _amountController;
+  late TextEditingController _notesController;
   String? _selectedCategory;
   DateTime _selectedDate = DateTime.now();
 
@@ -37,8 +38,8 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
   void initState() {
     super.initState();
     _categories = widget.type == TransactionType.expense 
-      ? ['Seed', 'Fertilizer', 'Labor', 'Fuel', 'Pesticide', 'Other']
-      : ['Harvest Sale', 'Subsidy', 'Other'];
+      ? AppCategories.expenses
+      : AppCategories.revenue;
 
     if (widget.transaction != null) {
       _amountController = TextEditingController(text: widget.transaction!.amount.toString());
@@ -58,23 +59,24 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
     super.dispose();
   }
 
-  void _save() async {
+  /// Core save logic shared by both "Save" and "Save & Add Another".
+  Future<bool> _saveTransaction() async {
     final seasonId = resolveSeasonId(ref);
     if (seasonId == null) {
       AppNotification.show(context, 'No active season selected.', isError: true);
-      return;
+      return false;
     }
 
     try {
       final amount = double.tryParse(_amountController.text);
       if (amount == null || amount <= 0) {
         AppNotification.show(context, 'Please enter a valid amount.', isError: true);
-        return;
+        return false;
       }
 
       if (_selectedCategory == null) {
         AppNotification.show(context, 'Please select a category.', isError: true);
-        return;
+        return false;
       }
 
       if (widget.transaction != null) {
@@ -96,15 +98,34 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
           date: _selectedDate,
         );
       }
-      
-      if (mounted) {
-        AppNotification.show(context, '${widget.type == TransactionType.expense ? "Expense" : "Revenue"} saved successfully!');
-        Navigator.pop(context);
-      }
+      return true;
     } catch (e) {
       if (mounted) {
         AppNotification.show(context, 'Failed to save transaction: $e', isError: true);
       }
+      return false;
+    }
+  }
+
+  void _saveAndClose() async {
+    final success = await _saveTransaction();
+    if (success && mounted) {
+      AppNotification.show(context, '${widget.type == TransactionType.expense ? "Expense" : "Revenue"} saved successfully!');
+      Navigator.pop(context);
+    }
+  }
+
+  void _saveAndAddAnother() async {
+    final success = await _saveTransaction();
+    if (success && mounted) {
+      AppNotification.show(context, 'Saved! Add another.');
+      // Reset form for next entry, keeping category as a smart default
+      setState(() {
+        _amountController.clear();
+        _notesController.clear();
+        _selectedDate = DateTime.now();
+        // Keep _selectedCategory — most likely the farmer is adding multiple items in the same category
+      });
     }
   }
 
@@ -116,19 +137,23 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
       'Fertilizer': l10n.categoryFertilizer,
       'Labor': l10n.categoryLabor,
       'Fuel': l10n.categoryFuel,
+      'Water': l10n.categoryWater,
       'Pesticide': l10n.categoryPesticide,
+      'Repairs': l10n.categoryRepairs,
       'Other': l10n.categoryOther,
     };
 
     final amount = double.tryParse(_amountController.text) ?? 0;
     final isValid = amount > 0 && _selectedCategory != null;
+    final isLoading = ref.watch(transactionsNotifierProvider).isLoading;
+    final isEditing = widget.transaction != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SharedAmountField(controller: _amountController),
         const SizedBox(height: 24),
-        Text('Category', style: Theme.of(context).textTheme.labelLarge),
+        Text(l10n.category, style: Theme.of(context).textTheme.labelLarge),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -138,7 +163,11 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
             return ChoiceChip(
               label: Text(categoryLabels[cat] ?? cat),
               selected: isSelected,
-              onSelected: (val) => setState(() => _selectedCategory = val ? cat : null),
+              onSelected: (val) {
+                // Auto-dismiss keyboard so save button is visible
+                FocusScope.of(context).unfocus();
+                setState(() => _selectedCategory = val ? cat : null);
+              },
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               showCheckmark: false,
             );
@@ -165,7 +194,7 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
               children: [
                 const Icon(Icons.calendar_today_rounded, size: 20),
                 const SizedBox(width: 12),
-                Text('Date: ${DateFormat.yMMMd().format(_selectedDate)}'),
+                Text('${l10n.dateLabel}: ${DateFormat.yMMMd().format(_selectedDate)}'),
                 const Spacer(),
                 const Icon(Icons.chevron_right_rounded),
               ],
@@ -175,13 +204,28 @@ class _GenericTransactionFormState extends ConsumerState<GenericTransactionForm>
         const SizedBox(height: 16),
         TextField(
           controller: _notesController,
-          decoration: const InputDecoration(labelText: 'Notes', prefixIcon: Icon(Icons.notes_rounded)),
+          decoration: InputDecoration(labelText: l10n.notes, prefixIcon: const Icon(Icons.notes_rounded)),
         ),
         const SizedBox(height: 32),
         SharedSaveButton(
-          onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _save : null,
-          label: ref.watch(transactionsNotifierProvider).isLoading ? 'Saving...' : l10n.save,
+          onPressed: (isValid && !isLoading) ? _saveAndClose : null,
+          label: isLoading ? l10n.saving : l10n.save,
         ),
+        // "Save & Add Another" only for new entries, not when editing
+        if (!isEditing) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: (isValid && !isLoading) ? _saveAndAddAnother : null,
+            child: Text(
+              l10n.saveAndAddAnother,
+              style: TextStyle(
+                color: (isValid && !isLoading)
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
