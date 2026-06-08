@@ -374,7 +374,7 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
                   TextField(
                     controller: _areaController, 
                     keyboardType: const TextInputType.numberWithOptions(decimal: true), 
-                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.area, suffixText: 'Acres', prefixIcon: const Icon(Icons.square_foot)),
+                    decoration: InputDecoration(labelText: AppLocalizations.of(context)!.area, suffixText: AppLocalizations.of(context)!.acresUnit, prefixIcon: const Icon(Icons.square_foot)),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -394,7 +394,7 @@ class _ManageLandsContentState extends ConsumerState<_ManageLandsContent> {
               children: lands.map((l) => ListTile(
                 leading: const Icon(Icons.landscape),
                 title: Text(l.name),
-                subtitle: Text('${l.area} Acres'),
+                subtitle: Text('${l.area} ${AppLocalizations.of(context)!.acresUnit}'),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: () async {

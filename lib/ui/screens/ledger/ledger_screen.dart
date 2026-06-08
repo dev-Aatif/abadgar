@@ -106,7 +106,8 @@ class LedgerScreen extends ConsumerWidget {
               final q = searchQuery.toLowerCase();
               final matchCat = t.category?.toLowerCase().contains(q) ?? false;
               final matchNote = t.notes?.toLowerCase().contains(q) ?? false;
-              if (!matchCat && !matchNote) return false;
+              final matchAmount = t.amount.toString().contains(q);
+              if (!matchCat && !matchNote && !matchAmount) return false;
             }
             return true;
           }).toList();
@@ -239,7 +240,8 @@ class LedgerScreen extends ConsumerWidget {
             final matchDest = yl.destination?.toLowerCase().contains(q) ?? false;
             final matchDisp = yl.disposition.value.toLowerCase().contains(q);
             final matchUnit = yl.unit.value.toLowerCase().contains(q);
-            if (!matchDest && !matchDisp && !matchUnit) return false;
+            final matchAmount = yl.totalWeight.toString().contains(q) || (yl.salePrice?.toString().contains(q) ?? false);
+            if (!matchDest && !matchDisp && !matchUnit && !matchAmount) return false;
           }
           return true;
         }).toList();

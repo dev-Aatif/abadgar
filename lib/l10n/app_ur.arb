@@ -171,5 +171,7 @@
   "category": "زمرہ",
   "saving": "محفوظ ہو رہا ہے...",
   "confirmDeleteTransactionTitle": "حذف کی تصدیق",
-  "dateLabel": "تاریخ"
+  "dateLabel": "تاریخ",
+  "acresUnit": "ایکڑ",
+  "acresUnitShort": "ایکڑ"
 }

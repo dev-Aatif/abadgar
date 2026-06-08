@@ -226,5 +226,7 @@
   "category": "Category",
   "saving": "Saving...",
   "confirmDeleteTransactionTitle": "Confirm Delete",
-  "dateLabel": "Date"
+  "dateLabel": "Date",
+  "acresUnit": "Acres",
+  "acresUnitShort": "Acr"
 }

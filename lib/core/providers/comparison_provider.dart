@@ -101,3 +101,26 @@ Stream<FinancialSummary> seasonSummary(SeasonSummaryRef ref, String seasonId) as
     );
   });
 }
+
+class SeasonTrendData {
+  final Season season;
+  final FinancialSummary summary;
+
+  SeasonTrendData(this.season, this.summary);
+}
+
+@riverpod
+Future<List<SeasonTrendData>> multiYearTrend(MultiYearTrendRef ref) async {
+  final seasons = await ref.watch(seasonsProvider.future);
+  final completedSeasons = seasons.where((s) => s.status == SeasonStatus.completed).toList();
+  // Sort from oldest to newest
+  completedSeasons.sort((a, b) => a.startDate.compareTo(b.startDate));
+  
+  final List<SeasonTrendData> trendData = [];
+  for (final season in completedSeasons) {
+    final summary = await ref.watch(seasonSummaryProvider(season.id).future);
+    trendData.add(SeasonTrendData(season, summary));
+  }
+  
+  return trendData;
+}

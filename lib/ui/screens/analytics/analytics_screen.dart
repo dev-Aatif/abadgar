@@ -88,6 +88,8 @@ class AnalyticsScreen extends ConsumerWidget {
             ),
           const SizedBox(height: 32),
           _buildExpenseBreakdown(context, comparison, format),
+          const SizedBox(height: 32),
+          _buildMultiYearTrendGraph(context, ref),
           const SizedBox(height: 100), // Spacing for navbar
         ],
       ),
@@ -379,7 +381,7 @@ class AnalyticsScreen extends ConsumerWidget {
 *Abadgar Season Report*
 Season: ${season.displayName}
 Crop: ${season.cropType.value}
-Area: ${season.landArea} Acres
+Area: ${season.landArea} ${AppLocalizations.of(context)!.acresUnit}
 Status: ${season.status.value}
 
 *Financial Summary*
@@ -399,5 +401,98 @@ ${summary.expenseByCategory.entries.map((e) => '- ${e.key}: ${format.format(e.va
 Generated via Abadgar App.
 ''';
     Share.share(text);
+  }
+  Widget _buildMultiYearTrendGraph(BuildContext context, WidgetRef ref) {
+    final trendAsync = ref.watch(multiYearTrendProvider);
+
+    return trendAsync.when(
+      data: (trendData) {
+        if (trendData.length < 2) return const SizedBox.shrink(); // Not enough data for trend
+
+        final spots = trendData.asMap().entries.map((e) {
+          return FlSpot(e.key.toDouble(), e.value.summary.profit);
+        }).toList();
+
+        final maxProfit = trendData.map((e) => e.summary.profit).reduce((a, b) => a > b ? a : b);
+        final minProfit = trendData.map((e) => e.summary.profit).reduce((a, b) => a < b ? a : b);
+        
+        final highestValue = maxProfit.abs() > minProfit.abs() ? maxProfit.abs() : minProfit.abs();
+        final maxY = highestValue * 1.2;
+        final minY = highestValue == 0 ? -1.0 : -maxY;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Multi-Year Profit Trend', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 200,
+              child: LineChart(
+                LineChartData(
+                  minY: minY,
+                  maxY: maxY,
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: spots,
+                      isCurved: true,
+                      color: Theme.of(context).colorScheme.primary,
+                      barWidth: 3,
+                      isStrokeCapRound: true,
+                      dotData: const FlDotData(show: true),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                      ),
+                    ),
+                  ],
+                  titlesData: FlTitlesData(
+                    show: true,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          final int index = value.toInt();
+                          if (index < 0 || index >= trendData.length) return const SizedBox.shrink();
+                          final seasonName = trendData[index].season.displayName;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              seasonName.length > 5 ? seasonName.substring(0, 5) + '..' : seasonName,
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                          );
+                        },
+                        reservedSize: 24,
+                      ),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) {
+                          if (value == 0) return const Text('0', style: TextStyle(fontSize: 10));
+                          final formatted = NumberFormat.compact().format(value);
+                          return Text(formatted, style: const TextStyle(fontSize: 10));
+                        },
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: (maxY / 2) == 0 ? 1 : maxY / 2,
+                  ),
+                  borderData: FlBorderData(show: false),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error loading trends: $e')),
+    );
   }
 }

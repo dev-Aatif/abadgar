@@ -171,5 +171,7 @@
   "category": "ذات",
   "saving": "محفوظ ٿي رهيو آهي...",
   "confirmDeleteTransactionTitle": "ڊاهڻ جي پڪ",
-  "dateLabel": "تاريخ"
+  "dateLabel": "تاريخ",
+  "acresUnit": "ايڪڙ",
+  "acresUnitShort": "ايڪڙ"
 }

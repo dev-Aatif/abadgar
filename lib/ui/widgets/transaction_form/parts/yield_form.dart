@@ -59,18 +59,18 @@ class _YieldFormState extends ConsumerState<YieldForm> {
     return weight * pricePerUnit;
   }
 
-  void _save() async {
+  Future<bool> _saveYieldLog() async {
     final seasonId = resolveSeasonId(ref);
     if (seasonId == null) {
       AppNotification.show(context, 'No active season selected.', isError: true);
-      return;
+      return false;
     }
 
     try {
       final weight = double.tryParse(_weightController.text);
       if (weight == null || weight <= 0) {
         AppNotification.show(context, 'Please enter a valid weight.', isError: true);
-        return;
+        return false;
       }
 
       final totalSalePrice = _disposition == YieldDisposition.sold ? _totalPrice : null;
@@ -109,16 +109,33 @@ class _YieldFormState extends ConsumerState<YieldForm> {
           );
         }
       }
-
-      // Successfully saved
-      if (mounted) {
-        AppNotification.show(context, 'Harvest logged successfully!');
-        Navigator.pop(context);
-      }
+      return true;
     } catch (e) {
       if (mounted) {
         AppNotification.show(context, 'Failed to save harvest: $e', isError: true);
       }
+      return false;
+    }
+  }
+
+  void _saveAndClose() async {
+    final success = await _saveYieldLog();
+    if (success && mounted) {
+      AppNotification.show(context, 'Harvest logged successfully!');
+      Navigator.pop(context);
+    }
+  }
+
+  void _saveAndAddAnother() async {
+    final success = await _saveYieldLog();
+    if (success && mounted) {
+      AppNotification.show(context, 'Saved! Add another.');
+      setState(() {
+        _weightController.clear();
+        _pricePerUnitController.clear();
+        _destinationController.clear();
+      });
+      FocusScope.of(context).previousFocus();
     }
   }
 
@@ -219,9 +236,23 @@ class _YieldFormState extends ConsumerState<YieldForm> {
         ],
         const SizedBox(height: 32),
         SharedSaveButton(
-          onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _save : null,
+          onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _saveAndClose : null,
           label: ref.watch(transactionsNotifierProvider).isLoading ? AppLocalizations.of(context)!.loggingHarvest : AppLocalizations.of(context)!.saveHarvest,
         ),
+        if (widget.yieldLog == null) ...[
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _saveAndAddAnother : null,
+            child: Text(
+              AppLocalizations.of(context)!.saveAndAddAnother,
+              style: TextStyle(
+                color: (isValid && !ref.watch(transactionsNotifierProvider).isLoading)
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

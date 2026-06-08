@@ -194,7 +194,7 @@ class _ActiveSeasonCard extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(season.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('${season.landArea} Acres • ${AppLocalizations.of(context)!.seasonStarted} ${DateFormat.yMMMd().format(season.startDate)}', style: TextStyle(color: Colors.white.withOpacity(0.8))),
+              Text('${season.landArea} ${AppLocalizations.of(context)!.acresUnit} • ${AppLocalizations.of(context)!.seasonStarted} ${DateFormat.yMMMd().format(season.startDate)}', style: TextStyle(color: Colors.white.withOpacity(0.8))),
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -261,7 +261,7 @@ class _CompletedSeasonTile extends ConsumerWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${season.cropType.value} • ${season.landArea} Acres'),
+            Text('${season.cropType.value} • ${season.landArea} ${AppLocalizations.of(context)!.acresUnit}'),
             if (season.status == SeasonStatus.completed)
                Text('${AppLocalizations.of(context)!.seasonFinished} ${DateFormat.yMMMd().format(season.endDate ?? season.startDate)}', style: const TextStyle(fontSize: 11)),
           ],
@@ -403,7 +403,7 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.totalArea,
               prefixIcon: const Icon(Icons.square_foot_rounded),
-              suffixText: 'Acres',
+              suffixText: AppLocalizations.of(context)!.acresUnit,
               hintText: 'e.g. 12.5',
             ),
           ),

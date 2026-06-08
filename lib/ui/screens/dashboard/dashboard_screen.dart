@@ -88,76 +88,70 @@ class DashboardScreen extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: InkWell(
-                        onTap: () => context.push('/seasons'),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              AppLocalizations.of(context)!.fieldOverview,
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.1,
-                              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppLocalizations.of(context)!.fieldOverview,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.1,
                             ),
-                            const SizedBox(height: 4),
+                          ),
+                          const SizedBox(height: 4),
+                          if (seasonsList.isNotEmpty && activeSeason != null)
+                            DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: activeSeason.id,
+                                isDense: true,
+                                icon: Icon(Icons.arrow_drop_down_rounded, color: Theme.of(context).colorScheme.onSurface),
+                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                                items: seasonsList.map((s) {
+                                  return DropdownMenuItem<String>(
+                                    value: s.id,
+                                    child: Text(s.displayName),
+                                  );
+                                }).toList(),
+                                onChanged: (newId) {
+                                  if (newId != null && newId != activeSeason.id) {
+                                    ref.read(activeSeasonIdProvider.notifier).set(newId);
+                                  }
+                                },
+                              ),
+                            )
+                          else
                             Text(
-                              activeSeason?.displayName ?? AppLocalizations.of(context)!.noActiveSeason,
+                              AppLocalizations.of(context)!.noActiveSeason,
                               style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
                     ),
-                    IconButton.filled(
-                      tooltip: AppLocalizations.of(context)!.changeSeason,
-                      onPressed: () => context.push('/seasons'),
-                      icon: const Icon(Icons.swap_horiz_rounded),
+                    Row(
+                      children: [
+                        if (!isAuthenticated) ...[
+                          Tooltip(
+                            message: AppLocalizations.of(context)!.offlineAlert,
+                            child: Icon(Icons.cloud_off_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
+                          const SizedBox(width: 16),
+                        ],
+                        IconButton.filledTonal(
+                          tooltip: AppLocalizations.of(context)!.changeSeason,
+                          onPressed: () => context.push('/seasons'),
+                          icon: const Icon(Icons.list_alt_rounded),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-
-            if (!isAuthenticated && isOfflineVisible)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.cloud_off_rounded, color: Theme.of(context).colorScheme.error, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            AppLocalizations.of(context)!.offlineAlert,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.push('/auth'),
-                          child: Text(AppLocalizations.of(context)!.signIn, style: const TextStyle(fontSize: 10)),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 16),
-                          onPressed: () {
-                            ref.read(isOfflineAlertVisibleProvider.notifier).state = false;
-                            AppNotification.show(context, AppLocalizations.of(context)!.alertHidden);
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
 
             // Metrics Summary
             SliverToBoxAdapter(
@@ -496,7 +490,7 @@ class _QuickSummaryCard extends StatelessWidget {
             children: [
               _MiniStat(label: AppLocalizations.of(context)!.revenue, value: curFormat.format(summary?.totalRevenue ?? 0)),
               _MiniStat(label: AppLocalizations.of(context)!.expenses, value: curFormat.format(summary?.totalExpenses ?? 0)),
-              _MiniStat(label: AppLocalizations.of(context)!.areaLabel, value: '${activeSeason?.landArea ?? 0} Acr'),
+              _MiniStat(label: AppLocalizations.of(context)!.areaLabel, value: '${activeSeason?.landArea ?? 0} ${AppLocalizations.of(context)!.acresUnitShort}'),
             ],
           ),
         ],
