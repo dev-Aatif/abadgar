@@ -87,6 +87,7 @@ class LedgerScreen extends ConsumerWidget {
           _buildHarvestsTab(context, ref, searchQuery),
         ],
       ),
+    ),
     );
   }
 
@@ -142,7 +143,7 @@ class LedgerScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsetsDirectional.only(start: 8, bottom: 8, top: index == 0 ? 0 : 16),
+                    padding: EdgeInsetsDirectional.only(start: 8, bottom: 8, top: index == 0 ? 0 : 16),
                     child: Text(
                       monthString.toUpperCase(),
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -320,7 +321,7 @@ class LedgerScreen extends ConsumerWidget {
                       child: Icon(Icons.eco_rounded, color: color),
                     ),
                     title: Text('${log.totalWeight} ${log.unit}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${DateFormat('dd MMM').format(log.date)} • ${log.disposition.toUpperCase()}'),
+                    subtitle: Text('${DateFormat('dd MMM').format(log.date)} • ${log.disposition.value.toUpperCase()}'),
                     trailing: log.salePrice != null
                         ? Text(
                             'Rs ${log.salePrice!.toStringAsFixed(0)}',

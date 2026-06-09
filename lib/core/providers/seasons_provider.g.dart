@@ -20,7 +20,7 @@ final seasonsProvider = AutoDisposeStreamProvider<List<Season>>.internal(
 );
 
 typedef SeasonsRef = AutoDisposeStreamProviderRef<List<Season>>;
-String _$seasonsNotifierHash() => r'896e0f7710fc7bd34a943064a67bd4dcaadb8282';
+String _$seasonsNotifierHash() => r'faefa485b27dd2f3f5d518efec44a9068ebd4ba0';
 
 /// See also [SeasonsNotifier].
 @ProviderFor(SeasonsNotifier)

@@ -309,7 +309,7 @@ class AnalyticsScreen extends ConsumerWidget {
                         case 1: text = Text(curName, style: style); break;
                         default: text = const Text(''); break;
                       }
-                      return SideTitleWidget(axisSide: meta.axisSide, child: text);
+                      return SideTitleWidget(meta: meta, child: text);
                     },
                   ),
                 ),

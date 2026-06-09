@@ -6,7 +6,7 @@ part of 'financial_summary_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$financialSummaryHash() => r'c25e1c25091cd7502ee80065fa3360fc7651b04a';
+String _$financialSummaryHash() => r'e557c293ce25dad2449991523397268561e1aacd';
 
 /// See also [financialSummary].
 @ProviderFor(financialSummary)
