@@ -218,7 +218,7 @@ class LedgerScreen extends ConsumerWidget {
                         ),
                       ),
                     );
-                  }).toList(),
+                  }),
                 ],
               );
             },

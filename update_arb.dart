@@ -104,7 +104,7 @@ void main() {
     
     jsonContent.addAll(extras);
     
-    final encoder = JsonEncoder.withIndent('  ');
+    const encoder = JsonEncoder.withIndent('  ');
     file.writeAsStringSync(encoder.convert(jsonContent));
   }
 

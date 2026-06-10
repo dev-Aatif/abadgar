@@ -1,0 +1,148 @@
+Analyzing Abadgar...                                            
+
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/constants/app_colors.dart:36:59 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/constants/app_colors.dart:37:59 • deprecated_member_use
+   info • Dangling library doc comment • lib/core/constants/enums.dart:1:1 • dangling_library_doc_comments
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:17:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:18:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:19:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:20:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:21:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:22:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:23:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:24:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:25:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:26:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:32:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:33:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:34:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:35:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:36:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:37:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:38:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:39:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:40:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:46:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:47:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:48:9 • unnecessary_const
+   info • Unnecessary 'const' keyword • lib/core/database/app_schema.dart:49:9 • unnecessary_const
+   info • The imported package 'path' isn't a dependency of the importing package • lib/core/database/database_provider.dart:2:8 • depend_on_referenced_packages
+   info • 'FutureProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/database/database_provider.g.dart:23:32 • deprecated_member_use
+   info • 'AutoDisposeStreamProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/active_season_provider.g.dart:22:27 • deprecated_member_use
+warning • Unused import: '../models/transaction.dart' • lib/core/providers/analytics_provider.dart:3:8 • unused_import
+   info • 'AutoDisposeProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/analytics_provider.g.dart:26:7 • deprecated_member_use
+warning • Unused import: 'transactions_provider.dart' • lib/core/providers/comparison_provider.dart:3:8 • unused_import
+   info • 'AutoDisposeFutureProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/comparison_provider.g.dart:146:30 • deprecated_member_use
+   info • 'AutoDisposeStreamProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/comparison_provider.g.dart:276:27 • deprecated_member_use
+   info • 'AutoDisposeFutureProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/comparison_provider.g.dart:305:29 • deprecated_member_use
+   info • 'AutoDisposeProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/financial_summary_provider.g.dart:24:31 • deprecated_member_use
+   info • 'AutoDisposeStreamProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/lands_provider.g.dart:22:20 • deprecated_member_use
+   info • 'AutoDisposeStreamProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/seasons_provider.g.dart:22:22 • deprecated_member_use
+   info • 'AutoDisposeProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/transaction_repository_provider.g.dart:26:7 • deprecated_member_use
+   info • 'AutoDisposeStreamProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/transactions_provider.g.dart:26:7 • deprecated_member_use
+   info • 'AutoDisposeStreamProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/transactions_provider.g.dart:43:36 • deprecated_member_use
+   info • 'AutoDisposeStreamProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/providers/transactions_provider.g.dart:59:30 • deprecated_member_use
+   info • 'AutoDisposeProviderRef' is deprecated and shouldn't be used. will be removed in 3.0.0. Use Ref instead • lib/core/router/app_router.g.dart:22:24 • deprecated_member_use
+   info • Don't invoke 'print' in production code • lib/core/services/autosave_service.dart:41:7 • avoid_print
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/theme/app_theme.dart:53:45 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/theme/app_theme.dart:63:42 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/theme/app_theme.dart:63:75 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/theme/app_theme.dart:80:37 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/theme/app_theme.dart:85:44 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/theme/app_theme.dart:91:40 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/core/theme/app_theme.dart:111:33 • deprecated_member_use
+   info • The imported package 'flutter_native_splash' isn't a dependency of the importing package • lib/main.dart:7:8 • depend_on_referenced_packages
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/analytics/analytics_screen.dart:142:22 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/analytics/analytics_screen.dart:144:41 • deprecated_member_use
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/ui/screens/analytics/analytics_screen.dart:168:48 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/analytics/analytics_screen.dart:168:63 • deprecated_member_use
+   info • Unnecessary use of 'toList' in a spread • lib/ui/screens/analytics/analytics_screen.dart:225:135 • unnecessary_to_list_in_spreads
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/ui/screens/analytics/analytics_screen.dart:247:60 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/analytics/analytics_screen.dart:290:9 • prefer_const_constructors
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/analytics/analytics_screen.dart:335:80 • deprecated_member_use
+   info • Use interpolation to compose strings and values • lib/ui/screens/analytics/analytics_screen.dart:460:55 • prefer_interpolation_to_compose_strings
+warning • Unused import: '../../../core/utils/notifications.dart' • lib/ui/screens/dashboard/dashboard_screen.dart:20:8 • unused_import
+warning • The value of the local variable 'isOfflineVisible' isn't used • lib/ui/screens/dashboard/dashboard_screen.dart:32:11 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:215:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:215:89 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:216:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:216:89 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:219:100 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:226:87 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:254:86 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:388:103 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:388:140 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:453:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:478:39 • deprecated_member_use
+warning • A value for optional parameter 'isWide' isn't ever given • lib/ui/screens/dashboard/dashboard_screen.dart:535:10 • unused_element_parameter
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:547:33 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/dashboard/dashboard_screen.dart:565:68 • deprecated_member_use
+warning • The left operand can't be null, so the right operand is never executed • lib/ui/screens/ledger/ledger_screen.dart:39:67 • dead_null_aware_expression
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/ledger/ledger_screen.dart:41:85 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/ledger/ledger_screen.dart:205:54 • deprecated_member_use
+   info • Unnecessary use of 'toList' in a spread • lib/ui/screens/ledger/ledger_screen.dart:221:22 • unnecessary_to_list_in_spreads
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/ledger/ledger_screen.dart:255:70 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/ledger/ledger_screen.dart:320:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/ledger/ledger_screen.dart:414:68 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:65:220 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:95:99 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:150:67 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/seasons/seasons_screen.dart:172:40 • prefer_const_constructors
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:197:218 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps • lib/ui/screens/seasons/seasons_screen.dart:218:28 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:255:58 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:273:96 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/seasons/seasons_screen.dart:287:30 • prefer_const_constructors
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:305:92 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:374:102 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/ui/screens/seasons/seasons_screen.dart:387:13 • deprecated_member_use
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/ui/screens/seasons/seasons_screen.dart:463:102 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/seasons/seasons_screen.dart:470:24 • deprecated_member_use
+warning • Unused import: '../../../core/models/land.dart' • lib/ui/screens/settings/settings_screen.dart:12:8 • unused_import
+warning • The value of the local variable 'dbAsync' isn't used • lib/ui/screens/settings/settings_screen.dart:24:11 • unused_local_variable
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/settings/settings_screen.dart:154:63 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/settings/settings_screen.dart:156:73 • deprecated_member_use
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/ui/screens/settings/settings_screen.dart:214:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/settings/settings_screen.dart:214:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/settings/settings_screen.dart:222:26 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/settings/settings_screen.dart:266:18 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/settings/settings_screen.dart:267:18 • prefer_const_constructors
+   info • Use 'const' literals as arguments to constructors of '@immutable' classes • lib/ui/screens/settings/settings_screen.dart:269:23 • prefer_const_literals_to_create_immutables
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/settings/settings_screen.dart:270:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/settings/settings_screen.dart:271:15 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • lib/ui/screens/settings/settings_screen.dart:272:15 • prefer_const_constructors
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/screens/settings/settings_screen.dart:291:16 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/screens/settings/settings_screen.dart:292:16 • deprecated_member_use
+   info • Use interpolation to compose strings and values • lib/ui/screens/settings/settings_screen.dart:309:15 • prefer_interpolation_to_compose_strings
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/settings/settings_screen.dart:359:102 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/screens/settings/settings_screen.dart:366:67 • deprecated_member_use
+   info • 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/screens/settings/settings_screen.dart:452:7 • deprecated_member_use
+   info • 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre • lib/ui/screens/settings/settings_screen.dart:453:7 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/shell/main_shell.dart:56:51 • deprecated_member_use
+   info • Use 'const' with the constructor to improve performance • lib/ui/shell/main_shell.dart:85:29 • prefer_const_constructors
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/parts/form_shared.dart:32:77 • deprecated_member_use
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/ui/widgets/transaction_form/parts/generic_transaction_form.dart:196:52 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/parts/generic_transaction_form.dart:196:67 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/parts/generic_transaction_form.dart:230:61 • deprecated_member_use
+   info • 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre • lib/ui/widgets/transaction_form/parts/yield_form.dart:169:17 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/parts/yield_form.dart:209:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/parts/yield_form.dart:211:79 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/parts/yield_form.dart:254:61 • deprecated_member_use
+warning • Unused import: 'package:abadgar/l10n/generated/app_localizations.dart' • lib/ui/widgets/transaction_form/transaction_bottom_sheet.dart:12:8 • unused_import
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/transaction_bottom_sheet.dart:67:102 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/transaction_bottom_sheet.dart:97:56 • deprecated_member_use
+   info • 'surfaceVariant' is deprecated and shouldn't be used. Use surfaceContainerHighest instead. This feature was deprecated after v3.18.0-0.1.pre • lib/ui/widgets/transaction_form/transaction_bottom_sheet.dart:149:46 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/transaction_bottom_sheet.dart:149:61 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/ui/widgets/transaction_form/transaction_bottom_sheet.dart:173:127 • deprecated_member_use
+   info • The import of 'package:flutter/cupertino.dart' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' • test/sindhi_test.dart:2:8 • unnecessary_import
+   info • Use 'const' for final variables initialized to a constant value • test/unit/import_validation_test.dart:35:7 • prefer_const_declarations
+   info • Use 'const' with the constructor to improve performance • test/widget/dashboard_metrics_test.dart:36:10 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • test/widget/dashboard_metrics_test.dart:37:18 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • test/widget/dashboard_metrics_test.dart:38:20 • prefer_const_constructors
+   info • Use 'const' literals as arguments to constructors of '@immutable' classes • test/widget/dashboard_metrics_test.dart:39:26 • prefer_const_literals_to_create_immutables
+   info • Use 'const' with the constructor to improve performance • test/widget/dashboard_metrics_test.dart:40:18 • prefer_const_constructors
+   info • Use 'const' with the constructor to improve performance • test/widget/dashboard_metrics_test.dart:41:18 • prefer_const_constructors
+   info • Use 'const' for final variables initialized to a constant value • test/widget_test.dart:60:7 • prefer_const_declarations
+   info • Use 'const' for final variables initialized to a constant value • test/widget_test.dart:61:7 • prefer_const_declarations
+   info • Use 'const' with the constructor to improve performance • update_arb.dart:107:21 • prefer_const_constructors
+

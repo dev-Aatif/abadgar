@@ -1,6 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'transactions_provider.dart';
-import '../models/transaction.dart';
 
 part 'analytics_provider.g.dart';
 

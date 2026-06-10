@@ -82,11 +82,7 @@ class MainShell extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Wrap(
-        children: const [
-          TransactionBottomSheet(),
-        ],
-      ),
+      builder: (context) => const TransactionBottomSheet(),
     );
   }
 }

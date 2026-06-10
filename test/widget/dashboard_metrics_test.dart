@@ -33,7 +33,7 @@ void main() {
        // Here we demonstrate the principle of searching for value text.
        
        await tester.pumpWidget(
-         MaterialApp(
+         const MaterialApp(
            home: Scaffold(
              body: Column(
                children: [

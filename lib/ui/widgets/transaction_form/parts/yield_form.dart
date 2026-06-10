@@ -166,7 +166,7 @@ class _YieldFormState extends ConsumerState<YieldForm> {
             const SizedBox(width: 12),
             Expanded(
               child: DropdownButtonFormField<YieldUnit>(
-                value: _unit,
+                initialValue: _unit,
                 decoration: InputDecoration(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

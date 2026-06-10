@@ -9,7 +9,6 @@ import '../../../core/services/import_service.dart';
 import '../../../core/services/github_updater.dart';
 import '../../../core/providers/locale_provider.dart';
 import '../../../core/providers/lands_provider.dart';
-import '../../../core/models/land.dart';
 import '../../../core/providers/auth_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
@@ -211,7 +210,7 @@ class SettingsScreen extends ConsumerWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListTile(
@@ -263,13 +262,13 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.language),
-        content: SingleChildScrollView(
+        content: const SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _LanguageOption(label: 'English', locale: const Locale('en')),
-              _LanguageOption(label: 'Urdu (اردو)', locale: const Locale('ur')),
-              _LanguageOption(label: 'Sindhi (سنڌي)', locale: const Locale('sd')),
+              _LanguageOption(label: 'English', locale: Locale('en')),
+              _LanguageOption(label: 'Urdu (اردو)', locale: Locale('ur')),
+              _LanguageOption(label: 'Sindhi (سنڌي)', locale: Locale('sd')),
             ],
           ),
         ),
@@ -306,7 +305,7 @@ class SettingsScreen extends ConsumerWidget {
       builder: (context) => AlertDialog(
         title: Text(update.isUpdateAvailable ? AppLocalizations.of(context)!.updateAvailable : AppLocalizations.of(context)!.upToDate),
         content: Text(update.isUpdateAvailable 
-            ? AppLocalizations.of(context)!.latestVersion(update.latestVersion) + '\n\n${update.releaseNotes}'
+            ? '${AppLocalizations.of(context)!.latestVersion(update.latestVersion)}\n\n${update.releaseNotes}'
             : AppLocalizations.of(context)!.upToDateContent),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text(AppLocalizations.of(context)!.close)),

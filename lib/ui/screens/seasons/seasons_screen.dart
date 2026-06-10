@@ -169,7 +169,7 @@ class _ActiveSeasonCard extends ConsumerWidget {
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (context) => AlertDialog(
-                                title: Text('Delete Season'),
+                                title: const Text('Delete Season'),
                                 content: Text('Are you sure you want to delete ${season.name}? This cannot be undone.'),
                                 actions: [
                                   TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
@@ -284,7 +284,7 @@ class _CompletedSeasonTile extends ConsumerWidget {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: Text('Delete Season'),
+                      title: const Text('Delete Season'),
                       content: Text('Are you sure you want to delete ${season.name}? This cannot be undone.'),
                       actions: [
                         TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AppLocalizations.of(context)!.cancel)),
@@ -384,7 +384,7 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
           ),
           const SizedBox(height: 24),
           DropdownButtonFormField<int>(
-            value: _selectedYear,
+            initialValue: _selectedYear,
             decoration: InputDecoration(
               labelText: AppLocalizations.of(context)!.year,
               prefixIcon: const Icon(Icons.calendar_today_rounded),
@@ -460,7 +460,7 @@ class _PillToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceVariant;
+    final color = isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(

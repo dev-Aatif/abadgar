@@ -17,7 +17,6 @@ import 'package:abadgar/l10n/generated/app_localizations.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/ui_state_providers.dart';
-import '../../../core/utils/notifications.dart';
 import 'package:flutter/services.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -532,7 +531,6 @@ class _MetricCard extends StatelessWidget {
     required this.value,
     required this.color,
     required this.icon,
-    this.isWide = false,
   });
 
   @override

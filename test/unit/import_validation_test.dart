@@ -32,7 +32,7 @@ void main() {
     });
 
     test('Should validate a complex sample JSON structure matching version 1', () {
-      final jsonStr = '''
+      const jsonStr = '''
       {
         "version": 1,
         "seasons": [

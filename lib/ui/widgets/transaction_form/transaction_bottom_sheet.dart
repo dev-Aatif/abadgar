@@ -9,7 +9,6 @@ import '../../../core/models/yield_log.dart';
 import '../../../core/constants/enums.dart';
 import 'parts/generic_transaction_form.dart';
 import 'parts/yield_form.dart'; // This will be our unified Harvest form
-import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 enum TransactionMode { expense, revenue, harvest }
 
@@ -73,11 +72,13 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
             const SizedBox(height: 16),
             _buildModeToggle(),
             const SizedBox(height: 24),
-            SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: _buildForm(seasonId: _sessionSeasonId!),
+            Flexible(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _buildForm(seasonId: _sessionSeasonId!),
+                ),
               ),
             ),
           ],
@@ -146,7 +147,7 @@ class _TransactionBottomSheetState extends ConsumerState<TransactionBottomSheet>
       height: 56,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(

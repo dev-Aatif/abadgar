@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
@@ -25,9 +26,9 @@ class AbadgarApp extends ConsumerWidget {
       routerConfig: ref.watch(appRouterProvider),
       localizationsDelegates: const [
         AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
+        FallbackMaterialLocalizationDelegate(),
+        FallbackCupertinoLocalizationDelegate(),
         GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
         Locale('en'),
@@ -36,4 +37,40 @@ class AbadgarApp extends ConsumerWidget {
       ],
     );
   }
+}
+
+class FallbackMaterialLocalizationDelegate extends LocalizationsDelegate<MaterialLocalizations> {
+  const FallbackMaterialLocalizationDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<MaterialLocalizations> load(Locale locale) async {
+    if (locale.languageCode == 'sd') {
+      return GlobalMaterialLocalizations.delegate.load(const Locale('ur'));
+    }
+    return GlobalMaterialLocalizations.delegate.load(locale);
+  }
+
+  @override
+  bool shouldReload(FallbackMaterialLocalizationDelegate old) => false;
+}
+
+class FallbackCupertinoLocalizationDelegate extends LocalizationsDelegate<CupertinoLocalizations> {
+  const FallbackCupertinoLocalizationDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<CupertinoLocalizations> load(Locale locale) async {
+    if (locale.languageCode == 'sd') {
+      return GlobalCupertinoLocalizations.delegate.load(const Locale('ur'));
+    }
+    return GlobalCupertinoLocalizations.delegate.load(locale);
+  }
+
+  @override
+  bool shouldReload(FallbackCupertinoLocalizationDelegate old) => false;
 }

@@ -165,7 +165,7 @@ class AnalyticsScreen extends ConsumerWidget {
       return Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -222,7 +222,7 @@ class AnalyticsScreen extends ConsumerWidget {
         if (expenses.isEmpty)
            Center(child: Text(AppLocalizations.of(context)!.noExpenses))
         else
-          ...expenses.entries.map((e) => _buildExpenseItem(context, e.key, e.value, comparison.currentSummary.totalExpenses, format)).toList(),
+          ...expenses.entries.map((e) => _buildExpenseItem(context, e.key, e.value, comparison.currentSummary.totalExpenses, format)),
       ],
     );
   }
@@ -244,7 +244,7 @@ class AnalyticsScreen extends ConsumerWidget {
           LinearProgressIndicator(
             value: percent,
             borderRadius: BorderRadius.circular(4),
-            backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
           ),
         ],
       ),
@@ -287,7 +287,7 @@ class AnalyticsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Year-over-Year Performance', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const Text('Year-over-Year Performance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         const SizedBox(height: 24),
         SizedBox(
           height: 250,
@@ -457,7 +457,7 @@ Generated via Abadgar App.
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              seasonName.length > 5 ? seasonName.substring(0, 5) + '..' : seasonName,
+                              seasonName.length > 5 ? '${seasonName.substring(0, 5)}..' : seasonName,
                               style: const TextStyle(fontSize: 10),
                             ),
                           );

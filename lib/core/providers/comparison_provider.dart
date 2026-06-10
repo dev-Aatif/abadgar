@@ -1,6 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'seasons_provider.dart';
-import 'transactions_provider.dart';
 import 'financial_summary_provider.dart';
 import '../models/season.dart';
 import '../models/transaction.dart';

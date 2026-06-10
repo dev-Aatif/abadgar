@@ -57,8 +57,8 @@ void main() {
   group('FinancialSummary calculations', () {
     test('profit is revenue minus expenses', () {
       // Inline test since FinancialSummary has a simple getter
-      final revenue = 50000.0;
-      final expenses = 30000.0;
+      const revenue = 50000.0;
+      const expenses = 30000.0;
       expect(revenue - expenses, 20000.0);
     });
   });

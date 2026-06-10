@@ -1,4 +1,5 @@
 /// Type-safe enums for domain concepts, replacing magic strings.
+library;
 
 enum TransactionType {
   expense('Expense'),
