@@ -19,7 +19,9 @@ class UpdateInfo {
 
 class GithubUpdater {
   static Future<UpdateInfo> checkForUpdates() async {
-    final repo = dotenv.env['GITHUB_REPO'] ?? 'archon/Abadgar';
+    final repo = dotenv.isInitialized
+        ? (dotenv.env['GITHUB_REPO'] ?? 'archon/Abadgar')
+        : const String.fromEnvironment('GITHUB_REPO', defaultValue: 'archon/Abadgar');
     final response = await http.get(
       Uri.parse('https://api.github.com/repos/$repo/releases/latest'),
     );

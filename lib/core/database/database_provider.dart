@@ -25,12 +25,14 @@ Future<PowerSyncDatabase> powerSyncDatabase(PowerSyncDatabaseRef ref) async {
     debugPrint("Database initialization failed or timed out: $e");
   }
 
-  // Connect to Supabase
-  final supabase = Supabase.instance.client;
-  final connector = SupabaseConnector(supabase);
-  
-  // Connect background sync
-  db.connect(connector: connector);
+  // Connect to Supabase if initialized (allows offline-first usage without .env)
+  try {
+    final supabase = Supabase.instance.client;
+    final connector = SupabaseConnector(supabase);
+    db.connect(connector: connector);
+  } catch (e) {
+    debugPrint("Supabase unavailable; running PowerSync in local-only mode: $e");
+  }
 
   ref.onDispose(() => db.close());
   

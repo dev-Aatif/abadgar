@@ -35,23 +35,27 @@ void main() async {
       appLogger.w("⚠️ Warning: .env file not found.");
     }
 
-    // Initialize Supabase - safely handle missing .env
-    final supabaseUrl = dotenv.isInitialized ? (dotenv.env['SUPABASE_URL'] ?? '') : '';
-    final supabaseKey = dotenv.isInitialized ? (dotenv.env['SUPABASE_ANON_KEY'] ?? '') : '';
+    // Initialize Supabase - safely handle missing .env or dart-define
+    final supabaseUrl = dotenv.isInitialized
+        ? (dotenv.env['SUPABASE_URL'] ?? const String.fromEnvironment('SUPABASE_URL'))
+        : const String.fromEnvironment('SUPABASE_URL');
+    final supabaseKey = dotenv.isInitialized
+        ? (dotenv.env['SUPABASE_ANON_KEY'] ?? const String.fromEnvironment('SUPABASE_ANON_KEY'))
+        : const String.fromEnvironment('SUPABASE_ANON_KEY');
 
     if (supabaseUrl.isEmpty || supabaseKey.isEmpty) {
       appLogger.w("⚠️ Warning: Supabase credentials missing. Cloud sync will be disabled.");
-    }
-
-    try {
-      appLogger.i("🚀 Startup: Step 3 (Initializing Supabase...)");
-      await Supabase.initialize(
-        url: supabaseUrl,
-        anonKey: supabaseKey,
-      ).timeout(const Duration(seconds: 10));
-      appLogger.i("🚀 Startup: Step 4 (Supabase Ready)");
-    } catch (e, stack) {
-      appLogger.e("❌ Supabase Init Failed", error: e, stackTrace: stack);
+    } else {
+      try {
+        appLogger.i("🚀 Startup: Step 3 (Initializing Supabase...)");
+        await Supabase.initialize(
+          url: supabaseUrl,
+          anonKey: supabaseKey,
+        ).timeout(const Duration(seconds: 10));
+        appLogger.i("🚀 Startup: Step 4 (Supabase Ready)");
+      } catch (e, stack) {
+        appLogger.e("❌ Supabase Init Failed", error: e, stackTrace: stack);
+      }
     }
 
     runApp(

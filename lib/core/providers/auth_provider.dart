@@ -7,7 +7,12 @@ part 'auth_provider.g.dart';
 class AuthState extends _$AuthState {
   @override
   Session? build() {
-    final supabase = Supabase.instance.client;
+    final SupabaseClient supabase;
+    try {
+      supabase = Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
     
     // Listen to auth changes
     supabase.auth.onAuthStateChange.listen((data) {
@@ -20,7 +25,9 @@ class AuthState extends _$AuthState {
   }
 
   Future<void> signOut() async {
-    await Supabase.instance.client.auth.signOut();
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } catch (_) {}
     state = null;
   }
 

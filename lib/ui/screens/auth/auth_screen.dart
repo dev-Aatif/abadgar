@@ -43,6 +43,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           SnackBar(content: Text(e.message), backgroundColor: Colors.red),
         );
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

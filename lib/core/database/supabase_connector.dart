@@ -14,7 +14,9 @@ class SupabaseConnector extends PowerSyncBackendConnector {
     if (session == null) return null;
 
     final token = session.accessToken;
-    final powersyncUrl = dotenv.env['POWERSYNC_URL'] ?? 'http://localhost:8080';
+    final powersyncUrl = dotenv.isInitialized
+        ? (dotenv.env['POWERSYNC_URL'] ?? 'http://localhost:8080')
+        : const String.fromEnvironment('POWERSYNC_URL', defaultValue: 'http://localhost:8080');
 
     return PowerSyncCredentials(
       endpoint: powersyncUrl,

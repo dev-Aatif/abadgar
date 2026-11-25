@@ -17,6 +17,9 @@
   @com.google.gson.annotations.SerializedName <fields>;
 }
 
+# Flutter optional Play Core deferred-components references
+-dontwarn com.google.android.play.core.**
+
 # Keep the Kotlin standard library
 -keep class kotlin.** { *; }
 -keep class kotlinx.** { *; }
