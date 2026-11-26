@@ -237,5 +237,66 @@
         "type": "String"
       }
     }
-  }
+  },
+  "insights": "Insights",
+  "expense": "Expense",
+  "harvest": "Harvest",
+  "undo": "Undo",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "otherDate": "Pick date",
+  "profitPerAcre": "Profit / Acre",
+  "savedLands": "Saved lands",
+  "whichSeason": "Select season",
+  "edit": "Edit",
+  "clear": "Clear",
+  "categoryHarvestSale": "Harvest Sale",
+  "categoryWheatSale": "Wheat Sale",
+  "categoryRiceSale": "Rice Sale",
+  "categorySubsidy": "Subsidy",
+  "yoyComparison": "Season comparison",
+  "noRecentEntries": "No entries for this season yet.",
+  "addFirstEntry": "Add entry",
+  "personalUse": "Personal Use",
+  "seasonComparisonEmpty": "Add another season of the same crop to compare.",
+  "noActiveCropsPrompt": "No active crops found. Please start a season first.",
+  "unitKg": "Kg",
+  "unitMund": "Mund (40kg)",
+  "unitTons": "Tons",
+  "deleteSeasonTitle": "Delete Season",
+  "deleteSeasonConfirm": "Are you sure you want to delete {name}? This cannot be undone.",
+  "@deleteSeasonConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "yoyPerformance": "Year-over-Year Performance",
+  "validationNoSeason": "No active season selected.",
+  "validationInvalidAmount": "Please enter a valid amount.",
+  "validationSelectCategory": "Please select a category.",
+  "validationInvalidWeight": "Please enter a valid weight.",
+  "savedExpense": "Expense saved successfully!",
+  "savedRevenue": "Revenue saved successfully!",
+  "savedHarvest": "Harvest logged successfully!",
+  "savedAddAnother": "Saved! Add another.",
+  "saveFailed": "Failed to save: {err}",
+  "@saveFailed": {
+    "placeholders": {
+      "err": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLocalOnly": "Saved on Phone",
+  "syncConnected": "Cloud Synced",
+  "syncSyncing": "Syncing...",
+  "reportShareHeading": "Abadgar Season Report",
+  "reportCropLabel": "Crop",
+  "reportStatusLabel": "Status",
+  "reportFooter": "Generated via Abadgar App.",
+  "restoreAutoBackup": "Restore Auto-Backup",
+  "noAutoBackupFound": "No local auto-backup found.",
+  "autoBackupRestored": "Auto-backup restored!"
 }

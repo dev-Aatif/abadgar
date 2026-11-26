@@ -8,7 +8,8 @@ import 'transaction_repository_provider.dart';
 part 'transactions_provider.g.dart';
 
 @riverpod
-Stream<List<Transaction>> activeSeasonTransactions(ActiveSeasonTransactionsRef ref) async* {
+Stream<List<Transaction>> activeSeasonTransactions(
+    ActiveSeasonTransactionsRef ref) async* {
   final seasonId = ref.watch(activeSeasonIdProvider);
   if (seasonId == null) {
     yield [];
@@ -16,13 +17,16 @@ Stream<List<Transaction>> activeSeasonTransactions(ActiveSeasonTransactionsRef r
   }
 
   final db = await ref.watch(powerSyncDatabaseProvider.future);
-  yield* db
-      .watch('SELECT * FROM transactions WHERE season_id = ? ORDER BY date DESC', parameters: [seasonId])
-      .map((rows) => rows.map((row) => Transaction.fromRow(row)).toList());
+  yield* db.watch(
+      'SELECT * FROM transactions WHERE season_id = ? ORDER BY date DESC',
+      parameters: [
+        seasonId
+      ]).map((rows) => rows.map((row) => Transaction.fromRow(row)).toList());
 }
 
 @riverpod
-Stream<List<YieldLog>> activeSeasonYieldLogs(ActiveSeasonYieldLogsRef ref) async* {
+Stream<List<YieldLog>> activeSeasonYieldLogs(
+    ActiveSeasonYieldLogsRef ref) async* {
   final seasonId = ref.watch(activeSeasonIdProvider);
   if (seasonId == null) {
     yield [];
@@ -30,9 +34,11 @@ Stream<List<YieldLog>> activeSeasonYieldLogs(ActiveSeasonYieldLogsRef ref) async
   }
 
   final db = await ref.watch(powerSyncDatabaseProvider.future);
-  yield* db
-      .watch('SELECT * FROM yield_logs WHERE season_id = ? ORDER BY date DESC', parameters: [seasonId])
-      .map((rows) => rows.map((row) => YieldLog.fromRow(row)).toList());
+  yield* db.watch(
+      'SELECT * FROM yield_logs WHERE season_id = ? ORDER BY date DESC',
+      parameters: [
+        seasonId
+      ]).map((rows) => rows.map((row) => YieldLog.fromRow(row)).toList());
 }
 
 @riverpod
@@ -59,16 +65,17 @@ class TransactionsNotifier extends _$TransactionsNotifier {
     state = const AsyncValue.loading();
     try {
       await ref.read(transactionRepositoryProvider).saveTransaction(
-        seasonId: seasonId,
-        amount: amount,
-        category: category,
-        date: date,
-        type: type,
-        notes: notes,
-      );
+            seasonId: seasonId,
+            amount: amount,
+            category: category,
+            date: date,
+            type: type,
+            notes: notes,
+          );
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -83,16 +90,17 @@ class TransactionsNotifier extends _$TransactionsNotifier {
     state = const AsyncValue.loading();
     try {
       await ref.read(transactionRepositoryProvider).updateTransaction(
-        id: id,
-        amount: amount,
-        category: category,
-        date: date,
-        type: type,
-        notes: notes,
-      );
+            id: id,
+            amount: amount,
+            category: category,
+            date: date,
+            type: type,
+            notes: notes,
+          );
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -108,17 +116,18 @@ class TransactionsNotifier extends _$TransactionsNotifier {
     state = const AsyncValue.loading();
     try {
       await ref.read(transactionRepositoryProvider).saveYieldLog(
-        seasonId: seasonId,
-        totalWeight: totalWeight,
-        unit: unit,
-        disposition: disposition,
-        salePrice: salePrice,
-        destination: destination,
-        date: date,
-      );
+            seasonId: seasonId,
+            totalWeight: totalWeight,
+            unit: unit,
+            disposition: disposition,
+            salePrice: salePrice,
+            destination: destination,
+            date: date,
+          );
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -129,6 +138,7 @@ class TransactionsNotifier extends _$TransactionsNotifier {
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -144,17 +154,18 @@ class TransactionsNotifier extends _$TransactionsNotifier {
     state = const AsyncValue.loading();
     try {
       await ref.read(transactionRepositoryProvider).updateYieldLog(
-        id: id,
-        totalWeight: totalWeight,
-        unit: unit,
-        disposition: disposition,
-        salePrice: salePrice,
-        destination: destination,
-        date: date,
-      );
+            id: id,
+            totalWeight: totalWeight,
+            unit: unit,
+            disposition: disposition,
+            salePrice: salePrice,
+            destination: destination,
+            date: date,
+          );
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -165,6 +176,7 @@ class TransactionsNotifier extends _$TransactionsNotifier {
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 }

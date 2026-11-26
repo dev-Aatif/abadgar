@@ -1,68 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/providers/financial_summary_provider.dart';
-import '../../../core/providers/active_season_provider.dart';
-import '../../../core/providers/transactions_provider.dart';
-import '../../../core/providers/comparison_provider.dart';
-import '../../../core/constants/enums.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/models/season.dart';
-import '../../../core/models/transaction.dart';
-import '../../widgets/transaction_form/transaction_bottom_sheet.dart';
+import 'package:intl/intl.dart';
+import 'package:powersync/powersync.dart' hide Column;
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/enums.dart';
+import '../../../core/database/database_provider.dart';
+import '../../../core/database/supabase_connector.dart';
+import '../../../core/models/season.dart';
+import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/comparison_provider.dart';
+import '../../../core/providers/financial_summary_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
-import '../../../core/providers/ui_state_providers.dart';
-import 'package:flutter/services.dart';
+import '../../../core/providers/transactions_provider.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/l10n_helpers.dart';
+import '../../widgets/app_selector.dart';
+import '../../widgets/app_surface.dart';
+import '../../widgets/transaction_actions.dart';
+import '../../widgets/transaction_form/transaction_bottom_sheet.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
     final summary = ref.watch(financialSummaryProvider);
     final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
-    final transactions = ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
+    final transactions =
+        ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
     final isAuthenticated = ref.watch(authStateProvider) != null;
-    final isOfflineVisible = ref.watch(isOfflineAlertVisibleProvider);
     final seasonsList = ref.watch(seasonsProvider).valueOrNull ?? [];
-    final comparisonAsync = activeSeason != null ? ref.watch(seasonComparisonProvider(activeSeason.id)) : null;
-    
-    final currencyFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
+    final comparisonAsync = activeSeason != null
+        ? ref.watch(seasonComparisonProvider(activeSeason.id))
+        : null;
+
+    final currencyFormat = NumberFormat.currency(
+      locale: L10nHelpers.intlLocaleFor(context),
+      symbol: 'Rs ',
+      decimalDigits: 0,
+    );
 
     if (seasonsList.isEmpty) {
       return Scaffold(
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.all(AppSpace.xl),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.eco_rounded, size: 80, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 24),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.sheet),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 88,
+                    height: 88,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.eco_rounded,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpace.xl),
                 Text(
-                  AppLocalizations.of(context)!.welcomeTitle,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                  l10n.welcomeTitle,
+                  style: Theme.of(context).textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpace.sm),
                 Text(
-                  AppLocalizations.of(context)!.welcomeSubtext,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 16),
+                  l10n.welcomeSubtext,
+                  style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 48),
-                ElevatedButton.icon(
-                  onPressed: () => context.push('/seasons'),
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(AppLocalizations.of(context)!.startNewSeason),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 56),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                const SizedBox(height: AppSpace.xxl),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => context.push('/seasons'),
+                    icon: const Icon(Icons.add_rounded),
+                    label: Text(l10n.startNewSeason),
                   ),
                 ),
               ],
@@ -79,512 +103,735 @@ class DashboardScreen extends ConsumerWidget {
             HapticFeedback.lightImpact();
             ref.invalidate(activeSeasonTransactionsProvider);
             ref.invalidate(financialSummaryProvider);
-            await Future.delayed(const Duration(milliseconds: 800));
+            await Future.delayed(const Duration(milliseconds: 500));
           },
           child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppLocalizations.of(context)!.fieldOverview,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.1,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          if (seasonsList.isNotEmpty && activeSeason != null)
-                            DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: activeSeason.id,
-                                isDense: true,
-                                isExpanded: true,
-                                icon: Icon(Icons.arrow_drop_down_rounded, color: Theme.of(context).colorScheme.onSurface),
-                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                                items: seasonsList.map((s) {
-                                  return DropdownMenuItem<String>(
-                                    value: s.id,
-                                    child: Text(s.displayName),
-                                  );
-                                }).toList(),
-                                onChanged: (newId) {
-                                  if (newId != null && newId != activeSeason.id) {
-                                    ref.read(activeSeasonIdProvider.notifier).set(newId);
-                                  }
-                                },
-                              ),
-                            )
-                          else
-                            Text(
-                              AppLocalizations.of(context)!.noActiveSeason,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        if (!isAuthenticated) ...[
-                          Tooltip(
-                            message: AppLocalizations.of(context)!.offlineAlert,
-                            child: Icon(Icons.cloud_off_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                          ),
-                          const SizedBox(width: 16),
-                        ],
-                        IconButton.filledTonal(
-                          tooltip: AppLocalizations.of(context)!.changeSeason,
-                          onPressed: () => context.push('/seasons'),
-                          icon: const Icon(Icons.list_alt_rounded),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Metrics Summary
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                child: _QuickSummaryCard(activeSeason: activeSeason, summary: summary),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // Metrics Grid
-            SliverPadding(
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 1.4, // Slightly taller for regional scripts
-                ),
-                delegate: SliverChildListDelegate([
-                    _MetricCard(
-                    title: AppLocalizations.of(context)!.totalRevenue,
-                    value: currencyFormat.format(summary?.totalRevenue ?? 0),
-                    color: AppColors.revenue,
-                    icon: Icons.trending_up_rounded,
-                  ),
-                  _MetricCard(
-                    title: AppLocalizations.of(context)!.totalExpenses,
-                    value: currencyFormat.format(summary?.totalExpenses ?? 0),
-                    color: AppColors.expense,
-                    icon: Icons.trending_down_rounded,
-                  ),
-                ]),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-            // Season Comparison Card
-            if (comparisonAsync != null)
-              SliverToBoxAdapter(
-                child: comparisonAsync.when(
-                  data: (comparison) {
-                    if (comparison == null || comparison.previousSeason == null) return const SizedBox.shrink();
-                    final variance = comparison.profitVariance;
-                    final isUp = variance >= 0;
-                    final pct = (variance.abs() * 100).toStringAsFixed(1);
-                    final prevName = comparison.previousSeason!.name;
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isUp
-                              ? [AppColors.revenue.withOpacity(0.08), AppColors.revenue.withOpacity(0.02)]
-                              : [AppColors.expense.withOpacity(0.08), AppColors.expense.withOpacity(0.02)],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: (isUp ? AppColors.revenue : AppColors.expense).withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: (isUp ? AppColors.revenue : AppColors.expense).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Icon(
-                                isUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
-                                color: isUp ? AppColors.revenue : AppColors.expense,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isUp
-                                      ? AppLocalizations.of(context)!.profitVarianceUp(pct, prevName)
-                                      : AppLocalizations.of(context)!.profitVarianceDown(pct, prevName),
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: isUp ? AppColors.revenue : AppColors.expense,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${AppLocalizations.of(context)!.netProfit}: ${currencyFormat.format(comparison.currentSummary.profit)}',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-              ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // Chart Section
-            if (summary != null && summary.expenseByCategory.isNotEmpty)
+            physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics()),
+            slivers: [
+              // Editorial Top Bar: Custom Season Selector + Sync Status + Seasons
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(AppLocalizations.of(context)!.totalExpenses, style: Theme.of(context).textTheme.titleLarge),
-                          const SizedBox(height: 24),
-                          SizedBox(
-                            height: 200,
-                            child: PieChart(
-                              PieChartData(
-                                sectionsSpace: 4,
-                                centerSpaceRadius: 40,
-                                sections: summary.expenseByCategory.entries.map((e) {
-                                  return PieChartSectionData(
-                                    color: AppColors.forCategory(e.key),
-                                    value: e.value,
-                                    title: '',
-                                    radius: 50,
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 8,
-                            children: summary.expenseByCategory.keys.map((cat) {
-                               return Row(
-                                 mainAxisSize: MainAxisSize.min,
-                                 children: [
-                                   Container(width: 12, height: 12, decoration: BoxDecoration(color: AppColors.forCategory(cat), shape: BoxShape.circle)),
-                                   const SizedBox(width: 4),
-                                   Text(cat, style: const TextStyle(fontSize: 12)),
-                                 ],
-                               );
-                            }).toList(),
-                          ),
-                        ],
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.sm),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _SeasonSelectorControl(
+                          activeSeason: activeSeason,
+                          seasonsList: seasonsList,
+                        ),
                       ),
+                      const SizedBox(width: AppSpace.xs),
+                      _SyncStatusBadge(
+                        isAuthenticated: isAuthenticated,
+                        db: ref.watch(powerSyncDatabaseProvider).valueOrNull,
+                        onTap: () => context.push('/auth'),
+                      ),
+                      const SizedBox(width: 2),
+                      IconButton(
+                        tooltip: l10n.changeSeason,
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => context.push('/seasons'),
+                        icon:
+                            Icon(Icons.agriculture_outlined, color: tokens.ink),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Open Typographic Hero Ledger Band (unboxed, directly on canvas)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
+                  child: _HeroLedgerBand(
+                    activeSeason: activeSeason,
+                    summary: summary,
+                    comparisonAsync: comparisonAsync,
+                    currencyFormat: currencyFormat,
+                  ),
+                ),
+              ),
+
+              // Unified 1-Tap Action Strip (single segmented bar, zero floating tiles)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpace.lg, 0, AppSpace.lg, AppSpace.xl),
+                  child: _QuickActionStrip(
+                    onExpense: () => showTransactionSheet(context,
+                        initialMode: TransactionMode.expense),
+                    onRevenue: () => showTransactionSheet(context,
+                        initialMode: TransactionMode.revenue),
+                    onHarvest: () => showTransactionSheet(context,
+                        initialMode: TransactionMode.harvest),
+                  ),
+                ),
+              ),
+
+              // Unboxed Proportional Spend Section
+              if (summary != null && summary.expenseByCategory.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                    child: AppSectionHeader(
+                      title: l10n.expenseBreakdown,
+                      trailing: TextButton(
+                        onPressed: () => context.go('/analytics'),
+                        child: Text(l10n.seeAll),
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpace.lg, AppSpace.xs, AppSpace.lg, AppSpace.xl),
+                    child: _SpendProportionStrip(
+                      summary: summary,
+                      currencyFormat: currencyFormat,
+                    ),
+                  ),
+                ),
+              ],
+
+              // Recent Activity Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                  child: AppSectionHeader(
+                    title: l10n.ledger,
+                    trailing: TextButton(
+                      onPressed: () => context.go('/ledger'),
+                      child: Text(l10n.seeAll),
                     ),
                   ),
                 ),
               ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-            // Recent Transactions
-            SliverPadding(
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
-              sliver: SliverToBoxAdapter(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(AppLocalizations.of(context)!.ledger, style: Theme.of(context).textTheme.titleLarge),
-                    TextButton(onPressed: () => context.go('/ledger'), child: Text(AppLocalizations.of(context)!.seeAll)),
-                  ],
-                ),
-              ),
-            ),
-
-            SliverPadding(
-              padding: const EdgeInsetsDirectional.symmetric(horizontal: 20.0),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final tx = transactions[index];
-                    return Dismissible(
-                      key: ValueKey(tx.id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsetsDirectional.only(end: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.redAccent,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
-                      ),
-                      confirmDismiss: (direction) async {
-                        return await showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text(AppLocalizations.of(context)!.confirmDeleteTransactionTitle),
-                              content: const Text('Are you sure you want to delete this transaction?'),
-                              actions: [
-                                TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(AppLocalizations.of(context)!.cancel)),
-                                TextButton(
-                                  onPressed: () => Navigator.of(context).pop(true), 
-                                  child: Text(AppLocalizations.of(context)!.delete, style: const TextStyle(color: Colors.redAccent)),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                      onDismissed: (direction) {
-                        ref.read(transactionsNotifierProvider.notifier).deleteTransaction(tx.id);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(AppLocalizations.of(context)!.transactionDeleted)),
-                        );
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: InkWell(
-                          onTap: () => _showEditTransactionSheet(context, tx),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: tx.type == TransactionType.revenue ? AppColors.revenue.withOpacity(0.1) : AppColors.expense.withOpacity(0.1),
-                              child: Icon(
-                                tx.type == TransactionType.revenue ? Icons.add_rounded : Icons.remove_rounded,
-                                color: tx.type == TransactionType.revenue ? AppColors.revenue : AppColors.expense,
-                              ),
-                            ),
-                            title: Text(tx.category ?? 'Other', style: const TextStyle(fontWeight: FontWeight.w600)),
-                            subtitle: Text(DateFormat.yMMMd().format(tx.date)),
-                            trailing: Text(
-                              currencyFormat.format(tx.amount),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: tx.type == TransactionType.revenue ? AppColors.revenue : AppColors.expense,
-                              ),
+              // Flat Hairline Ledger Rows (unboxed, edge-aligned)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpace.lg, AppSpace.xs, AppSpace.lg, 48),
+                sliver: SliverToBoxAdapter(
+                  child: transactions.isEmpty
+                      ? Container(
+                          padding:
+                              const EdgeInsets.symmetric(vertical: AppSpace.lg),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: tokens.hairline),
+                              bottom: BorderSide(color: tokens.hairline),
                             ),
                           ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  l10n.noRecentEntries,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => showTransactionSheet(context),
+                                child: Text(l10n.addFirstEntry),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: tokens.hairline),
+                              bottom: BorderSide(color: tokens.hairline),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              for (int i = 0;
+                                  i <
+                                      (transactions.length > 5
+                                          ? 5
+                                          : transactions.length);
+                                  i++)
+                                TransactionTile(
+                                  transaction: transactions[i],
+                                  currencyFormat: currencyFormat,
+                                  horizontalPadding: 0,
+                                  showDivider: i <
+                                      (transactions.length > 5
+                                          ? 4
+                                          : transactions.length - 1),
+                                  onTap: () => showTransactionSheet(
+                                    context,
+                                    transaction: transactions[i],
+                                  ),
+                                  onDelete: () => deleteTransactionWithUndo(
+                                    context,
+                                    ref,
+                                    transactions[i],
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  childCount: transactions.length > 5 ? 5 : transactions.length,
                 ),
               ),
-            ),
-            
-            const SliverToBoxAdapter(child: SizedBox(height: 100)),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
   }
+}
 
-  // Category colors now centralized in AppColors.forCategory()
+class _SeasonSelectorControl extends ConsumerWidget {
+  final Season? activeSeason;
+  final List<Season> seasonsList;
 
-  void _showEditTransactionSheet(BuildContext context, Transaction transaction) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => TransactionBottomSheet(transaction: transaction),
+  const _SeasonSelectorControl({
+    required this.activeSeason,
+    required this.seasonsList,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final cropColor = activeSeason?.cropType == CropType.wheat
+        ? AppColors.wheatFor(context)
+        : AppColors.riceFor(context);
+
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: AppSelectorTrigger(
+        leading: activeSeason != null
+            ? Icon(
+                activeSeason!.cropType == CropType.wheat
+                    ? Icons.grass_rounded
+                    : Icons.water_drop_rounded,
+                size: 17,
+                color: cropColor,
+              )
+            : null,
+        label: activeSeason != null
+            ? '${L10nHelpers.cropLabel(context, activeSeason!.cropType)} ${activeSeason!.startDate.year}'
+            : l10n.noActiveSeason,
+        onTap: () async {
+          final picked = await showAppSelectorSheet<String>(
+            context: context,
+            title: l10n.whichSeason,
+            selectedValue: activeSeason?.id,
+            headerAction: TextButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                context.push('/seasons');
+              },
+              icon: const Icon(Icons.tune_rounded, size: 16),
+              label: Text(l10n.seasons),
+            ),
+            options: seasonsList.map((s) {
+              final sColor = s.cropType == CropType.wheat
+                  ? AppColors.wheatFor(context)
+                  : AppColors.riceFor(context);
+              return AppSelectorOption<String>(
+                value: s.id,
+                label:
+                    '${L10nHelpers.cropLabel(context, s.cropType)} ${s.startDate.year}',
+                subtitle:
+                    '${l10n.seasonStarted} ${DateFormat.yMMMd(L10nHelpers.intlLocaleFor(context)).format(s.startDate)}',
+                badge: '${s.landArea} ${l10n.acresUnitShort}',
+                leading: Icon(
+                  s.cropType == CropType.wheat
+                      ? Icons.grass_rounded
+                      : Icons.water_drop_rounded,
+                  color: sColor,
+                  size: 20,
+                ),
+              );
+            }).toList(),
+          );
+          if (picked != null && picked != activeSeason?.id) {
+            ref.read(activeSeasonIdProvider.notifier).set(picked);
+          }
+        },
+      ),
     );
   }
 }
 
-
-
-class _QuickSummaryCard extends StatelessWidget {
+class _HeroLedgerBand extends StatelessWidget {
   final Season? activeSeason;
   final FinancialSummary? summary;
+  final AsyncValue<SeasonComparison?>? comparisonAsync;
+  final NumberFormat currencyFormat;
 
-  const _QuickSummaryCard({this.activeSeason, this.summary});
+  const _HeroLedgerBand({
+    required this.activeSeason,
+    required this.summary,
+    required this.comparisonAsync,
+    required this.currencyFormat,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final curFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
     final profit = summary?.profit ?? 0;
+    final isNegative = profit < 0;
+    final profitColor = isNegative ? AppColors.expenseFor(context) : tokens.ink;
 
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(32),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('SEASON PROFIT', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                  const SizedBox(height: 4),
-                  Text(
-                    curFormat.format(profit),
-                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  activeSeason?.cropType.value ?? 'N/A',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _MiniStat(label: AppLocalizations.of(context)!.revenue, value: curFormat.format(summary?.totalRevenue ?? 0)),
-              _MiniStat(label: AppLocalizations.of(context)!.expenses, value: curFormat.format(summary?.totalExpenses ?? 0)),
-              _MiniStat(label: AppLocalizations.of(context)!.areaLabel, value: '${activeSeason?.landArea ?? 0} ${AppLocalizations.of(context)!.acresUnitShort}'),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-  const _MiniStat({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(
+                l10n.netProfit,
+                style: Theme.of(context).textTheme.bodyMedium,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (activeSeason != null)
+              Text(
+                '${activeSeason!.landArea} ${l10n.acresUnitShort}',
+                style: AppTheme.tabular(Theme.of(context).textTheme.bodySmall),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.xxs),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            '${isNegative ? '−' : ''}${currencyFormat.format(profit.abs())}',
+            style: AppTheme.tabular(
+              Theme.of(context).textTheme.headlineLarge?.copyWith(
+                    color: profitColor,
+                    fontSize: 38,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1.0,
+                  ),
+            ),
+          ),
+        ),
+        if (comparisonAsync != null)
+          comparisonAsync!.maybeWhen(
+            data: (comparison) {
+              if (comparison == null || comparison.previousSeason == null) {
+                return const SizedBox.shrink();
+              }
+              final variance = comparison.profitVariance;
+              final isUp = variance >= 0;
+              final pct = (variance.abs() * 100).toStringAsFixed(1);
+              final trendColor = isUp
+                  ? AppColors.revenueFor(context)
+                  : AppColors.expenseFor(context);
+              final prevName =
+                  '${L10nHelpers.cropLabel(context, comparison.previousSeason!.cropType)} ${comparison.previousSeason!.startDate.year}';
+
+              return Padding(
+                padding: const EdgeInsets.only(top: AppSpace.xs),
+                child: InkWell(
+                  onTap: () => context.go('/analytics'),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isUp
+                              ? Icons.trending_up_rounded
+                              : Icons.trending_down_rounded,
+                          size: 16,
+                          color: trendColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            isUp
+                                ? l10n.profitVarianceUp(pct, prevName)
+                                : l10n.profitVarianceDown(pct, prevName),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: trendColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+            orElse: () => const SizedBox.shrink(),
+          ),
+        const SizedBox(height: AppSpace.md),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: AppSpace.sm),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: tokens.hairline),
+              bottom: BorderSide(color: tokens.hairline),
+            ),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.revenue,
+                          style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          '+${currencyFormat.format(summary?.totalRevenue ?? 0)}',
+                          style: AppTheme.tabular(
+                            Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  color: AppColors.revenueFor(context),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                VerticalDivider(width: AppSpace.lg, color: tokens.hairline),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.expenses,
+                          style: Theme.of(context).textTheme.bodySmall),
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          '−${currencyFormat.format(summary?.totalExpenses ?? 0)}',
+                          style: AppTheme.tabular(
+                            Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  color: AppColors.expenseFor(context),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final Color color;
-  final IconData icon;
-  final bool isWide;
+class _QuickActionStrip extends StatelessWidget {
+  final VoidCallback onExpense;
+  final VoidCallback onRevenue;
+  final VoidCallback onHarvest;
 
-  const _MetricCard({
-    required this.title,
-    required this.value,
-    required this.color,
-    required this.icon,
-    this.isWide = false,
+  const _QuickActionStrip({
+    required this.onExpense,
+    required this.onRevenue,
+    required this.onHarvest,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsetsDirectional.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: isWide ? 20 : 16,
-                fontWeight: FontWeight.w800,
-                color: Theme.of(context).colorScheme.onSurface,
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
+
+    return AppCard(
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Expanded(
+              child: _StripItem(
+                label: l10n.expense,
+                icon: Icons.remove_rounded,
+                tint: AppColors.expenseFor(context),
+                onTap: onExpense,
               ),
             ),
-          ),
-        ],
+            VerticalDivider(width: 1, color: tokens.hairline),
+            Expanded(
+              child: _StripItem(
+                label: l10n.revenue,
+                icon: Icons.add_rounded,
+                tint: AppColors.revenueFor(context),
+                onTap: onRevenue,
+              ),
+            ),
+            VerticalDivider(width: 1, color: tokens.hairline),
+            Expanded(
+              child: _StripItem(
+                label: l10n.harvest,
+                icon: Icons.eco_outlined,
+                tint: AppColors.wheatFor(context),
+                onTap: onHarvest,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _StripItem extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color tint;
+  final VoidCallback onTap;
+
+  const _StripItem({
+    required this.label,
+    required this.icon,
+    required this.tint,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 15, color: tint),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(fontSize: 12.5),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SpendProportionStrip extends StatelessWidget {
+  final FinancialSummary summary;
+  final NumberFormat currencyFormat;
+
+  const _SpendProportionStrip({
+    required this.summary,
+    required this.currencyFormat,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final entries = summary.expenseByCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final total = summary.totalExpenses > 0 ? summary.totalExpenses : 1.0;
+    final topEntries = entries.take(4).toList();
+
+    return Column(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(5),
+          child: SizedBox(
+            height: 10,
+            child: Row(
+              children: [
+                for (int i = 0; i < entries.length; i++)
+                  Expanded(
+                    flex:
+                        (entries[i].value * 100 / total).round().clamp(1, 100),
+                    child: Container(
+                      margin: EdgeInsetsDirectional.only(
+                          end: i < entries.length - 1 ? 2 : 0),
+                      color: AppColors.forCategory(entries[i].key),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpace.sm),
+        for (int i = 0; i < topEntries.length; i++) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: AppColors.forCategory(topEntries[i].key),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpace.xs),
+                Expanded(
+                  child: Text(
+                    L10nHelpers.categoryLabel(context, topEntries[i].key),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: tokens.ink),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '${((topEntries[i].value / total) * 100).round()}%',
+                  style:
+                      AppTheme.tabular(Theme.of(context).textTheme.bodySmall),
+                ),
+                const SizedBox(width: AppSpace.md),
+                Text(
+                  currencyFormat.format(topEntries[i].value),
+                  style: AppTheme.tabular(Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(color: tokens.ink)),
+                ),
+              ],
+            ),
+          ),
+          if (i < topEntries.length - 1)
+            Divider(height: 1, color: tokens.hairline),
+        ],
+      ],
+    );
+  }
+}
+
+class _SyncStatusBadge extends StatelessWidget {
+  final bool isAuthenticated;
+  final PowerSyncDatabase? db;
+  final VoidCallback onTap;
+
+  const _SyncStatusBadge({
+    required this.isAuthenticated,
+    required this.db,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
+
+    if (!isAuthenticated || db == null) {
+      return Tooltip(
+        message: l10n.offlineAlert,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: tokens.well,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              border: Border.all(color: tokens.hairline, width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.phone_android_rounded,
+                    size: 14, color: tokens.inkMuted),
+                const SizedBox(width: 4),
+                Text(
+                  l10n.offline,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ValueListenableBuilder<String?>(
+      valueListenable: SupabaseConnector.lastSyncWarning,
+      builder: (context, syncWarning, _) {
+        return StreamBuilder<SyncStatus>(
+          stream: db!.statusStream,
+          initialData: db!.currentStatus,
+          builder: (context, snapshot) {
+            final status = snapshot.data;
+            final isSyncing = (status?.connecting ?? false) ||
+                (status?.downloading ?? false) ||
+                (status?.uploading ?? false);
+            final isConnected = status?.connected ?? false;
+
+            final IconData icon;
+            final String label;
+            final Color color;
+
+            if (syncWarning != null) {
+              icon = Icons.sync_problem_rounded;
+              label = l10n.offline;
+              color = AppColors.expenseFor(context);
+            } else if (isSyncing) {
+              icon = Icons.sync_rounded;
+              label = l10n.connecting;
+              color = Theme.of(context).colorScheme.primary;
+            } else if (isConnected) {
+              icon = Icons.cloud_done_rounded;
+              label = l10n.connected;
+              color = AppColors.revenueFor(context);
+            } else {
+              icon = Icons.cloud_off_rounded;
+              label = l10n.offline;
+              color = tokens.inkMuted;
+            }
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: tokens.well,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(color: tokens.hairline, width: 1),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 14, color: color),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: color),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

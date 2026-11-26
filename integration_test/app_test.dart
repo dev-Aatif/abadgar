@@ -6,12 +6,14 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('End-to-End App Flow', () {
-    testWidgets('Full Season Lifecycle: Create Land -> Create Season -> Add Expense', (tester) async {
+    testWidgets(
+        'Full Season Lifecycle: Create Land -> Create Season -> Add Expense',
+        (tester) async {
       app.main();
       await tester.pumpAndSettle();
 
-      // 1. Verify we are on Dashboard
-      expect(find.text('Field Overview'), findsOneWidget);
+      // 1. Verify onboarding state renders on fresh launch
+      expect(find.text('Welcome to Abadgar!'), findsOneWidget);
 
       // 2. Open Land Management
       // Note: Integration tests rely on Finding Keys or Text.
@@ -23,11 +25,11 @@ void main() {
       // 3. Navigate to Seasons
       // await tester.tap(find.text('No Active Season'));
       // await tester.pumpAndSettle();
-      
+
       // ... more steps would follow here ...
       // In a real integration test, you'd use keys like:
       // await tester.enterText(find.byKey(const Key('land_name_field')), 'Test Plot');
-      
+
       // Verification
       // expect(find.text('Test Plot'), findsOneWidget);
     });

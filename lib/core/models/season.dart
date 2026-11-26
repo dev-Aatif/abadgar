@@ -32,7 +32,9 @@ class Season with _$Season {
       cropType: CropType.fromString(row['crop_type'] as String),
       landArea: (row['land_area'] as num).toDouble(),
       startDate: DateTime.parse(row['start_date'] as String),
-      endDate: row['end_date'] != null ? DateTime.parse(row['end_date'] as String) : null,
+      endDate: row['end_date'] != null
+          ? DateTime.parse(row['end_date'] as String)
+          : null,
       status: SeasonStatus.fromString(row['status'] as String),
       createdAt: DateTime.parse(row['created_at'] as String),
       updatedAt: DateTime.parse(row['updated_at'] as String),

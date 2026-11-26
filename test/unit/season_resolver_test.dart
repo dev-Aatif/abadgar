@@ -18,7 +18,8 @@ void main() {
     test('Should resolve the active season ID if one is explicitly set', () {
       final container = ProviderContainer(
         overrides: [
-          activeSeasonIdProvider.overrideWith(() => MockActiveSeasonId('selected-s1')),
+          activeSeasonIdProvider
+              .overrideWith(() => MockActiveSeasonId('selected-s1')),
         ],
       );
 
@@ -26,7 +27,9 @@ void main() {
       expect(resolvedId, 'selected-s1');
     });
 
-    test('Logic check: should find first active season from list if none selected', () {
+    test(
+        'Logic check: should find first active season from list if none selected',
+        () {
       final now = DateTime.now();
       final seasons = [
         Season(

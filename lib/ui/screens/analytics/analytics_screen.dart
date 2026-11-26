@@ -1,490 +1,743 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
+
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/enums.dart';
+import '../../../core/providers/analytics_selection_provider.dart';
 import '../../../core/providers/comparison_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
-import '../../../core/providers/analytics_selection_provider.dart';
-import '../../../core/constants/app_colors.dart';
-import 'package:abadgar/l10n/generated/app_localizations.dart';
-import 'package:share_plus/share_plus.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/l10n_helpers.dart';
+import '../../widgets/app_selector.dart';
+import '../../widgets/app_surface.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final seasonsAsync = ref.watch(seasonsProvider);
     final selectedSeasonId = ref.watch(analyticsSeasonSelectionProvider);
-    
-    final comparisonAsync = selectedSeasonId != null 
+    final comparisonAsync = selectedSeasonId != null
         ? ref.watch(seasonComparisonProvider(selectedSeasonId))
         : const AsyncValue<SeasonComparison?>.data(null);
-    
-    final currencyFormat = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
+    final currencyFormat = NumberFormat.currency(
+      locale: L10nHelpers.intlLocaleFor(context),
+      symbol: 'Rs ',
+      decimalDigits: 0,
+    );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.seasonInsights, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.seasonInsights),
         actions: [
           if (comparisonAsync.value != null)
             IconButton(
-              icon: const Icon(Icons.share_rounded),
+              tooltip: l10n.exportData,
+              icon: const Icon(Icons.share_outlined),
               onPressed: () => _shareReport(context, comparisonAsync.value),
             ),
           seasonsAsync.when(
-            data: (seasons) => seasons.isEmpty 
-              ? const SizedBox.shrink()
-              : Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 8.0),
-                  child: DropdownButton<String>(
-                    value: selectedSeasonId,
-                    underline: const SizedBox.shrink(),
-                    icon: const Icon(Icons.filter_list_rounded),
-                    items: seasons.map((s) => DropdownMenuItem(
-                      value: s.id,
-                      child: Text(s.displayName),
-                    )).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        ref.read(analyticsSeasonSelectionProvider.notifier).setSeason(val);
+            data: (seasons) {
+              if (seasons.isEmpty) return const SizedBox.shrink();
+              final current = seasons.firstWhere(
+                (s) => s.id == selectedSeasonId,
+                orElse: () => seasons.first,
+              );
+              final cropColor = current.cropType == CropType.wheat
+                  ? AppColors.wheatFor(context)
+                  : AppColors.riceFor(context);
+
+              return Padding(
+                padding: const EdgeInsetsDirectional.only(end: AppSpace.sm),
+                child: Center(
+                  child: AppSelectorTrigger(
+                    compact: true,
+                    leading: Icon(
+                      current.cropType == CropType.wheat
+                          ? Icons.grass_rounded
+                          : Icons.water_drop_rounded,
+                      size: 15,
+                      color: cropColor,
+                    ),
+                    label:
+                        '${L10nHelpers.cropLabel(context, current.cropType)} ${current.startDate.year}',
+                    onTap: () async {
+                      final picked = await showAppSelectorSheet<String>(
+                        context: context,
+                        title: l10n.whichSeason,
+                        selectedValue: current.id,
+                        options: seasons.map((s) {
+                          final sColor = s.cropType == CropType.wheat
+                              ? AppColors.wheatFor(context)
+                              : AppColors.riceFor(context);
+                          return AppSelectorOption<String>(
+                            value: s.id,
+                            label:
+                                '${L10nHelpers.cropLabel(context, s.cropType)} ${s.startDate.year}',
+                            badge: '${s.landArea} ${l10n.acresUnitShort}',
+                            leading: Icon(
+                              s.cropType == CropType.wheat
+                                  ? Icons.grass_rounded
+                                  : Icons.water_drop_rounded,
+                              color: sColor,
+                              size: 20,
+                            ),
+                          );
+                        }).toList(),
+                      );
+                      if (picked != null) {
+                        ref
+                            .read(analyticsSeasonSelectionProvider.notifier)
+                            .setSeason(picked);
                       }
                     },
                   ),
                 ),
+              );
+            },
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
           ),
         ],
       ),
       body: selectedSeasonId == null
-        ? _buildNoSeasonState(context)
-        : comparisonAsync.when(
-            data: (comparison) => comparison == null 
-              ? _buildNoDataState(context)
-              : _buildAnalyticsBody(context, comparison, currencyFormat, ref),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text(AppLocalizations.of(context)!.errorGeneral(err.toString()))),
-          ),
-    );
-  }
-
-  Widget _buildAnalyticsBody(BuildContext context, SeasonComparison comparison, NumberFormat format, WidgetRef ref) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSeasonHeader(context, comparison.currentSeason),
-          const SizedBox(height: 24),
-          _buildStatsGrid(context, comparison, format),
-          const SizedBox(height: 32),
-          _buildComparisonCard(context, comparison, format),
-          if (comparison.previousSeason != null && comparison.previousSummary != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 32),
-              child: _buildPerformanceGraph(context, comparison, format),
+          ? AppEmptyState(
+              icon: Icons.insights_outlined,
+              title: l10n.selectSeasonForAnalytics,
+            )
+          : comparisonAsync.when(
+              data: (comparison) => comparison == null
+                  ? AppEmptyState(
+                      icon: Icons.insights_outlined,
+                      title: l10n.noDataFoundForSeason,
+                    )
+                  : _AnalyticsBody(
+                      comparison: comparison,
+                      currencyFormat: currencyFormat,
+                    ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) =>
+                  Center(child: Text(l10n.errorGeneral(err.toString()))),
             ),
-          const SizedBox(height: 32),
-          _buildExpenseBreakdown(context, comparison, format),
-          const SizedBox(height: 32),
-          _buildMultiYearTrendGraph(context, ref),
-          const SizedBox(height: 100), // Spacing for navbar
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSeasonHeader(BuildContext context, dynamic season) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          season.displayName,
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        Text(
-          AppLocalizations.of(context)!.detailedReport,
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatsGrid(BuildContext context, SeasonComparison comparison, NumberFormat format) {
-    final summary = comparison.currentSummary;
-    final acres = comparison.currentSeason.landArea > 0 ? comparison.currentSeason.landArea : 1.0;
-    final weightFormat = NumberFormat.decimalPattern();
-
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 16,
-      crossAxisSpacing: 16,
-      childAspectRatio: 1.5,
-      children: [
-        _buildStatCard(context, AppLocalizations.of(context)!.totalRevenue, format.format(summary.totalRevenue), Icons.payments_rounded, AppColors.revenue),
-        _buildStatCard(context, AppLocalizations.of(context)!.totalExpenses, format.format(summary.totalExpenses), Icons.shopping_basket_rounded, AppColors.expense),
-        _buildStatCard(context, AppLocalizations.of(context)!.netProfit, format.format(summary.profit), Icons.account_balance_rounded, summary.profit >= 0 ? AppColors.profit : AppColors.loss),
-        _buildStatCard(context, AppLocalizations.of(context)!.costPerAcre, format.format(summary.totalExpenses / acres), Icons.landscape_rounded, Colors.brown),
-        _buildStatCard(context, AppLocalizations.of(context)!.revenuePerAcre, format.format(summary.totalRevenue / acres), Icons.monetization_on_rounded, AppColors.revenue),
-        _buildStatCard(context, AppLocalizations.of(context)!.yieldPerAcre, '${weightFormat.format(summary.totalYieldWeight / acres)} Unit', Icons.eco_rounded, AppColors.wheat),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(BuildContext context, String label, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Icon(icon, color: color, size: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text(label, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComparisonCard(BuildContext context, SeasonComparison comparison, NumberFormat format) {
-    if (comparison.previousSeason == null) {
-      return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.info_outline_rounded),
-            const SizedBox(width: 12),
-            Expanded(child: Text(AppLocalizations.of(context)!.addAnotherSeason)),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary],
-        ),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Text(AppLocalizations.of(context)!.smartComparison, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            comparison.profitVariance >= 0
-                ? AppLocalizations.of(context)!.profitVarianceUp(
-                    (comparison.profitVariance * 100).abs().toStringAsFixed(1),
-                    comparison.previousSeason!.displayName)
-                : AppLocalizations.of(context)!.profitVarianceDown(
-                    (comparison.profitVariance * 100).abs().toStringAsFixed(1),
-                    comparison.previousSeason!.displayName),
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExpenseBreakdown(BuildContext context, SeasonComparison comparison, NumberFormat format) {
-    final expenses = comparison.currentSummary.expenseByCategory;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(AppLocalizations.of(context)!.expenseBreakdown, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        const SizedBox(height: 16),
-        if (expenses.isEmpty)
-           Center(child: Text(AppLocalizations.of(context)!.noExpenses))
-        else
-          ...expenses.entries.map((e) => _buildExpenseItem(context, e.key, e.value, comparison.currentSummary.totalExpenses, format)),
-      ],
-    );
-  }
-
-  Widget _buildExpenseItem(BuildContext context, String cat, double val, double total, NumberFormat format) {
-    final percent = val / total;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(cat, style: const TextStyle(fontWeight: FontWeight.w600)),
-              Text(format.format(val), style: const TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: percent,
-            borderRadius: BorderRadius.circular(4),
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoSeasonState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.analytics_outlined, size: 64, color: Colors.grey),
-          const SizedBox(height: 16),
-          Text(AppLocalizations.of(context)!.selectSeasonForAnalytics),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoDataState(BuildContext context) {
-    return Center(child: Text(AppLocalizations.of(context)!.noDataFoundForSeason));
-  }
-
-  Widget _buildPerformanceGraph(BuildContext context, SeasonComparison comparison, NumberFormat format) {
-    final curSummary = comparison.currentSummary;
-    final prevSummary = comparison.previousSummary!;
-    final curName = comparison.currentSeason.displayName;
-    final prevName = comparison.previousSeason!.displayName;
-
-    final maxY = [
-      curSummary.totalRevenue,
-      curSummary.totalExpenses,
-      prevSummary.totalRevenue,
-      prevSummary.totalExpenses,
-    ].reduce((a, b) => a > b ? a : b);
-
-    // If everything is 0, don't show graph
-    if (maxY == 0) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Year-over-Year Performance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        const SizedBox(height: 24),
-        SizedBox(
-          height: 250,
-          child: BarChart(
-            BarChartData(
-              alignment: BarChartAlignment.spaceAround,
-              maxY: maxY * 1.2,
-              barTouchData: BarTouchData(enabled: false),
-              titlesData: FlTitlesData(
-                show: true,
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (double value, TitleMeta meta) {
-                      const style = TextStyle(fontSize: 12, fontWeight: FontWeight.bold);
-                      Widget text;
-                      switch (value.toInt()) {
-                        case 0: text = Text(prevName, style: style); break;
-                        case 1: text = Text(curName, style: style); break;
-                        default: text = const Text(''); break;
-                      }
-                      return SideTitleWidget(meta: meta, child: text);
-                    },
-                  ),
-                ),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 40,
-                    getTitlesWidget: (value, meta) {
-                      if (value == 0) return const SizedBox.shrink();
-                      return Text(
-                        NumberFormat.compact().format(value),
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
-                      );
-                    },
-                  ),
-                ),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              ),
-              gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.withOpacity(0.2), strokeWidth: 1),
-              ),
-              borderData: FlBorderData(show: false),
-              barGroups: [
-                BarChartGroupData(
-                  x: 0,
-                  barRods: [
-                    BarChartRodData(toY: prevSummary.totalRevenue, color: AppColors.revenue, width: 16, borderRadius: BorderRadius.circular(4)),
-                    BarChartRodData(toY: prevSummary.totalExpenses, color: AppColors.expense, width: 16, borderRadius: BorderRadius.circular(4)),
-                  ],
-                ),
-                BarChartGroupData(
-                  x: 1,
-                  barRods: [
-                    BarChartRodData(toY: curSummary.totalRevenue, color: AppColors.revenue, width: 16, borderRadius: BorderRadius.circular(4)),
-                    BarChartRodData(toY: curSummary.totalExpenses, color: AppColors.expense, width: 16, borderRadius: BorderRadius.circular(4)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(width: 12, height: 12, color: AppColors.revenue),
-            const SizedBox(width: 4),
-            const Text('Revenue', style: TextStyle(fontSize: 12)),
-            const SizedBox(width: 16),
-            Container(width: 12, height: 12, color: AppColors.expense),
-            const SizedBox(width: 4),
-            const Text('Expenses', style: TextStyle(fontSize: 12)),
-          ],
-        ),
-      ],
     );
   }
 
   void _shareReport(BuildContext context, SeasonComparison? comparison) {
     if (comparison == null) return;
-    final format = NumberFormat.currency(symbol: 'Rs ', decimalDigits: 0);
+    final l10n = AppLocalizations.of(context)!;
+    final intlLocale = L10nHelpers.intlLocaleFor(context);
+    final format = NumberFormat.currency(
+        locale: intlLocale, symbol: 'Rs ', decimalDigits: 0);
+    final weightFormat = NumberFormat.decimalPattern(intlLocale);
     final summary = comparison.currentSummary;
     final season = comparison.currentSeason;
-    
+    final acres = season.landArea > 0 ? season.landArea : 1.0;
+
     final text = '''
-*Abadgar Season Report*
-Season: ${season.displayName}
-Crop: ${season.cropType.value}
-Area: ${season.landArea} ${AppLocalizations.of(context)!.acresUnit}
-Status: ${season.status.value}
+*${l10n.appTitle} — ${L10nHelpers.cropLabel(context, season.cropType)} ${season.startDate.year}*
+${l10n.areaLabel}: ${season.landArea} ${l10n.acresUnit}
 
-*Financial Summary*
-Total Revenue: ${format.format(summary.totalRevenue)}
-Total Expenses: ${format.format(summary.totalExpenses)}
-Net Profit: ${format.format(summary.profit)}
+${l10n.totalRevenue}: ${format.format(summary.totalRevenue)}
+${l10n.totalExpenses}: ${format.format(summary.totalExpenses)}
+${l10n.netProfit}: ${format.format(summary.profit)}
 
-*Performance Metrics*
-Cost / Acre: ${format.format(summary.totalExpenses / (season.landArea > 0 ? season.landArea : 1))}
-Revenue / Acre: ${format.format(summary.totalRevenue / (season.landArea > 0 ? season.landArea : 1))}
-Total Yield: ${NumberFormat.decimalPattern().format(summary.totalYieldWeight)}
-Yield / Acre: ${NumberFormat.decimalPattern().format(summary.totalYieldWeight / (season.landArea > 0 ? season.landArea : 1))}
+${l10n.costPerAcre}: ${format.format(summary.totalExpenses / acres)}
+${l10n.revenuePerAcre}: ${format.format(summary.totalRevenue / acres)}
+${l10n.yieldPerAcre}: ${weightFormat.format(summary.totalYieldWeight / acres)}
 
-*Expense Breakdown*
-${summary.expenseByCategory.entries.map((e) => '- ${e.key}: ${format.format(e.value)}').join('\n')}
-
-Generated via Abadgar App.
+${l10n.expenseBreakdown}:
+${summary.expenseByCategory.entries.map((e) => '- ${L10nHelpers.categoryLabel(context, e.key)}: ${format.format(e.value)}').join('\n')}
 ''';
     Share.share(text);
   }
-  Widget _buildMultiYearTrendGraph(BuildContext context, WidgetRef ref) {
+}
+
+class _AnalyticsBody extends ConsumerWidget {
+  final SeasonComparison comparison;
+  final NumberFormat currencyFormat;
+
+  const _AnalyticsBody({
+    required this.comparison,
+    required this.currencyFormat,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
+    final summary = comparison.currentSummary;
+    final acres = comparison.currentSeason.landArea > 0
+        ? comparison.currentSeason.landArea
+        : 1.0;
+    final weightFormat =
+        NumberFormat.decimalPattern(L10nHelpers.intlLocaleFor(context));
+
+    final sortedExpenses = summary.expenseByCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding:
+          const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Season header
+          Text(
+            '${L10nHelpers.cropLabel(context, comparison.currentSeason.cropType)} ${comparison.currentSeason.startDate.year}',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: AppSpace.xxs),
+          Text(
+            '${comparison.currentSeason.landArea} ${l10n.acresUnit}',
+            style: AppTheme.tabular(Theme.of(context).textTheme.bodyMedium),
+          ),
+          const SizedBox(height: AppSpace.lg),
+
+          // Unit Economics 2x2 hairline ledger grid
+          AppCard(
+            child: Column(
+              children: [
+                IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _UnitCell(
+                          label: l10n.costPerAcre,
+                          value: currencyFormat
+                              .format(summary.totalExpenses / acres),
+                          valueColor: AppColors.expenseFor(context),
+                        ),
+                      ),
+                      VerticalDivider(width: 1, color: tokens.hairline),
+                      Expanded(
+                        child: _UnitCell(
+                          label: l10n.revenuePerAcre,
+                          value: currencyFormat
+                              .format(summary.totalRevenue / acres),
+                          valueColor: AppColors.revenueFor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Divider(height: 1, color: tokens.hairline),
+                IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _UnitCell(
+                          label: l10n.profitPerAcre,
+                          value: currencyFormat.format(summary.profit / acres),
+                          valueColor: summary.profit >= 0
+                              ? AppColors.profitFor(context)
+                              : AppColors.expenseFor(context),
+                        ),
+                      ),
+                      VerticalDivider(width: 1, color: tokens.hairline),
+                      Expanded(
+                        child: _UnitCell(
+                          label: l10n.yieldPerAcre,
+                          value: weightFormat
+                              .format(summary.totalYieldWeight / acres),
+                          valueColor: tokens.ink,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpace.xl),
+
+          // Season Comparison
+          AppSectionHeader(title: l10n.yoyComparison),
+          const SizedBox(height: AppSpace.sm),
+          if (comparison.previousSeason == null)
+            AppCard(
+              padding: const EdgeInsets.all(AppSpace.md),
+              child: Text(
+                l10n.seasonComparisonEmpty,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )
+          else ...[
+            _ComparisonCard(comparison: comparison),
+            if (comparison.previousSummary != null) ...[
+              const SizedBox(height: AppSpace.md),
+              _ComparisonBarChart(comparison: comparison),
+            ],
+          ],
+          const SizedBox(height: AppSpace.xl),
+
+          // Expense Breakdown
+          AppSectionHeader(title: l10n.expenseBreakdown),
+          const SizedBox(height: AppSpace.sm),
+          if (sortedExpenses.isEmpty)
+            AppCard(
+              padding: const EdgeInsets.all(AppSpace.md),
+              child: Text(l10n.noExpenses,
+                  style: Theme.of(context).textTheme.bodyMedium),
+            )
+          else
+            AppCard(
+              padding: const EdgeInsets.all(AppSpace.md),
+              child: Column(
+                children: [
+                  for (int i = 0; i < sortedExpenses.length; i++) ...[
+                    _ExpenseRow(
+                      category: sortedExpenses[i].key,
+                      amount: sortedExpenses[i].value,
+                      total: summary.totalExpenses > 0
+                          ? summary.totalExpenses
+                          : 1.0,
+                      format: currencyFormat,
+                    ),
+                    if (i < sortedExpenses.length - 1)
+                      const SizedBox(height: AppSpace.md),
+                  ],
+                ],
+              ),
+            ),
+
+          // Multi-year Trend
+          const SizedBox(height: AppSpace.xl),
+          _MultiYearTrendSection(),
+        ],
+      ),
+    );
+  }
+}
+
+class _UnitCell extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  const _UnitCell({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: AppSpace.xxs),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              value,
+              style: AppTheme.tabular(
+                Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: valueColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonCard extends StatelessWidget {
+  final SeasonComparison comparison;
+
+  const _ComparisonCard({required this.comparison});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isUp = comparison.profitVariance >= 0;
+    final pct = (comparison.profitVariance * 100).abs().toStringAsFixed(1);
+    final prevName =
+        '${L10nHelpers.cropLabel(context, comparison.previousSeason!.cropType)} ${comparison.previousSeason!.startDate.year}';
+    final trendColor =
+        isUp ? AppColors.revenueFor(context) : AppColors.expenseFor(context);
+
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Row(
+        children: [
+          Icon(
+            isUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+            color: trendColor,
+            size: 22,
+          ),
+          const SizedBox(width: AppSpace.sm),
+          Expanded(
+            child: Text(
+              isUp
+                  ? l10n.profitVarianceUp(pct, prevName)
+                  : l10n.profitVarianceDown(pct, prevName),
+              style:
+                  Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 15),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonBarChart extends StatelessWidget {
+  final SeasonComparison comparison;
+
+  const _ComparisonBarChart({required this.comparison});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
+    final cur = comparison.currentSummary;
+    final prev = comparison.previousSummary!;
+    final curLabel =
+        '${L10nHelpers.cropLabel(context, comparison.currentSeason.cropType)} ${comparison.currentSeason.startDate.year}';
+    final prevLabel =
+        '${L10nHelpers.cropLabel(context, comparison.previousSeason!.cropType)} ${comparison.previousSeason!.startDate.year}';
+
+    final maxY = [
+      cur.totalRevenue,
+      cur.totalExpenses,
+      prev.totalRevenue,
+      prev.totalExpenses,
+    ].reduce((a, b) => a > b ? a : b);
+
+    if (maxY == 0) return const SizedBox.shrink();
+
+    final revColor = AppColors.revenueFor(context);
+    final expColor = AppColors.expenseFor(context);
+
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 210,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: maxY * 1.2,
+                barTouchData: BarTouchData(enabled: false),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      getTitlesWidget: (value, meta) {
+                        final text = value.toInt() == 0 ? prevLabel : curLabel;
+                        return SideTitleWidget(
+                          meta: meta,
+                          child: Text(text,
+                              style: Theme.of(context).textTheme.bodySmall),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 52,
+                      getTitlesWidget: (value, meta) {
+                        if (value == 0) return const SizedBox.shrink();
+                        return Text(
+                          NumberFormat.compact(
+                                  locale: L10nHelpers.intlLocaleFor(context))
+                              .format(value),
+                          style: AppTheme.tabular(
+                              Theme.of(context).textTheme.bodySmall),
+                        );
+                      },
+                    ),
+                  ),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (_) =>
+                      FlLine(color: tokens.hairline, strokeWidth: 1),
+                ),
+                borderData: FlBorderData(show: false),
+                barGroups: [
+                  BarChartGroupData(
+                    x: 0,
+                    barsSpace: 6,
+                    barRods: [
+                      BarChartRodData(
+                          toY: prev.totalRevenue,
+                          color: revColor,
+                          width: 16,
+                          borderRadius: BorderRadius.circular(4)),
+                      BarChartRodData(
+                          toY: prev.totalExpenses,
+                          color: expColor,
+                          width: 16,
+                          borderRadius: BorderRadius.circular(4)),
+                    ],
+                  ),
+                  BarChartGroupData(
+                    x: 1,
+                    barsSpace: 6,
+                    barRods: [
+                      BarChartRodData(
+                          toY: cur.totalRevenue,
+                          color: revColor,
+                          width: 16,
+                          borderRadius: BorderRadius.circular(4)),
+                      BarChartRodData(
+                          toY: cur.totalExpenses,
+                          color: expColor,
+                          width: 16,
+                          borderRadius: BorderRadius.circular(4)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpace.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _LegendDot(color: revColor, label: l10n.revenue),
+              const SizedBox(width: AppSpace.md),
+              _LegendDot(color: expColor, label: l10n.expenses),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+      ],
+    );
+  }
+}
+
+class _ExpenseRow extends StatelessWidget {
+  final String category;
+  final double amount;
+  final double total;
+  final NumberFormat format;
+
+  const _ExpenseRow({
+    required this.category,
+    required this.amount,
+    required this.total,
+    required this.format,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final pct = (amount / total).clamp(0.0, 1.0);
+    final catColor = AppColors.forCategory(category);
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration:
+                  BoxDecoration(color: catColor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: AppSpace.xs),
+            Expanded(
+              child: Text(
+                L10nHelpers.categoryLabel(context, category),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(color: tokens.ink),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '${(pct * 100).round()}%',
+              style: AppTheme.tabular(Theme.of(context).textTheme.bodySmall),
+            ),
+            const SizedBox(width: AppSpace.sm),
+            Text(
+              format.format(amount),
+              style: AppTheme.tabular(Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(color: tokens.ink)),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpace.xs),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: pct,
+            minHeight: 6,
+            valueColor: AlwaysStoppedAnimation(catColor),
+            backgroundColor: tokens.well,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MultiYearTrendSection extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
     final trendAsync = ref.watch(multiYearTrendProvider);
 
     return trendAsync.when(
       data: (trendData) {
-        if (trendData.length < 2) return const SizedBox.shrink(); // Not enough data for trend
+        if (trendData.length < 2) return const SizedBox.shrink();
 
-        final spots = trendData.asMap().entries.map((e) {
-          return FlSpot(e.key.toDouble(), e.value.summary.profit);
-        }).toList();
+        final spots = trendData
+            .asMap()
+            .entries
+            .map((e) => FlSpot(e.key.toDouble(), e.value.summary.profit))
+            .toList();
 
-        final maxProfit = trendData.map((e) => e.summary.profit).reduce((a, b) => a > b ? a : b);
-        final minProfit = trendData.map((e) => e.summary.profit).reduce((a, b) => a < b ? a : b);
-        
-        final highestValue = maxProfit.abs() > minProfit.abs() ? maxProfit.abs() : minProfit.abs();
-        final maxY = highestValue * 1.2;
-        final minY = highestValue == 0 ? -1.0 : -maxY;
+        final maxProfit = trendData
+            .map((e) => e.summary.profit)
+            .reduce((a, b) => a > b ? a : b);
+        final minProfit = trendData
+            .map((e) => e.summary.profit)
+            .reduce((a, b) => a < b ? a : b);
+        final highest = maxProfit.abs() > minProfit.abs()
+            ? maxProfit.abs()
+            : minProfit.abs();
+        final maxY = highest == 0 ? 1.0 : highest * 1.2;
+        final minY = minProfit >= 0 ? 0.0 : (highest == 0 ? -1.0 : -maxY);
+        final gridInterval =
+            ((maxY - minY) / 4).abs().clamp(0.25, double.infinity);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(AppLocalizations.of(context)!.multiYearTrend, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 200,
-              child: LineChart(
-                LineChartData(
-                  minY: minY,
-                  maxY: maxY,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: true,
-                      color: Theme.of(context).colorScheme.primary,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: const FlDotData(show: true),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            AppSectionHeader(title: l10n.multiYearTrend),
+            const SizedBox(height: AppSpace.sm),
+            AppCard(
+              padding: const EdgeInsets.all(AppSpace.md),
+              child: SizedBox(
+                height: 200,
+                child: LineChart(
+                  LineChartData(
+                    minY: minY,
+                    maxY: maxY,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: true,
+                        color: Theme.of(context).colorScheme.primary,
+                        barWidth: 2.5,
+                        isStrokeCapRound: true,
+                        dotData: const FlDotData(show: true),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.08),
+                        ),
                       ),
-                    ),
-                  ],
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final int index = value.toInt();
-                          if (index < 0 || index >= trendData.length) return const SizedBox.shrink();
-                          final seasonName = trendData[index].season.displayName;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              seasonName.length > 5 ? '${seasonName.substring(0, 5)}..' : seasonName,
-                              style: const TextStyle(fontSize: 10),
-                            ),
-                          );
-                        },
-                        reservedSize: 24,
+                    ],
+                    titlesData: FlTitlesData(
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          interval: 1,
+                          getTitlesWidget: (value, meta) {
+                            final idx = value.toInt();
+                            if (idx < 0 || idx >= trendData.length) {
+                              return const SizedBox.shrink();
+                            }
+                            final s = trendData[idx].season;
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Text(
+                                '${s.startDate.year}',
+                                style: AppTheme.tabular(
+                                    Theme.of(context).textTheme.bodySmall),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: (value, meta) {
-                          if (value == 0) return const Text('0', style: TextStyle(fontSize: 10));
-                          final formatted = NumberFormat.compact().format(value);
-                          return Text(formatted, style: const TextStyle(fontSize: 10));
-                        },
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 52,
+                          getTitlesWidget: (value, meta) {
+                            if (value == 0) {
+                              return Text('0',
+                                  style: AppTheme.tabular(
+                                      Theme.of(context).textTheme.bodySmall));
+                            }
+                            return Text(
+                              NumberFormat.compact(
+                                      locale:
+                                          L10nHelpers.intlLocaleFor(context))
+                                  .format(value),
+                              style: AppTheme.tabular(
+                                  Theme.of(context).textTheme.bodySmall),
+                            );
+                          },
+                        ),
                       ),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
                     ),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: gridInterval,
+                      getDrawingHorizontalLine: (_) =>
+                          FlLine(color: tokens.hairline, strokeWidth: 1),
+                    ),
+                    borderData: FlBorderData(show: false),
                   ),
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: (maxY / 2) == 0 ? 1 : maxY / 2,
-                  ),
-                  borderData: FlBorderData(show: false),
                 ),
               ),
             ),
@@ -492,7 +745,8 @@ Generated via Abadgar App.
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text(AppLocalizations.of(context)!.errorLoadingTrends(e.toString()))),
+      error: (e, _) =>
+          Center(child: Text(l10n.errorLoadingTrends(e.toString()))),
     );
   }
 }

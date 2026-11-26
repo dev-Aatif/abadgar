@@ -13,8 +13,10 @@ class AbadgarApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeNotifierProvider).value ?? ThemeMode.system;
-    final locale = ref.watch(localeNotifierProvider).value ?? const Locale('en');
+    final themeMode =
+        ref.watch(themeModeNotifierProvider).value ?? ThemeMode.system;
+    final locale =
+        ref.watch(localeNotifierProvider).value ?? const Locale('en');
 
     return MaterialApp.router(
       title: 'Abadgar',
@@ -39,7 +41,8 @@ class AbadgarApp extends ConsumerWidget {
   }
 }
 
-class FallbackMaterialLocalizationDelegate extends LocalizationsDelegate<MaterialLocalizations> {
+class FallbackMaterialLocalizationDelegate
+    extends LocalizationsDelegate<MaterialLocalizations> {
   const FallbackMaterialLocalizationDelegate();
 
   @override
@@ -57,7 +60,8 @@ class FallbackMaterialLocalizationDelegate extends LocalizationsDelegate<Materia
   bool shouldReload(FallbackMaterialLocalizationDelegate old) => false;
 }
 
-class FallbackCupertinoLocalizationDelegate extends LocalizationsDelegate<CupertinoLocalizations> {
+class FallbackCupertinoLocalizationDelegate
+    extends LocalizationsDelegate<CupertinoLocalizations> {
   const FallbackCupertinoLocalizationDelegate();
 
   @override

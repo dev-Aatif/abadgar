@@ -35,11 +35,20 @@ class ExportService {
   Future<void> exportDatabase() async {
     final data = await prepareData();
     final jsonString = jsonEncode(data);
-    
+
     final tempDir = await getTemporaryDirectory();
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
     final file = File('${tempDir.path}/abadgar_backup_$timestamp.json');
-    
+
+    // Remove older temporary backup files to keep cache bounded
+    await for (final entity in tempDir.list()) {
+      if (entity is File &&
+          entity.path.contains('abadgar_backup_') &&
+          entity.path != file.path) {
+        await entity.delete();
+      }
+    }
+
     await file.writeAsString(jsonString);
 
     await Share.shareXFiles(
@@ -52,9 +61,9 @@ class ExportService {
     final data = await prepareData();
     final jsonString = jsonEncode(data);
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    
+
     final fileName = 'abadgar_backup_$timestamp.json';
-    
+
     final result = await FilePicker.platform.saveFile(
       dialogTitle: 'Save Backup',
       fileName: fileName,
@@ -63,10 +72,8 @@ class ExportService {
       bytes: utf8.encode(jsonString),
     );
 
-    if (result != null) {
-      // On some platforms saveFile returns the path and we might need to write manually
-      // but if bytes was provided, it might have been saved already.
-      // To be safe, we check if the file exists at the returned path.
+    if (result != null && !result.startsWith('content://')) {
+      // On desktop platforms saveFile returns a filesystem path without writing bytes.
       final file = File(result);
       if (!await file.exists()) {
         await file.writeAsString(jsonString);

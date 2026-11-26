@@ -1,65 +1,66 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:abadgar/core/constants/enums.dart';
+import 'package:abadgar/core/services/github_updater.dart';
 
 void main() {
-  group('TransactionType enum', () {
-    test('fromString returns correct enum for known values', () {
+  group('Domain enums', () {
+    test('TransactionType.fromString resolves known and unknown values', () {
       expect(TransactionType.fromString('Expense'), TransactionType.expense);
       expect(TransactionType.fromString('Revenue'), TransactionType.revenue);
       expect(TransactionType.fromString('Yield'), TransactionType.yield_);
-    });
-
-    test('fromString returns default for unknown value', () {
       expect(TransactionType.fromString('Unknown'), TransactionType.expense);
     });
-  });
 
-  group('SeasonStatus enum', () {
-    test('fromString returns correct enum for known values', () {
+    test('SeasonStatus.fromString resolves known values', () {
       expect(SeasonStatus.fromString('Active'), SeasonStatus.active);
       expect(SeasonStatus.fromString('Completed'), SeasonStatus.completed);
       expect(SeasonStatus.fromString('Planned'), SeasonStatus.planned);
     });
-  });
 
-  group('CropType enum', () {
-    test('fromString returns correct enum for known values', () {
+    test('CropType.fromString resolves known values', () {
       expect(CropType.fromString('Wheat'), CropType.wheat);
       expect(CropType.fromString('Rice'), CropType.rice);
     });
-  });
 
-  group('GithubUpdater._isNewer (via reflection-like test)', () {
-    // Testing version comparison logic directly
-    test('newer version detected correctly', () {
-      // Testing the logic the private _isNewer uses
-      bool isNewer(String latest, String current) {
-        final cleanLatest = latest.replaceAll('v', '');
-        final cleanCurrent = current.replaceAll('v', '');
-        List<int> latestParts = cleanLatest.split('.').map(int.parse).toList();
-        List<int> currentParts = cleanCurrent.split('.').map(int.parse).toList();
-        for (var i = 0; i < latestParts.length; i++) {
-          if (i >= currentParts.length) return true;
-          if (latestParts[i] > currentParts[i]) return true;
-          if (latestParts[i] < currentParts[i]) return false;
-        }
-        return false;
-      }
-
-      expect(isNewer('v1.2.0', 'v1.1.0'), true);
-      expect(isNewer('v1.1.0', 'v1.2.0'), false);
-      expect(isNewer('v1.0.0', 'v1.0.0'), false);
-      expect(isNewer('v2.0.0', 'v1.9.9'), true);
-      expect(isNewer('v1.0.1', 'v1.0.0'), true);
+    test('YieldUnit converts Kg, Mund (40kg), and Tons accurately', () {
+      expect(YieldUnit.kg.toKg(100), 100.0);
+      expect(YieldUnit.mund.toKg(10), 400.0);
+      expect(YieldUnit.tons.toKg(2.5), 2500.0);
     });
   });
 
-  group('FinancialSummary calculations', () {
-    test('profit is revenue minus expenses', () {
-      // Inline test since FinancialSummary has a simple getter
-      const revenue = 50000.0;
-      const expenses = 30000.0;
-      expect(revenue - expenses, 20000.0);
+  group('GithubUpdater', () {
+    test('isNewerVersion compares semantic and pre-release tags safely', () {
+      expect(GithubUpdater.isNewerVersion('v1.2.0', 'v1.1.0'), isTrue);
+      expect(GithubUpdater.isNewerVersion('v1.1.0', 'v1.2.0'), isFalse);
+      expect(GithubUpdater.isNewerVersion('v1.0.0', 'v1.0.0'), isFalse);
+      expect(GithubUpdater.isNewerVersion('v2.0.0', 'v1.9.9'), isTrue);
+      expect(GithubUpdater.isNewerVersion('v1.0.1-beta.1', 'v1.0.0'), isTrue);
+      expect(GithubUpdater.isNewerVersion('invalid-tag', 'v1.0.0'), isFalse);
+    });
+
+    test('isTrustedDownloadUrl enforces HTTPS and GitHub hosts', () {
+      expect(
+        GithubUpdater.isTrustedDownloadUrl(
+          'https://github.com/archon/Abadgar/releases/download/v1.0.1/app.apk',
+        ),
+        isTrue,
+      );
+      expect(
+        GithubUpdater.isTrustedDownloadUrl(
+          'https://objects.githubusercontent.com/github-production-release/app.apk',
+        ),
+        isTrue,
+      );
+      expect(
+        GithubUpdater.isTrustedDownloadUrl(
+            'http://github.com/archon/Abadgar/app.apk'),
+        isFalse,
+      );
+      expect(
+        GithubUpdater.isTrustedDownloadUrl('https://evil.example.com/app.apk'),
+        isFalse,
+      );
     });
   });
 }

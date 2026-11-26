@@ -31,7 +31,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
       final db = await ref.read(powerSyncDatabaseProvider.future);
       final id = const Uuid().v4();
       final now = DateTime.now();
-      
+
       final season = Season(
         id: id,
         name: name,
@@ -56,13 +56,14 @@ class SeasonsNotifier extends _$SeasonsNotifier {
           season.updatedAt.toIso8601String(),
         ],
       );
-      
+
       // Auto-set as active
       ref.read(activeSeasonIdProvider.notifier).set(id);
-      
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 
@@ -72,8 +73,8 @@ class SeasonsNotifier extends _$SeasonsNotifier {
     await db.execute(
       'UPDATE seasons SET status = ?, updated_at = ?, end_date = ? WHERE id = ?',
       [
-        status.value, 
-        DateTime.now().toIso8601String(), 
+        status.value,
+        DateTime.now().toIso8601String(),
         isCompleted ? DateTime.now().toIso8601String() : null,
         id
       ],
@@ -104,7 +105,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
   Future<void> deleteSeason(String id) async {
     final db = await ref.read(powerSyncDatabaseProvider.future);
     await db.execute('DELETE FROM seasons WHERE id = ?', [id]);
-    
+
     // Check if the deleted season was the active one
     final activeId = ref.read(activeSeasonIdProvider);
     if (activeId == id) {

@@ -20,7 +20,8 @@ class Transaction with _$Transaction {
     required DateTime updatedAt,
   }) = _Transaction;
 
-  factory Transaction.fromJson(Map<String, dynamic> json) => _$TransactionFromJson(json);
+  factory Transaction.fromJson(Map<String, dynamic> json) =>
+      _$TransactionFromJson(json);
 
   factory Transaction.fromRow(Map<String, dynamic> row) {
     return Transaction(
@@ -33,8 +34,10 @@ class Transaction with _$Transaction {
       notes: row['notes'] as String?,
       quantity: (row['quantity'] as num?)?.toDouble(),
       buyerName: row['buyer_name'] as String?,
-      createdAt: DateTime.tryParse(row['created_at'] as String? ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(row['updated_at'] as String? ?? '') ?? DateTime.now(),
+      createdAt: DateTime.tryParse(row['created_at'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse(row['updated_at'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 

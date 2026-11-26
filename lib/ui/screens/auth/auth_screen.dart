@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
+
+import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/logger.dart';
+import '../../../core/utils/notifications.dart';
+import '../../widgets/app_surface.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -16,8 +21,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _passwordController = TextEditingController();
   bool _isSignUp = false;
   bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _handleAuth() async {
+    final l10n = AppLocalizations.of(context)!;
     setState(() => _isLoading = true);
     try {
       final supabase = Supabase.instance.client;
@@ -27,9 +41,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           password: _passwordController.text.trim(),
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context)!.registrationSuccess)),
-          );
+          AppNotification.show(context, l10n.registrationSuccess);
         }
       } else {
         await supabase.auth.signInWithPassword(
@@ -39,15 +51,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } on AuthException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
-        );
+        AppNotification.show(context, e.message, isError: true);
       }
-    } catch (e) {
+    } catch (e, st) {
+      appLogger.e('Authentication error', error: e, stackTrace: st);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-        );
+        AppNotification.show(
+            context, l10n.errorGeneral('Authentication failed'),
+            isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -56,86 +67,119 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primaryContainer,
-            ],
-          ),
-        ),
+      body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.agriculture_rounded, size: 64, color: Theme.of(context).colorScheme.primary),
-                    const SizedBox(height: 16),
-                    Text(
-                      AppLocalizations.of(context)!.appTitle,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.primary,
+            padding: const EdgeInsets.all(AppSpace.xl),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: 64,
+                        height: 64,
+                        errorBuilder: (_, __, ___) => Icon(
+                          Icons.agriculture_rounded,
+                          size: 56,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _isSignUp ? AppLocalizations.of(context)!.createAccount : AppLocalizations.of(context)!.welcomeBack,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                  ),
+                  const SizedBox(height: AppSpace.md),
+                  Text(
+                    l10n.appTitle,
+                    style: Theme.of(context).textTheme.headlineLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpace.xxs),
+                  Text(
+                    _isSignUp ? l10n.createAccount : l10n.welcomeBack,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpace.xl),
+                  AppCard(
+                    padding: const EdgeInsets.all(AppSpace.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: l10n.email,
+                            prefixIcon:
+                                const Icon(Icons.email_outlined, size: 20),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpace.md),
+                        TextField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.done,
+                          onSubmitted: (_) => _isLoading ? null : _handleAuth(),
+                          decoration: InputDecoration(
+                            labelText: l10n.password,
+                            prefixIcon:
+                                const Icon(Icons.lock_outline, size: 20),
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                  () => _obscurePassword = !_obscurePassword),
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 20,
+                                color: tokens.inkMuted,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpace.lg),
+                        SizedBox(
+                          height: 52,
+                          child: FilledButton(
+                            onPressed: _isLoading ? null : _handleAuth,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white),
+                                  )
+                                : Text(_isSignUp ? l10n.signUp : l10n.login),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 32),
-                    TextField(
-                      controller: _emailController,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)!.email,
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: AppSpace.md),
+                  TextButton(
+                    onPressed: () => setState(() => _isSignUp = !_isSignUp),
+                    child: Text(_isSignUp
+                        ? l10n.alreadyHaveAccount
+                        : l10n.newToAbadgar),
+                  ),
+                  TextButton(
+                    onPressed: () => context.go('/dashboard'),
+                    child: Text(
+                      l10n.skipAuth,
+                      style: TextStyle(color: tokens.inkMuted),
                     ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _passwordController,
-                      decoration: InputDecoration(
-                        labelText: AppLocalizations.of(context)!.password,
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _isLoading ? null : _handleAuth,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 56),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: _isLoading 
-                        ? const CircularProgressIndicator() 
-                        : Text(_isSignUp ? AppLocalizations.of(context)!.signUp : AppLocalizations.of(context)!.login),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () => setState(() => _isSignUp = !_isSignUp),
-                      child: Text(_isSignUp ? AppLocalizations.of(context)!.alreadyHaveAccount : AppLocalizations.of(context)!.newToAbadgar),
-                    ),
-                    const Divider(height: 32),
-                    TextButton(
-                      onPressed: () => context.go('/dashboard'),
-                      child: Text(AppLocalizations.of(context)!.skipAuth, style: const TextStyle(color: Colors.grey)),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

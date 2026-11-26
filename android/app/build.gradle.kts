@@ -1,8 +1,18 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
 }
 
 android {
@@ -27,9 +37,30 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            val allowDebugReleaseSigning = project.hasProperty("allowDebugReleaseSigning")
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else if (allowDebugReleaseSigning) {
+                logger.warn("WARNING: android/key.properties not found; using debug signing due to -PallowDebugReleaseSigning.")
+                signingConfigs.getByName("debug")
+            } else {
+                throw GradleException(
+                    "Release keystore missing: create android/key.properties before building release, or pass -PallowDebugReleaseSigning for local testing."
+                )
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -38,8 +69,6 @@ android {
             )
         }
     }
-
-
 }
 
 flutter {

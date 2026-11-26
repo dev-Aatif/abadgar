@@ -1,10 +1,12 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utils/logger.dart';
 import 'app_schema.dart';
+import 'supabase_bootstrap.dart';
 import 'supabase_connector.dart';
 
 part 'database_provider.g.dart';
@@ -19,22 +21,32 @@ Future<PowerSyncDatabase> powerSyncDatabase(PowerSyncDatabaseRef ref) async {
     path: path,
   );
 
-  try {
-    await db.initialize().timeout(const Duration(seconds: 10));
-  } catch (e) {
-    debugPrint("Database initialization failed or timed out: $e");
-  }
+  var disposed = false;
+  ref.onDispose(() {
+    disposed = true;
+    unawaited(db.close());
+  });
 
-  // Connect to Supabase if initialized (allows offline-first usage without .env)
-  try {
-    final supabase = Supabase.instance.client;
-    final connector = SupabaseConnector(supabase);
-    db.connect(connector: connector);
-  } catch (e) {
-    debugPrint("Supabase unavailable; running PowerSync in local-only mode: $e");
-  }
+  await db.initialize().timeout(const Duration(seconds: 10));
 
-  ref.onDispose(() => db.close());
-  
+  // Connect to Supabase once initialized (allows instant local-first startup).
+  unawaited(
+    SupabaseBootstrap.ready.then((initialized) async {
+      if (!initialized || disposed) return;
+      try {
+        final supabase = Supabase.instance.client;
+        if (!db.connected) {
+          await db.connect(connector: SupabaseConnector(supabase));
+        }
+      } catch (e, st) {
+        appLogger.w(
+          'Supabase unavailable; running PowerSync in local-only mode',
+          error: e,
+          stackTrace: st,
+        );
+      }
+    }),
+  );
+
   return db;
 }

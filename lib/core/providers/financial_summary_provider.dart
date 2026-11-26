@@ -12,7 +12,7 @@ class FinancialSummary {
   final Map<String, double> expenseByCategory;
   final int transactionCount;
   final double totalYieldWeight;
-  
+
   double get profit => totalRevenue - totalExpenses;
 
   FinancialSummary({
@@ -28,7 +28,7 @@ class FinancialSummary {
 FinancialSummary? financialSummary(FinancialSummaryRef ref) {
   final transactionsAsync = ref.watch(activeSeasonTransactionsProvider);
   final yieldLogsAsync = ref.watch(activeSeasonYieldLogsProvider);
-  
+
   if (transactionsAsync is! AsyncData || yieldLogsAsync is! AsyncData) {
     return null;
   }
@@ -39,30 +39,32 @@ FinancialSummary? financialSummary(FinancialSummaryRef ref) {
   double revenue = 0;
   double expenses = 0;
   final Map<String, double> catExpenses = {};
-  
+
   for (final tx in transactions) {
-    if (tx.type == TransactionType.revenue || tx.type == TransactionType.yield_) {
+    if (tx.type == TransactionType.revenue ||
+        tx.type == TransactionType.yield_) {
       revenue += tx.amount;
     } else {
       expenses += tx.amount;
-      catExpenses[tx.category ?? 'Other'] = (catExpenses[tx.category ?? 'Other'] ?? 0) + tx.amount;
+      catExpenses[tx.category ?? 'Other'] =
+          (catExpenses[tx.category ?? 'Other'] ?? 0) + tx.amount;
     }
   }
 
-  // NOTE: We no longer add yieldLogs.salePrice here because the Log Harvest workflow 
+  // NOTE: We no longer add yieldLogs.salePrice here because the Log Harvest workflow
   // already creates a corresponding 'revenue' transaction to ensure ledger consistency.
   // YieldLogs are now strictly for physical harvest tracking.
-  
-  double totalWeight = 0;
+
+  double totalWeightKg = 0;
   for (final yl in yieldLogs) {
-    totalWeight += yl.totalWeight;
+    totalWeightKg += yl.unit.toKg(yl.totalWeight);
   }
-  
+
   return FinancialSummary(
     totalRevenue: revenue,
     totalExpenses: expenses,
     expenseByCategory: catExpenses,
     transactionCount: transactions.length + yieldLogs.length,
-    totalYieldWeight: totalWeight,
+    totalYieldWeight: totalWeightKg,
   );
 }

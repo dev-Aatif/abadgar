@@ -27,7 +27,7 @@ class LandsNotifier extends _$LandsNotifier {
       final db = await ref.read(powerSyncDatabaseProvider.future);
       final id = const Uuid().v4();
       final now = DateTime.now();
-      
+
       final land = Land(
         id: id,
         name: name,
@@ -46,10 +46,11 @@ class LandsNotifier extends _$LandsNotifier {
           land.updatedAt.toIso8601String(),
         ],
       );
-      
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      rethrow;
     }
   }
 

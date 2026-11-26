@@ -12,7 +12,10 @@ class ThemeModeNotifier extends _$ThemeModeNotifier {
   Future<ThemeMode> build() async {
     final prefs = await SharedPreferences.getInstance();
     final index = prefs.getInt(_key);
-    return index != null ? ThemeMode.values[index] : ThemeMode.system;
+    if (index != null && index >= 0 && index < ThemeMode.values.length) {
+      return ThemeMode.values[index];
+    }
+    return ThemeMode.system;
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {

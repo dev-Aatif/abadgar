@@ -7,7 +7,7 @@ void main() {
     test('Should correctly group expenses by category and year', () {
       final year2023 = DateTime(2023, 5, 20);
       final year2024 = DateTime(2024, 6, 15);
-      
+
       final transactions = [
         Transaction(
           id: '1',
@@ -48,7 +48,7 @@ void main() {
         if (tx.category == null) continue;
         final year = tx.date.year;
         final cat = tx.category!;
-        
+
         groupings.putIfAbsent(cat, () => {});
         groupings[cat]![year] = (groupings[cat]![year] ?? 0) + tx.amount;
       }

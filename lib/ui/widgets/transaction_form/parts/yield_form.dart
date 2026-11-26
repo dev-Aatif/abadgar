@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
+
+import '../../../../core/constants/enums.dart';
 import '../../../../core/models/yield_log.dart';
 import '../../../../core/providers/transactions_provider.dart';
-import '../../../../core/utils/season_resolver.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/l10n_helpers.dart';
 import '../../../../core/utils/notifications.dart';
 import 'form_shared.dart';
-import '../../../../core/constants/enums.dart';
-import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 class YieldForm extends ConsumerStatefulWidget {
   final String seasonId;
@@ -25,29 +28,43 @@ class _YieldFormState extends ConsumerState<YieldForm> {
   final _weightFocusNode = FocusNode();
   YieldUnit _unit = YieldUnit.mund;
   YieldDisposition _disposition = YieldDisposition.sold;
+  DateTime _selectedDate = DateTime.now();
+  String? _initialWeightText;
+  String? _initialPriceText;
 
   @override
   void initState() {
     super.initState();
     if (widget.yieldLog != null) {
       _weightController.text = widget.yieldLog!.totalWeight.toString();
-      if (widget.yieldLog!.salePrice != null) {
-        // Calculate price per unit
-        _pricePerUnitController.text = (widget.yieldLog!.salePrice! / widget.yieldLog!.totalWeight).toString();
+      if (widget.yieldLog!.salePrice != null &&
+          widget.yieldLog!.totalWeight > 0) {
+        final unitPrice =
+            widget.yieldLog!.salePrice! / widget.yieldLog!.totalWeight;
+        _pricePerUnitController.text = unitPrice == unitPrice.roundToDouble()
+            ? unitPrice.toInt().toString()
+            : unitPrice.toStringAsFixed(2);
       }
       _destinationController.text = widget.yieldLog!.destination ?? '';
       _unit = widget.yieldLog!.unit;
       _disposition = widget.yieldLog!.disposition;
+      _selectedDate = widget.yieldLog!.date;
+      _initialWeightText = _weightController.text;
+      _initialPriceText = _pricePerUnitController.text;
     }
 
     _weightController.addListener(_updateState);
     _pricePerUnitController.addListener(_updateState);
   }
 
-  void _updateState() => setState(() {});
+  void _updateState() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void dispose() {
+    _weightController.removeListener(_updateState);
+    _pricePerUnitController.removeListener(_updateState);
     _weightController.dispose();
     _pricePerUnitController.dispose();
     _destinationController.dispose();
@@ -56,65 +73,63 @@ class _YieldFormState extends ConsumerState<YieldForm> {
   }
 
   double get _totalPrice {
+    if (widget.yieldLog != null &&
+        widget.yieldLog!.salePrice != null &&
+        _weightController.text == _initialWeightText &&
+        _pricePerUnitController.text == _initialPriceText) {
+      return widget.yieldLog!.salePrice!;
+    }
     final weight = double.tryParse(_weightController.text) ?? 0;
     final pricePerUnit = double.tryParse(_pricePerUnitController.text) ?? 0;
     return weight * pricePerUnit;
   }
 
   Future<bool> _saveYieldLog() async {
-    final seasonId = resolveSeasonId(ref);
-    if (seasonId == null) {
-      AppNotification.show(context, 'No active season selected.', isError: true);
+    final l10n = AppLocalizations.of(context)!;
+    final seasonId = widget.seasonId;
+    if (seasonId.isEmpty) {
+      AppNotification.show(context, l10n.noActiveSeason, isError: true);
       return false;
     }
 
     try {
       final weight = double.tryParse(_weightController.text);
-      if (weight == null || weight <= 0) {
-        AppNotification.show(context, 'Please enter a valid weight.', isError: true);
-        return false;
-      }
+      if (weight == null || weight <= 0) return false;
 
-      final totalSalePrice = _disposition == YieldDisposition.sold ? _totalPrice : null;
+      final totalSalePrice =
+          _disposition == YieldDisposition.sold && _totalPrice > 0
+              ? _totalPrice
+              : null;
+      final destination = _disposition == YieldDisposition.stored
+          ? _destinationController.text.trim()
+          : null;
 
-      // 1. Add or Update the Yield Log (Harvest tracking)
       if (widget.yieldLog != null) {
         await ref.read(transactionsNotifierProvider.notifier).updateYieldLog(
-          id: widget.yieldLog!.id,
-          totalWeight: weight,
-          unit: _unit.value,
-          disposition: _disposition.value,
-          salePrice: totalSalePrice,
-          destination: _disposition == YieldDisposition.stored ? _destinationController.text : null,
-          date: widget.yieldLog!.date,
-        );
+              id: widget.yieldLog!.id,
+              totalWeight: weight,
+              unit: _unit.value,
+              disposition: _disposition.value,
+              salePrice: totalSalePrice,
+              destination: destination,
+              date: _selectedDate,
+            );
       } else {
         await ref.read(transactionsNotifierProvider.notifier).addYieldLog(
-          seasonId: seasonId,
-          totalWeight: weight,
-          unit: _unit.value,
-          disposition: _disposition.value,
-          salePrice: totalSalePrice,
-          destination: _disposition == YieldDisposition.stored ? _destinationController.text : null,
-          date: DateTime.now(),
-        );
-
-        // 2. If sold, automatically create a Revenue transaction for the ledger (only on creation)
-        if (_disposition == YieldDisposition.sold && totalSalePrice != null && totalSalePrice > 0) {
-          await ref.read(transactionsNotifierProvider.notifier).addTransaction(
-            seasonId: seasonId,
-            amount: totalSalePrice,
-            category: 'Harvest Sale',
-            date: DateTime.now(),
-            type: TransactionType.revenue.value,
-            notes: 'Yield: $weight ${_unit.value}',
-          );
-        }
+              seasonId: seasonId,
+              totalWeight: weight,
+              unit: _unit.value,
+              disposition: _disposition.value,
+              salePrice: totalSalePrice,
+              destination: destination,
+              date: _selectedDate,
+            );
       }
       return true;
     } catch (e) {
       if (mounted) {
-        AppNotification.show(context, 'Failed to save harvest: $e', isError: true);
+        AppNotification.show(context, l10n.errorGeneral(e.toString()),
+            isError: true);
       }
       return false;
     }
@@ -123,19 +138,20 @@ class _YieldFormState extends ConsumerState<YieldForm> {
   void _saveAndClose() async {
     final success = await _saveYieldLog();
     if (success && mounted) {
-      AppNotification.show(context, 'Harvest logged successfully!');
       Navigator.pop(context);
     }
   }
 
   void _saveAndAddAnother() async {
+    final l10n = AppLocalizations.of(context)!;
     final success = await _saveYieldLog();
     if (success && mounted) {
-      AppNotification.show(context, 'Saved! Add another.');
+      AppNotification.show(context, l10n.saveAndAddAnother);
       setState(() {
         _weightController.clear();
         _pricePerUnitController.clear();
         _destinationController.clear();
+        _selectedDate = DateTime.now();
       });
       _weightFocusNode.requestFocus();
     }
@@ -143,117 +159,135 @@ class _YieldFormState extends ConsumerState<YieldForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final tokens = context.tokens;
     final weight = double.tryParse(_weightController.text) ?? 0;
     final isValid = weight > 0;
+    final isLoading = ref.watch(transactionsNotifierProvider).isLoading;
+    final currencyFormat = NumberFormat.currency(
+      locale: L10nHelpers.intlLocaleFor(context),
+      symbol: 'Rs ',
+      decimalDigits: 0,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(AppLocalizations.of(context)!.howMuchHarvested, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 2,
-              child: SharedAmountField(
-                controller: _weightController,
-                focusNode: _weightFocusNode,
-                prefix: AppLocalizations.of(context)!.yield,
-                hint: '0.0',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: DropdownButtonFormField<YieldUnit>(
-                initialValue: _unit,
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                items: YieldUnit.values.map((u) => DropdownMenuItem(value: u, child: Text(u.value))).toList(),
-                onChanged: (val) => setState(() => _unit = val!),
-              ),
-            ),
-          ],
+        Text(l10n.yield, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: AppSpace.xs),
+        SharedAmountField(
+          controller: _weightController,
+          focusNode: _weightFocusNode,
+          autofocus: widget.yieldLog == null,
+          prefix: L10nHelpers.yieldUnitLabel(context, _unit),
+          hint: '0',
         ),
-        const SizedBox(height: 24),
-        Text(AppLocalizations.of(context)!.whatDidYouDo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpace.sm),
+        SegmentedButton<YieldUnit>(
+          showSelectedIcon: false,
+          segments: YieldUnit.values
+              .map((u) => ButtonSegment<YieldUnit>(
+                    value: u,
+                    label: Text(
+                      L10nHelpers.yieldUnitLabel(context, u),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ))
+              .toList(),
+          selected: {_unit},
+          onSelectionChanged: (set) {
+            HapticFeedback.selectionClick();
+            setState(() => _unit = set.first);
+          },
+        ),
+        const SizedBox(height: AppSpace.lg),
         SegmentedButton<YieldDisposition>(
+          showSelectedIcon: false,
           segments: [
-            ButtonSegment(value: YieldDisposition.sold, label: Text(AppLocalizations.of(context)!.sold), icon: const Icon(Icons.monetization_on_rounded, size: 16)),
-            ButtonSegment(value: YieldDisposition.stored, label: Text(AppLocalizations.of(context)!.stored), icon: const Icon(Icons.inventory_2_rounded, size: 16)),
-            ButtonSegment(value: YieldDisposition.personal, label: Text(AppLocalizations.of(context)!.home), icon: const Icon(Icons.home_rounded, size: 16)),
+            ButtonSegment(value: YieldDisposition.sold, label: Text(l10n.sold)),
+            ButtonSegment(
+                value: YieldDisposition.stored, label: Text(l10n.stored)),
+            ButtonSegment(
+                value: YieldDisposition.personal,
+                label: Text(l10n.personalUse)),
           ],
           selected: {_disposition},
-          onSelectionChanged: (set) => setState(() => _disposition = set.first),
+          onSelectionChanged: (set) {
+            HapticFeedback.selectionClick();
+            setState(() => _disposition = set.first);
+          },
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpace.md),
         if (_disposition == YieldDisposition.sold) ...[
           TextField(
             controller: _pricePerUnitController,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))],
+            inputFormatters: [NormalizedDecimalFormatter()],
             decoration: InputDecoration(
-              labelText: AppLocalizations.of(context)!.pricePer(_unit.value),
-              prefixIcon: const Icon(Icons.attach_money_rounded),
+              labelText:
+                  l10n.pricePer(L10nHelpers.yieldUnitLabel(context, _unit)),
               suffixText: 'Rs',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpace.sm),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpace.md, vertical: AppSpace.sm),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+              color: tokens.well,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: tokens.hairline, width: 1),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(AppLocalizations.of(context)!.totalEstimatedRevenue, style: const TextStyle(fontWeight: FontWeight.w500)),
+                Expanded(
+                  child: Text(
+                    l10n.totalEstimatedRevenue,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
                 Text(
-                  'Rs ${_totalPrice.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Theme.of(context).colorScheme.primary,
+                  currencyFormat.format(_totalPrice),
+                  style: AppTheme.tabular(
+                    Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(height: AppSpace.md),
         ],
         if (_disposition == YieldDisposition.stored) ...[
           TextField(
             controller: _destinationController,
             decoration: InputDecoration(
-              labelText: AppLocalizations.of(context)!.whereStored,
-              prefixIcon: const Icon(Icons.location_on_rounded),
-              hintText: 'Home, Warehouse, etc.',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              labelText: l10n.whereStored,
+              prefixIcon: const Icon(Icons.inventory_2_outlined, size: 20),
             ),
           ),
+          const SizedBox(height: AppSpace.md),
         ],
-        const SizedBox(height: 32),
+        Text(l10n.dateLabel, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: AppSpace.xs),
+        QuickDateSelector(
+          selectedDate: _selectedDate,
+          onDateChanged: (d) => setState(() => _selectedDate = d),
+        ),
+        const SizedBox(height: AppSpace.xl),
         SharedSaveButton(
-          onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _saveAndClose : null,
-          label: ref.watch(transactionsNotifierProvider).isLoading ? AppLocalizations.of(context)!.loggingHarvest : AppLocalizations.of(context)!.saveHarvest,
+          onPressed: isValid ? _saveAndClose : null,
+          isLoading: isLoading,
+          label: isLoading ? l10n.loggingHarvest : l10n.saveHarvest,
         ),
         if (widget.yieldLog == null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.xs),
           TextButton(
-            onPressed: (isValid && !ref.watch(transactionsNotifierProvider).isLoading) ? _saveAndAddAnother : null,
-            child: Text(
-              AppLocalizations.of(context)!.saveAndAddAnother,
-              style: TextStyle(
-                color: (isValid && !ref.watch(transactionsNotifierProvider).isLoading)
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
-              ),
-            ),
+            onPressed: (isValid && !isLoading) ? _saveAndAddAnother : null,
+            child: Text(l10n.saveAndAddAnother),
           ),
         ],
       ],

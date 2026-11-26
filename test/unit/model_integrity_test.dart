@@ -28,7 +28,8 @@ void main() {
       final fromRow = Season.fromRow(row);
       expect(fromRow.id, season.id);
       expect(fromRow.cropType, season.cropType);
-      expect(fromRow.startDate.toIso8601String(), season.startDate.toIso8601String());
+      expect(fromRow.startDate.toIso8601String(),
+          season.startDate.toIso8601String());
     });
 
     test('Transaction Model SQL Mapping', () {

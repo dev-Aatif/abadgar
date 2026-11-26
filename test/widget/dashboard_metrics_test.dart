@@ -1,52 +1,161 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:abadgar/app.dart';
+import 'package:abadgar/core/constants/enums.dart';
+import 'package:abadgar/core/models/season.dart';
+import 'package:abadgar/core/models/transaction.dart';
+import 'package:abadgar/core/providers/active_season_provider.dart';
+import 'package:abadgar/core/providers/auth_provider.dart';
+import 'package:abadgar/core/providers/comparison_provider.dart';
+import 'package:abadgar/core/providers/financial_summary_provider.dart';
+import 'package:abadgar/core/providers/seasons_provider.dart';
+import 'package:abadgar/core/providers/transactions_provider.dart';
+import 'package:abadgar/l10n/generated/app_localizations.dart';
+import 'package:abadgar/ui/screens/dashboard/dashboard_screen.dart';
 
-// Note: In real scenarios, you'd generate l10n first. 
-// For this test, we assume they are generated or we mock them.
+class _StubActiveSeasonId extends ActiveSeasonId {
+  final String? _id;
+  _StubActiveSeasonId(this._id);
+
+  @override
+  String? build() => _id;
+}
+
+class _StubAuthState extends AuthState {
+  @override
+  Session? build() => null;
+}
 
 void main() {
-  group('Dashboard Widget Tests', () {
-    testWidgets('Dashboard should show empty state when no data is available', (WidgetTester tester) async {
-       // Using a simplified version of the Dashboard components to test UI presence
-       // without complex provider dependencies for this example.
-       
-       await tester.pumpWidget(
-         const ProviderScope(
-           child: MaterialApp(
-             home: Scaffold(
-               body: Center(child: Text('Field Overview')),
-             ),
-           ),
-         ),
-       );
+  final now = DateTime(2026, 3, 1);
+  final sampleSeason = Season(
+    id: 's1',
+    name: 'Wheat 2026',
+    cropType: CropType.wheat,
+    landArea: 12.5,
+    startDate: now,
+    status: SeasonStatus.active,
+    createdAt: now,
+    updatedAt: now,
+  );
 
-       expect(find.text('Field Overview'), findsOneWidget);
+  Widget wrapDashboard({
+    required Locale locale,
+    required List<Override> overrides,
+    double textScale = 1.0,
+  }) {
+    return ProviderScope(
+      overrides: overrides,
+      child: MaterialApp(
+        locale: locale,
+        supportedLocales: const [Locale('en'), Locale('ur'), Locale('sd')],
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          FallbackMaterialLocalizationDelegate(),
+          FallbackCupertinoLocalizationDelegate(),
+          GlobalWidgetsLocalizations.delegate,
+        ],
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: TextScaler.linear(textScale),
+          ),
+          child: child!,
+        ),
+        home: const DashboardScreen(),
+      ),
+    );
+  }
+
+  group('DashboardScreen widget tests', () {
+    testWidgets('shows onboarding welcome state when no seasons exist',
+        (tester) async {
+      await tester.pumpWidget(
+        wrapDashboard(
+          locale: const Locale('en'),
+          overrides: [
+            seasonsProvider.overrideWith((ref) => Stream.value(const [])),
+            activeSeasonIdProvider
+                .overrideWith(() => _StubActiveSeasonId(null)),
+            activeSeasonProvider.overrideWith((ref) => Stream.value(null)),
+            activeSeasonTransactionsProvider
+                .overrideWith((ref) => Stream.value(const [])),
+            activeSeasonYieldLogsProvider
+                .overrideWith((ref) => Stream.value(const [])),
+            financialSummaryProvider.overrideWithValue(null),
+            authStateProvider.overrideWith(() => _StubAuthState()),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome to Abadgar!'), findsOneWidget);
+      expect(find.text('Start New Season'), findsOneWidget);
     });
 
-    testWidgets('Metric Card should display correct values and title', (WidgetTester tester) async {
-       // Testing the _MetricCard component directly
-       // This avoids the complexity of loading the entire DashboardScreen
-       
-       // Since _MetricCard is private in dashboard_screen.dart, 
-       // in a real test suite you would either make it public or test through the parent.
-       // Here we demonstrate the principle of searching for value text.
-       
-       await tester.pumpWidget(
-         const MaterialApp(
-           home: Scaffold(
-             body: Column(
-               children: [
-                 Text('Revenue'),
-                 Text('Rs 50,000'),
-               ],
-             ),
-           ),
-         )
-       );
+    testWidgets(
+        'renders active season metrics cleanly on narrow 320dp Sindhi RTL with 1.3x scale',
+        (tester) async {
+      tester.view.physicalSize = const Size(320, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
 
-       expect(find.text('Revenue'), findsOneWidget);
-       expect(find.text('Rs 50,000'), findsOneWidget);
+      final txns = [
+        Transaction(
+          id: 't1',
+          seasonId: 's1',
+          amount: 125000,
+          type: TransactionType.revenue,
+          category: 'Wheat Sale',
+          date: now,
+          createdAt: now,
+          updatedAt: now,
+        ),
+        Transaction(
+          id: 't2',
+          seasonId: 's1',
+          amount: 45000,
+          type: TransactionType.expense,
+          category: 'Fertilizer',
+          date: now,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+
+      final summary = summarizeSeasonRows(txns, const []);
+
+      await tester.pumpWidget(
+        wrapDashboard(
+          locale: const Locale('sd'),
+          textScale: 1.3,
+          overrides: [
+            seasonsProvider.overrideWith((ref) => Stream.value([sampleSeason])),
+            activeSeasonIdProvider
+                .overrideWith(() => _StubActiveSeasonId('s1')),
+            activeSeasonProvider
+                .overrideWith((ref) => Stream.value(sampleSeason)),
+            activeSeasonTransactionsProvider
+                .overrideWith((ref) => Stream.value(txns)),
+            activeSeasonYieldLogsProvider
+                .overrideWith((ref) => Stream.value(const [])),
+            financialSummaryProvider.overrideWithValue(summary),
+            seasonComparisonProvider('s1').overrideWith(
+              (ref) async => SeasonComparison(
+                currentSeason: sampleSeason,
+                currentSummary: summary,
+              ),
+            ),
+            authStateProvider.overrideWith(() => _StubAuthState()),
+          ],
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('80,000'), findsOneWidget);
     });
   });
 }

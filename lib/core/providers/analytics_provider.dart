@@ -12,7 +12,7 @@ class CategoryYearData {
 @riverpod
 List<CategoryYearData> comparativeAnalytics(ComparativeAnalyticsRef ref) {
   final transactions = ref.watch(allTransactionsProvider).valueOrNull ?? [];
-  
+
   // category -> year -> total
   final Map<String, Map<int, double>> groupings = {};
 
@@ -20,13 +20,15 @@ List<CategoryYearData> comparativeAnalytics(ComparativeAnalyticsRef ref) {
     if (tx.category == null) continue;
     final year = tx.date.year;
     final cat = tx.category!;
-    
+
     groupings.putIfAbsent(cat, () => {});
     groupings[cat]![year] = (groupings[cat]![year] ?? 0) + tx.amount;
   }
 
-  return groupings.entries.map((e) => CategoryYearData(
-    category: e.key,
-    yearlyTotals: e.value,
-  )).toList();
+  return groupings.entries
+      .map((e) => CategoryYearData(
+            category: e.key,
+            yearlyTotals: e.value,
+          ))
+      .toList();
 }

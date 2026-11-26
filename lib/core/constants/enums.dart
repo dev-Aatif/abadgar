@@ -49,12 +49,16 @@ enum CropType {
 }
 
 enum YieldUnit {
-  kg('Kg'),
-  mund('Mund (40kg)'),
-  tons('Tons');
+  kg('Kg', 1.0),
+  mund('Mund (40kg)', 40.0),
+  tons('Tons', 1000.0);
 
   final String value;
-  const YieldUnit(this.value);
+  final double kgFactor;
+  const YieldUnit(this.value, this.kgFactor);
+
+  double toKg(double weight) => weight * kgFactor;
+  double fromKg(double kg) => kg / kgFactor;
 
   static YieldUnit fromString(String s) {
     return YieldUnit.values.firstWhere(
