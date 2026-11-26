@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:isolate';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:pointycastle/export.dart';
@@ -35,6 +36,23 @@ class BackupCrypto {
     } catch (_) {
       return false;
     }
+  }
+
+  static Future<String> encryptJsonAsync(
+    String plainJson,
+    String passphrase, {
+    int iterations = defaultIterations,
+  }) {
+    return Isolate.run(
+      () => encryptJson(plainJson, passphrase, iterations: iterations),
+    );
+  }
+
+  static Future<String> decryptJsonAsync(
+    String envelopeJson,
+    String passphrase,
+  ) {
+    return Isolate.run(() => decryptJson(envelopeJson, passphrase));
   }
 
   static String encryptJson(

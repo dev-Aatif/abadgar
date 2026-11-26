@@ -8,6 +8,7 @@ import 'package:abadgar/core/models/season.dart';
 import 'package:abadgar/core/models/transaction.dart';
 import 'package:abadgar/core/models/yield_log.dart';
 import 'package:abadgar/core/providers/active_season_provider.dart';
+import 'package:abadgar/core/providers/seasons_provider.dart';
 import 'package:abadgar/core/theme/app_theme.dart';
 import 'package:abadgar/ui/widgets/app_controls.dart';
 import 'package:abadgar/ui/widgets/app_selector.dart';
@@ -203,6 +204,60 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('Seeds'), findsOneWidget);
+    });
+
+    testWidgets(
+        'GenericTransactionForm resolves revenue crop categories from widget.seasonId rather than activeSeasonProvider',
+        (WidgetTester tester) async {
+      final now = DateTime(2026, 6, 1);
+      final wheatSeason = Season(
+        id: 's-wheat',
+        name: 'Wheat 2026',
+        cropType: CropType.wheat,
+        landArea: 10,
+        startDate: now,
+        status: SeasonStatus.active,
+        createdAt: now,
+        updatedAt: now,
+      );
+      final riceSeason = Season(
+        id: 's-rice',
+        name: 'Rice 2026',
+        cropType: CropType.rice,
+        landArea: 8,
+        startDate: now,
+        status: SeasonStatus.completed,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            activeSeasonProvider
+                .overrideWith((ref) => Stream.value(wheatSeason)),
+            seasonsProvider
+                .overrideWith((ref) => Stream.value([wheatSeason, riceSeason])),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Scaffold(
+              body: SingleChildScrollView(
+                child: GenericTransactionForm(
+                  seasonId: 's-rice',
+                  type: TransactionType.revenue,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rice Sale'), findsOneWidget);
+      expect(find.text('Wheat Sale'), findsNothing);
     });
 
     testWidgets(

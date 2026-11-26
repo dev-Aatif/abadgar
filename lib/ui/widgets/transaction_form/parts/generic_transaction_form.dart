@@ -6,7 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/categories.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/models/transaction.dart';
-import '../../../../core/providers/active_season_provider.dart';
+import '../../../../core/providers/seasons_provider.dart';
 import '../../../../core/providers/transactions_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/l10n_helpers.dart';
@@ -143,11 +143,16 @@ class _GenericTransactionFormState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
+    final cropType = widget.type == TransactionType.revenue
+        ? (ref.watch(seasonsProvider).valueOrNull ?? [])
+            .where((s) => s.id == widget.seasonId)
+            .firstOrNull
+            ?.cropType
+        : null;
     final categories = List<String>.of(
       widget.type == TransactionType.expense
           ? AppCategories.expenses
-          : AppCategories.revenueForCrop(activeSeason?.cropType),
+          : AppCategories.revenueForCrop(cropType),
     );
 
     if (widget.transaction != null &&

@@ -72,6 +72,33 @@ void main() {
   }
 
   group('DashboardScreen widget tests', () {
+    testWidgets('shows loading indicator while seasonsProvider is loading',
+        (tester) async {
+      await tester.pumpWidget(
+        wrapDashboard(
+          locale: const Locale('en'),
+          overrides: [
+            seasonsProvider.overrideWith((ref) => const Stream.empty()),
+            activeSeasonIdProvider
+                .overrideWith(() => _StubActiveSeasonId(null)),
+            activeSeasonProvider.overrideWith((ref) => Stream.value(null)),
+            activeSeasonTransactionsProvider
+                .overrideWith((ref) => Stream.value(const [])),
+            activeSeasonYieldLogsProvider
+                .overrideWith((ref) => Stream.value(const [])),
+            financialSummaryProvider.overrideWithValue(null),
+            backupStatusNotifierProvider.overrideWith(
+              () => _StubBackupStatusNotifier(),
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Welcome to Abadgar!'), findsNothing);
+    });
+
     testWidgets('shows onboarding welcome state when no seasons exist',
         (tester) async {
       await tester.pumpWidget(

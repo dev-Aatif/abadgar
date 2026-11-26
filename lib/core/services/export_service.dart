@@ -16,26 +16,28 @@ class ExportService {
   ExportService(this.db);
 
   Future<Map<String, dynamic>> prepareData() async {
-    final seasons = await db.getAll('SELECT * FROM seasons');
-    final transactions = await db.getAll('SELECT * FROM transactions');
-    final yieldLogs = await db.getAll('SELECT * FROM yield_logs');
-    final lands = await db.getAll('SELECT * FROM lands');
+    return db.readTransaction((tx) async {
+      final seasons = await tx.getAll('SELECT * FROM seasons');
+      final transactions = await tx.getAll('SELECT * FROM transactions');
+      final yieldLogs = await tx.getAll('SELECT * FROM yield_logs');
+      final lands = await tx.getAll('SELECT * FROM lands');
 
-    return {
-      'version': 1,
-      'exported_at': DateTime.now().toIso8601String(),
-      'seasons': seasons,
-      'transactions': transactions,
-      'yield_logs': yieldLogs,
-      'lands': lands,
-    };
+      return {
+        'version': 1,
+        'exported_at': DateTime.now().toIso8601String(),
+        'seasons': seasons,
+        'transactions': transactions,
+        'yield_logs': yieldLogs,
+        'lands': lands,
+      };
+    });
   }
 
   Future<String> getBackupData({String? passphrase}) async {
     final data = await prepareData();
     final plainJson = jsonEncode(data);
     if (passphrase != null && passphrase.isNotEmpty) {
-      return BackupCrypto.encryptJson(plainJson, passphrase);
+      return BackupCrypto.encryptJsonAsync(plainJson, passphrase);
     }
     return plainJson;
   }

@@ -26,11 +26,18 @@ import '../../widgets/transaction_form/parts/form_shared.dart';
 
 enum _ExportAction { share, save }
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _isBackupBusy = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tokens = context.tokens;
     final themeMode =
@@ -146,11 +153,21 @@ class SettingsScreen extends ConsumerWidget {
 
           // Data Management (Local-First Backups)
           _GroupLabel(title: l10n.dataManagement),
+          if (_isBackupBusy)
+            const Padding(
+              padding: EdgeInsets.only(bottom: AppSpace.xs),
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
           _DataManagementCard(
-            onEncryptedExport: () => _handleEncryptedExport(context, ref),
-            onPlainExport: () => _handlePlainExport(context, ref),
-            onImport: () => _handleImport(context, ref),
-            onRestoreAutoBackup: () => _showAutoBackupsSheet(context, ref),
+            onEncryptedExport: _isBackupBusy
+                ? null
+                : () => _handleEncryptedExport(context, ref),
+            onPlainExport:
+                _isBackupBusy ? null : () => _handlePlainExport(context, ref),
+            onImport: _isBackupBusy ? null : () => _handleImport(context, ref),
+            onRestoreAutoBackup: _isBackupBusy
+                ? null
+                : () => _showAutoBackupsSheet(context, ref),
             onOpenGuide: () => _showBackupGuideSheet(context),
           ),
           const SizedBox(height: AppSpace.md),
@@ -220,6 +237,7 @@ class SettingsScreen extends ConsumerWidget {
     final passphrase = await _askSetPassphrase(context);
     if (passphrase == null || !context.mounted) return;
 
+    setState(() => _isBackupBusy = true);
     try {
       final db = await ref.read(localDatabaseProvider.future);
       final service = ExportService(db);
@@ -241,6 +259,8 @@ class SettingsScreen extends ConsumerWidget {
           isError: true,
         );
       }
+    } finally {
+      if (mounted) setState(() => _isBackupBusy = false);
     }
   }
 
@@ -253,6 +273,7 @@ class SettingsScreen extends ConsumerWidget {
     );
     if (action == null || !context.mounted) return;
 
+    setState(() => _isBackupBusy = true);
     try {
       final db = await ref.read(localDatabaseProvider.future);
       final service = ExportService(db);
@@ -274,11 +295,14 @@ class SettingsScreen extends ConsumerWidget {
           isError: true,
         );
       }
+    } finally {
+      if (mounted) setState(() => _isBackupBusy = false);
     }
   }
 
   Future<void> _handleImport(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context)!;
+    setState(() => _isBackupBusy = true);
     try {
       final db = await ref.read(localDatabaseProvider.future);
       final success = await ImportService(db).importDatabase(
@@ -310,6 +334,8 @@ class SettingsScreen extends ConsumerWidget {
           isError: true,
         );
       }
+    } finally {
+      if (mounted) setState(() => _isBackupBusy = false);
     }
   }
 
@@ -424,8 +450,14 @@ class SettingsScreen extends ConsumerWidget {
             FilledButton(
               onPressed: () async {
                 final uri = Uri.parse(update.downloadUrl);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                final launched = await canLaunchUrl(uri) &&
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                if (!launched && context.mounted) {
+                  AppNotification.show(
+                    context,
+                    l10n.updateCheckFailed,
+                    isError: true,
+                  );
                 }
               },
               child: Text(l10n.download),
@@ -495,10 +527,10 @@ class _BackupOverviewCard extends ConsumerWidget {
 }
 
 class _DataManagementCard extends ConsumerWidget {
-  final VoidCallback onEncryptedExport;
-  final VoidCallback onPlainExport;
-  final VoidCallback onImport;
-  final VoidCallback onRestoreAutoBackup;
+  final VoidCallback? onEncryptedExport;
+  final VoidCallback? onPlainExport;
+  final VoidCallback? onImport;
+  final VoidCallback? onRestoreAutoBackup;
   final VoidCallback onOpenGuide;
 
   const _DataManagementCard({

@@ -8,6 +8,8 @@ import 'package:abadgar/core/database/transaction_repository.dart';
 import 'package:abadgar/core/models/transaction.dart';
 import 'package:abadgar/core/models/yield_log.dart';
 import 'package:abadgar/core/services/autosave_service.dart';
+import 'package:abadgar/core/services/backup_crypto.dart';
+import 'package:abadgar/core/services/export_service.dart';
 import 'package:abadgar/core/services/import_service.dart';
 
 void main() {
@@ -144,6 +146,33 @@ void main() {
       final restoredTxns = await db.getAll('SELECT * FROM transactions');
       expect(restoredTxns.length, 1);
       expect(restoredTxns.first['amount'], 5000.0);
+    });
+
+    test('ExportService encrypted backup round-trips cleanly via Isolate',
+        () async {
+      await repo.saveYieldLog(
+        seasonId: 's1',
+        totalWeight: 12,
+        unit: 'Kharrar (800kg)',
+        disposition: 'Sold',
+        salePrice: 240000,
+        date: DateTime(2026, 5, 15),
+      );
+
+      final encrypted =
+          await ExportService(db).getBackupData(passphrase: 'secret-123');
+      expect(BackupCrypto.isEncryptedEnvelope(encrypted), isTrue);
+
+      await db.execute('DELETE FROM seasons');
+      expect(await db.getAll('SELECT * FROM transactions'), isEmpty);
+
+      final decrypted =
+          await BackupCrypto.decryptJsonAsync(encrypted, 'secret-123');
+      await ImportService(db).restoreFromJsonString(decrypted);
+
+      expect((await db.getAll('SELECT * FROM seasons')).length, 1);
+      expect((await db.getAll('SELECT * FROM yield_logs')).length, 1);
+      expect((await db.getAll('SELECT * FROM transactions')).length, 1);
     });
   });
 }

@@ -32,7 +32,7 @@ class DashboardScreen extends ConsumerWidget {
     final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
     final transactions =
         ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
-    final seasonsList = ref.watch(seasonsProvider).valueOrNull ?? [];
+    final seasonsAsync = ref.watch(seasonsProvider);
     final comparisonAsync = activeSeason != null
         ? ref.watch(seasonComparisonProvider(activeSeason.id))
         : null;
@@ -43,267 +43,292 @@ class DashboardScreen extends ConsumerWidget {
       decimalDigits: 0,
     );
 
-    if (seasonsList.isEmpty) {
-      return Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpace.xl),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const AbadgarLogoBadge(size: 76, radius: AppRadius.lg),
-                    const SizedBox(height: AppSpace.xl),
-                    Text(
-                      l10n.welcomeTitle,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpace.xs),
-                    Text(
-                      l10n.welcomeSubtext,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpace.xl),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: () => context.push('/seasons'),
-                        icon: const Icon(Icons.add_rounded, size: 18),
-                        label: Text(l10n.startNewSeason),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return seasonsAsync.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (err, _) => Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpace.xl),
+            child: Text(
+              l10n.errorGeneral(err.toString()),
+              textAlign: TextAlign.center,
             ),
           ),
         ),
-      );
-    }
-
-    return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: () async {
-            HapticFeedback.lightImpact();
-            ref.invalidate(activeSeasonTransactionsProvider);
-            ref.invalidate(financialSummaryProvider);
-            await Future.delayed(const Duration(milliseconds: 450));
-          },
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            slivers: [
-              // Compact Console Top Bar: Season Selector + Sync + Seasons
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpace.md,
-                    AppSpace.sm,
-                    AppSpace.md,
-                    AppSpace.sm,
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _SeasonSelectorControl(
-                          activeSeason: activeSeason,
-                          seasonsList: seasonsList,
+      ),
+      data: (seasonsList) {
+        if (seasonsList.isEmpty) {
+          return Scaffold(
+            body: SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpace.xl),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const AbadgarLogoBadge(size: 76, radius: AppRadius.lg),
+                        const SizedBox(height: AppSpace.xl),
+                        Text(
+                          l10n.welcomeTitle,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      const SizedBox(width: AppSpace.xs),
-                      _LocalStatusBadge(
-                        onTap: () => context.go('/settings'),
-                      ),
-                      const SizedBox(width: AppSpace.xxs),
-                      SizedBox(
-                        width: 36,
-                        height: 36,
-                        child: Material(
-                          color: tokens.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            side: BorderSide(color: tokens.hairline, width: 1),
+                        const SizedBox(height: AppSpace.xs),
+                        Text(
+                          l10n.welcomeSubtext,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: AppSpace.xl),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () => context.push('/seasons'),
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: Text(l10n.startNewSeason),
                           ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () => context.push('/seasons'),
-                            child: Tooltip(
-                              message: l10n.changeSeason,
-                              child: Icon(
-                                Icons.agriculture_outlined,
-                                size: 18,
-                                color: tokens.ink,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Scaffold(
+          body: SafeArea(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                HapticFeedback.lightImpact();
+                ref.invalidate(activeSeasonTransactionsProvider);
+                ref.invalidate(financialSummaryProvider);
+                await Future.delayed(const Duration(milliseconds: 450));
+              },
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                slivers: [
+                  // Compact Console Top Bar: Season Selector + Sync + Seasons
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpace.md,
+                        AppSpace.sm,
+                        AppSpace.md,
+                        AppSpace.sm,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _SeasonSelectorControl(
+                              activeSeason: activeSeason,
+                              seasonsList: seasonsList,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpace.xs),
+                          _LocalStatusBadge(
+                            onTap: () => context.go('/settings'),
+                          ),
+                          const SizedBox(width: AppSpace.xxs),
+                          SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: Material(
+                              color: tokens.surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.sm),
+                                side: BorderSide(
+                                    color: tokens.hairline, width: 1),
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () => context.push('/seasons'),
+                                child: Tooltip(
+                                  message: l10n.changeSeason,
+                                  child: Icon(
+                                    Icons.agriculture_outlined,
+                                    size: 18,
+                                    color: tokens.ink,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Signature Console Margin & Cash-Flow Instrument Card
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpace.md,
+                        AppSpace.xxs,
+                        AppSpace.md,
+                        AppSpace.sm,
+                      ),
+                      child: _ConsoleInstrumentCard(
+                        activeSeason: activeSeason,
+                        summary: summary,
+                        comparisonAsync: comparisonAsync,
+                        currencyFormat: currencyFormat,
+                      ),
+                    ),
+                  ),
+
+                  // Compact 1-Tap Action Strip
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpace.md,
+                        0,
+                        AppSpace.md,
+                        AppSpace.lg,
+                      ),
+                      child: _QuickActionStrip(
+                        onExpense: () => showTransactionSheet(
+                          context,
+                          initialMode: TransactionMode.expense,
+                        ),
+                        onRevenue: () => showTransactionSheet(
+                          context,
+                          initialMode: TransactionMode.revenue,
+                        ),
+                        onHarvest: () => showTransactionSheet(
+                          context,
+                          initialMode: TransactionMode.harvest,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Signature Console Margin & Cash-Flow Instrument Card
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpace.md,
-                    AppSpace.xxs,
-                    AppSpace.md,
-                    AppSpace.sm,
-                  ),
-                  child: _ConsoleInstrumentCard(
-                    activeSeason: activeSeason,
-                    summary: summary,
-                    comparisonAsync: comparisonAsync,
-                    currencyFormat: currencyFormat,
-                  ),
-                ),
-              ),
-
-              // Compact 1-Tap Action Strip
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpace.md,
-                    0,
-                    AppSpace.md,
-                    AppSpace.lg,
-                  ),
-                  child: _QuickActionStrip(
-                    onExpense: () => showTransactionSheet(
-                      context,
-                      initialMode: TransactionMode.expense,
-                    ),
-                    onRevenue: () => showTransactionSheet(
-                      context,
-                      initialMode: TransactionMode.revenue,
-                    ),
-                    onHarvest: () => showTransactionSheet(
-                      context,
-                      initialMode: TransactionMode.harvest,
                     ),
                   ),
-                ),
-              ),
 
-              // Compact Spend Distribution Panel
-              if (summary != null && summary.expenseByCategory.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpace.md),
-                    child: AppSectionHeader(
-                      title: l10n.expenseBreakdown,
-                      trailing: TextButton(
-                        onPressed: () => context.go('/analytics'),
-                        child: Text(l10n.seeAll),
+                  // Compact Spend Distribution Panel
+                  if (summary != null &&
+                      summary.expenseByCategory.isNotEmpty) ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: AppSpace.md),
+                        child: AppSectionHeader(
+                          title: l10n.expenseBreakdown,
+                          trailing: TextButton(
+                            onPressed: () => context.go('/analytics'),
+                            child: Text(l10n.seeAll),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpace.md,
+                          AppSpace.xxs,
+                          AppSpace.md,
+                          AppSpace.lg,
+                        ),
+                        child: _SpendProportionPanel(
+                          summary: summary,
+                          currencyFormat: currencyFormat,
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  // Recent Activity Header
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: AppSpace.md),
+                      child: AppSectionHeader(
+                        title: l10n.ledger,
+                        trailing: TextButton(
+                          onPressed: () => context.go('/ledger'),
+                          child: Text(l10n.seeAll),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
+
+                  // Dense Hairline Ledger Rows
+                  SliverPadding(
                     padding: const EdgeInsets.fromLTRB(
                       AppSpace.md,
                       AppSpace.xxs,
                       AppSpace.md,
-                      AppSpace.lg,
+                      32,
                     ),
-                    child: _SpendProportionPanel(
-                      summary: summary,
-                      currencyFormat: currencyFormat,
+                    sliver: SliverToBoxAdapter(
+                      child: transactions.isEmpty
+                          ? AppCard(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpace.md,
+                                vertical: AppSpace.md,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      l10n.noRecentEntries,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium,
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        showTransactionSheet(context),
+                                    child: Text(l10n.addFirstEntry),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : AppCard(
+                              child: Column(
+                                children: [
+                                  for (int i = 0;
+                                      i <
+                                          (transactions.length > 5
+                                              ? 5
+                                              : transactions.length);
+                                      i++)
+                                    TransactionTile(
+                                      transaction: transactions[i],
+                                      currencyFormat: currencyFormat,
+                                      horizontalPadding: AppSpace.md,
+                                      showDivider: i <
+                                          (transactions.length > 5
+                                              ? 4
+                                              : transactions.length - 1),
+                                      onTap: () => showTransactionSheet(
+                                        context,
+                                        transaction: transactions[i],
+                                      ),
+                                      onDelete: () => deleteTransactionWithUndo(
+                                        context,
+                                        ref,
+                                        transactions[i],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                     ),
                   ),
-                ),
-              ],
-
-              // Recent Activity Header
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
-                  child: AppSectionHeader(
-                    title: l10n.ledger,
-                    trailing: TextButton(
-                      onPressed: () => context.go('/ledger'),
-                      child: Text(l10n.seeAll),
-                    ),
-                  ),
-                ),
+                ],
               ),
-
-              // Dense Hairline Ledger Rows
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpace.md,
-                  AppSpace.xxs,
-                  AppSpace.md,
-                  32,
-                ),
-                sliver: SliverToBoxAdapter(
-                  child: transactions.isEmpty
-                      ? AppCard(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpace.md,
-                            vertical: AppSpace.md,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  l10n.noRecentEntries,
-                                  style: Theme.of(context).textTheme.bodyMedium,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () => showTransactionSheet(context),
-                                child: Text(l10n.addFirstEntry),
-                              ),
-                            ],
-                          ),
-                        )
-                      : AppCard(
-                          child: Column(
-                            children: [
-                              for (int i = 0;
-                                  i <
-                                      (transactions.length > 5
-                                          ? 5
-                                          : transactions.length);
-                                  i++)
-                                TransactionTile(
-                                  transaction: transactions[i],
-                                  currencyFormat: currencyFormat,
-                                  horizontalPadding: AppSpace.md,
-                                  showDivider: i <
-                                      (transactions.length > 5
-                                          ? 4
-                                          : transactions.length - 1),
-                                  onTap: () => showTransactionSheet(
-                                    context,
-                                    transaction: transactions[i],
-                                  ),
-                                  onDelete: () => deleteTransactionWithUndo(
-                                    context,
-                                    ref,
-                                    transactions[i],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

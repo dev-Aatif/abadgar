@@ -51,7 +51,7 @@ class ImportService {
       if (passphrase == null || passphrase.isEmpty) {
         return false;
       }
-      jsonToParse = BackupCrypto.decryptJson(content, passphrase);
+      jsonToParse = await BackupCrypto.decryptJsonAsync(content, passphrase);
     }
 
     final parsed = parseAndValidateBackup(jsonToParse);

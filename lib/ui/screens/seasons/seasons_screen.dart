@@ -283,8 +283,20 @@ class _ActiveSeasonCard extends ConsumerWidget {
           ],
         ),
       );
-      if (confirm == true) {
-        ref.read(seasonsNotifierProvider.notifier).deleteSeason(season.id);
+      if (confirm == true && context.mounted) {
+        try {
+          await ref
+              .read(seasonsNotifierProvider.notifier)
+              .deleteSeason(season.id);
+        } catch (e) {
+          if (context.mounted) {
+            AppNotification.show(
+              context,
+              l10n.errorGeneral(e.toString()),
+              isError: true,
+            );
+          }
+        }
       }
     }
   }
@@ -390,10 +402,20 @@ class _SeasonListRow extends ConsumerWidget {
                           ],
                         ),
                       );
-                      if (confirm == true) {
-                        ref
-                            .read(seasonsNotifierProvider.notifier)
-                            .deleteSeason(season.id);
+                      if (confirm == true && context.mounted) {
+                        try {
+                          await ref
+                              .read(seasonsNotifierProvider.notifier)
+                              .deleteSeason(season.id);
+                        } catch (e) {
+                          if (context.mounted) {
+                            AppNotification.show(
+                              context,
+                              l10n.errorGeneral(e.toString()),
+                              isError: true,
+                            );
+                          }
+                        }
                       }
                     }
                   },

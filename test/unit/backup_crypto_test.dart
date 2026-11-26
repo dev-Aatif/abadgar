@@ -43,5 +43,18 @@ void main() {
         throwsA(isA<BackupDecryptionException>()),
       );
     });
+    test('encrypts and decrypts JSON round-trip asynchronously via isolate',
+        () async {
+      const payload =
+          '{"version":1,"seasons":[{"id":"s1","name":"Rice 2026"}]}';
+      final envelope = await BackupCrypto.encryptJsonAsync(
+        payload,
+        'async-farm-secret',
+        iterations: 1000,
+      );
+      final decrypted =
+          await BackupCrypto.decryptJsonAsync(envelope, 'async-farm-secret');
+      expect(decrypted, payload);
+    });
   });
 }

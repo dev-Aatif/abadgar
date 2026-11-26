@@ -106,10 +106,19 @@ class SeasonsNotifier extends _$SeasonsNotifier {
     final db = await ref.read(localDatabaseProvider.future);
     await db.execute('DELETE FROM seasons WHERE id = ?', [id]);
 
-    // Check if the deleted season was the active one
+    // Check if the deleted season was the active one and fall back to the next available season.
     final activeId = ref.read(activeSeasonIdProvider);
     if (activeId == id) {
-      ref.read(activeSeasonIdProvider.notifier).clear();
+      final remaining = await db.getAll(
+        "SELECT id FROM seasons ORDER BY CASE WHEN status = 'Active' THEN 0 ELSE 1 END, created_at DESC LIMIT 1",
+      );
+      if (remaining.isNotEmpty) {
+        await ref
+            .read(activeSeasonIdProvider.notifier)
+            .set(remaining.first['id'] as String);
+      } else {
+        await ref.read(activeSeasonIdProvider.notifier).clear();
+      }
     }
   }
 }
