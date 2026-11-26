@@ -9,6 +9,7 @@ import 'package:abadgar/core/models/transaction.dart';
 import 'package:abadgar/core/models/yield_log.dart';
 import 'package:abadgar/core/providers/active_season_provider.dart';
 import 'package:abadgar/core/theme/app_theme.dart';
+import 'package:abadgar/ui/widgets/app_controls.dart';
 import 'package:abadgar/ui/widgets/app_selector.dart';
 import 'package:abadgar/ui/widgets/app_surface.dart';
 import 'package:abadgar/ui/widgets/transaction_form/parts/form_shared.dart';
@@ -264,6 +265,73 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Console UI controls', () {
+    testWidgets('AppSegmentedControl switches selection cleanly in 1 tap',
+        (WidgetTester tester) async {
+      var selected = 'expense';
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return Center(
+                  child: AppSegmentedControl<String>(
+                    selected: selected,
+                    segments: const [
+                      AppSegment(value: 'expense', label: 'Expense'),
+                      AppSegment(value: 'revenue', label: 'Revenue'),
+                      AppSegment(value: 'harvest', label: 'Harvest'),
+                    ],
+                    onChanged: (next) => setState(() => selected = next),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Revenue'));
+      await tester.pumpAndSettle();
+      expect(selected, 'revenue');
+    });
+
+    testWidgets(
+        'CompactStepperCluster increments and decrements values accurately',
+        (WidgetTester tester) async {
+      double area = 5.0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.dark,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                return Center(
+                  child: CompactStepperCluster(
+                    stepLabel: '0.5',
+                    onDecrement: () => setState(() => area -= 0.5),
+                    onIncrement: () => setState(() => area += 0.5),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byIcon(Icons.add_rounded));
+      await tester.pump();
+      expect(area, 5.5);
+
+      await tester.tap(find.byIcon(Icons.remove_rounded));
+      await tester.pump();
+      expect(area, 5.0);
     });
   });
 }

@@ -51,15 +51,20 @@ android {
     buildTypes {
         release {
             val allowDebugReleaseSigning = project.hasProperty("allowDebugReleaseSigning")
+            val isReleaseBuildRequested = gradle.startParameter.taskNames.any {
+                it.contains("Release", ignoreCase = true)
+            }
             signingConfig = if (hasReleaseKeystore) {
                 signingConfigs.getByName("release")
             } else if (allowDebugReleaseSigning) {
                 logger.warn("WARNING: android/key.properties not found; using debug signing due to -PallowDebugReleaseSigning.")
                 signingConfigs.getByName("debug")
-            } else {
+            } else if (isReleaseBuildRequested) {
                 throw GradleException(
                     "Release keystore missing: create android/key.properties before building release, or pass -PallowDebugReleaseSigning for local testing."
                 )
+            } else {
+                signingConfigs.getByName("debug")
             }
             isMinifyEnabled = true
             isShrinkResources = true

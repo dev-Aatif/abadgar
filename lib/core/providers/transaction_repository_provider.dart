@@ -6,7 +6,7 @@ part 'transaction_repository_provider.g.dart';
 
 @riverpod
 TransactionRepository transactionRepository(TransactionRepositoryRef ref) {
-  final db = ref.watch(powerSyncDatabaseProvider).valueOrNull;
+  final db = ref.watch(localDatabaseProvider).valueOrNull;
   if (db == null) throw Exception('Database not initialized');
   return TransactionRepository(db);
 }

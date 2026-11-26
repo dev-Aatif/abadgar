@@ -52,6 +52,8 @@ class L10nHelpers {
         return l10n.unitKg;
       case YieldUnit.mund:
         return l10n.unitMund;
+      case YieldUnit.kharrar:
+        return l10n.unitKharrar;
       case YieldUnit.tons:
         return l10n.unitTons;
     }

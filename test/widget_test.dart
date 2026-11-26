@@ -22,9 +22,12 @@ void main() {
       expect(CropType.fromString('Rice'), CropType.rice);
     });
 
-    test('YieldUnit converts Kg, Mund (40kg), and Tons accurately', () {
+    test(
+        'YieldUnit converts Kg, Mund (40kg), Kharrar (800kg), and Tons accurately',
+        () {
       expect(YieldUnit.kg.toKg(100), 100.0);
       expect(YieldUnit.mund.toKg(10), 400.0);
+      expect(YieldUnit.kharrar.toKg(2), 1600.0);
       expect(YieldUnit.tons.toKg(2.5), 2500.0);
     });
   });

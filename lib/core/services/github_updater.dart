@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class UpdateInfo {
   final String latestVersion;
@@ -21,12 +20,8 @@ class GithubUpdater {
   static const Duration _requestTimeout = Duration(seconds: 10);
 
   static Future<UpdateInfo> checkForUpdates() async {
-    final repo = dotenv.isInitialized
-        ? (dotenv.env['GITHUB_REPO'] ??
-            const String.fromEnvironment('GITHUB_REPO',
-                defaultValue: 'archon/Abadgar'))
-        : const String.fromEnvironment('GITHUB_REPO',
-            defaultValue: 'archon/Abadgar');
+    const repo = String.fromEnvironment('GITHUB_REPO',
+        defaultValue: 'dev-aatif/abadgar');
     final response = await http
         .get(Uri.parse('https://api.github.com/repos/$repo/releases/latest'))
         .timeout(_requestTimeout);

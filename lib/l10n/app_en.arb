@@ -38,7 +38,7 @@
   "deleteTransaction": "Delete Transaction",
   "deleteConfirmation": "Are you sure you want to delete this record?",
   "noTransactions": "No transactions recorded yet",
-  "totalArea": "Total Area (Acres)",
+  "totalArea": "Total Area (Jareeb)",
   "appearance": "Appearance",
   "dataManagement": "Data Management",
   "manualSync": "Manual Sync",
@@ -130,7 +130,7 @@
   "noTransactionsFilter": "No transactions found under this filter.",
   "seasonInsights": "Season Insights",
   "detailedReport": "Detailed performance report for this season",
-  "costPerAcre": "Cost / Acre",
+  "costPerAcre": "Cost / Jareeb",
   "other": "Other",
   "farmProfile": "Farm Profile",
   "manageLands": "Manage Lands",
@@ -209,8 +209,8 @@
   "sold": "Sold",
   "stored": "Stored",
   "home": "Home",
-  "revenuePerAcre": "Revenue / Acre",
-  "yieldPerAcre": "Yield / Acre",
+  "revenuePerAcre": "Revenue / Jareeb",
+  "yieldPerAcre": "Yield / Jareeb",
   "delete": "Delete",
   "deleteLand": "Delete Land",
   "welcomeTitle": "Welcome to Abadgar!",
@@ -227,8 +227,8 @@
   "saving": "Saving...",
   "confirmDeleteTransactionTitle": "Confirm Delete",
   "dateLabel": "Date",
-  "acresUnit": "Acres",
-  "acresUnitShort": "Acr",
+  "acresUnit": "Jareeb",
+  "acresUnitShort": "Jrb",
   "multiYearTrend": "Multi-Year Profit Trend",
   "errorLoadingTrends": "Error loading trends: {error}",
   "@errorLoadingTrends": {
@@ -245,7 +245,7 @@
   "today": "Today",
   "yesterday": "Yesterday",
   "otherDate": "Pick date",
-  "profitPerAcre": "Profit / Acre",
+  "profitPerAcre": "Profit / Jareeb",
   "savedLands": "Saved lands",
   "whichSeason": "Select season",
   "edit": "Edit",
@@ -262,6 +262,7 @@
   "noActiveCropsPrompt": "No active crops found. Please start a season first.",
   "unitKg": "Kg",
   "unitMund": "Mund (40kg)",
+  "unitKharrar": "Kharrar (20 Mund)",
   "unitTons": "Tons",
   "deleteSeasonTitle": "Delete Season",
   "deleteSeasonConfirm": "Are you sure you want to delete {name}? This cannot be undone.",
@@ -298,5 +299,64 @@
   "reportFooter": "Generated via Abadgar App.",
   "restoreAutoBackup": "Restore Auto-Backup",
   "noAutoBackupFound": "No local auto-backup found.",
-  "autoBackupRestored": "Auto-backup restored!"
+  "autoBackupRestored": "Auto-backup restored!",
+  "backupEncryptedExport": "Encrypted Backup (.abadgar)",
+  "backupEncryptedSubtitle": "Password-protected file (recommended)",
+  "backupPlainExport": "Plain JSON Backup (.json)",
+  "backupPlainSubtitle": "Readable text without password",
+  "backupPassphraseTitle": "Set Backup Password",
+  "backupEnterPassphraseTitle": "Enter Backup Password",
+  "backupPassphraseHint": "Password (min 6 characters)",
+  "backupPassphraseConfirmHint": "Confirm password",
+  "backupPassphraseMismatch": "Passwords do not match.",
+  "backupPassphraseShort": "Use at least 6 characters.",
+  "backupWrongPassphrase": "Wrong password or damaged backup file.",
+  "backupShareAction": "Share",
+  "backupSaveAction": "Save to Device",
+  "backupSavedToDevice": "Backup saved to device.",
+  "backupPlainWarning": "Anyone with this file can read your farm records. Use an Encrypted Backup when sharing via WhatsApp or cloud storage.",
+  "autoBackups": "Auto-Backups",
+  "autoBackupsSubtitle": "Save rolling copies on this phone automatically",
+  "lastAutoBackupNever": "Last auto-backup: None yet",
+  "lastAutoBackupAt": "Last auto-backup: {time}",
+  "@lastAutoBackupAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "lastExternalBackupNever": "No external backup exported yet",
+  "lastExternalBackupAt": "Last exported: {time}",
+  "@lastExternalBackupAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "backupDue": "Backup needed",
+  "backupGuideTitle": "How to Protect Your Backups",
+  "backupGuideSubtitle": "Keep farm records safe if your phone is lost",
+  "backupGuideStep1Title": "1. Auto-backups stay on this phone only",
+  "backupGuideStep1Body": "Uninstalling Abadgar, resetting your phone, or losing the device deletes phone-only auto-backups.",
+  "backupGuideStep2Title": "2. Export an Encrypted Backup weekly",
+  "backupGuideStep2Body": "Choose Encrypted Backup (.abadgar) with a strong password before saving to Google Drive, WhatsApp (Send to Yourself), or an SD card.",
+  "backupGuideStep3Title": "3. Write your password in a safe notebook",
+  "backupGuideStep3Body": "Encrypted files cannot be opened without your password. Keep it written down offline.",
+  "backupGuideStep4Title": "4. Restoring on a new phone",
+  "backupGuideStep4Body": "Install Abadgar, open Settings -> Restore Backup, pick your .abadgar file, and enter your password.",
+  "autoBackupSnapshotLine": "{seasons} seasons, {txns} entries",
+  "@autoBackupSnapshotLine": {
+    "placeholders": {
+      "seasons": {
+        "type": "int"
+      },
+      "txns": {
+        "type": "int"
+      }
+    }
+  },
+  "restoreConfirmBody": "This updates records on your phone from this backup. A safety snapshot will be saved first.",
+  "restore": "Restore"
 }

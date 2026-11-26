@@ -52,6 +52,7 @@ class SharedAmountField extends StatefulWidget {
   final String hint;
   final bool autofocus;
   final FocusNode? focusNode;
+  final Color? accentColor;
 
   const SharedAmountField({
     super.key,
@@ -60,6 +61,7 @@ class SharedAmountField extends StatefulWidget {
     this.hint = '0',
     this.autofocus = true,
     this.focusNode,
+    this.accentColor,
   });
 
   @override
@@ -67,15 +69,20 @@ class SharedAmountField extends StatefulWidget {
 }
 
 class _SharedAmountFieldState extends State<SharedAmountField> {
+  bool _hasFocus = false;
+
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_onChanged);
+    widget.focusNode?.addListener(_onFocusChanged);
+    _hasFocus = widget.focusNode?.hasFocus ?? false;
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_onChanged);
+    widget.focusNode?.removeListener(_onFocusChanged);
     super.dispose();
   }
 
@@ -83,27 +90,47 @@ class _SharedAmountFieldState extends State<SharedAmountField> {
     if (mounted) setState(() {});
   }
 
+  void _onFocusChanged() {
+    if (mounted) {
+      setState(() => _hasFocus = widget.focusNode?.hasFocus ?? false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final hasText = widget.controller.text.isNotEmpty;
+    final accent = widget.accentColor ?? Theme.of(context).colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpace.md, vertical: AppSpace.xs),
+        horizontal: AppSpace.sm,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: tokens.well,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: tokens.hairline, width: 1),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: _hasFocus ? accent : tokens.hairline,
+          width: _hasFocus ? 1.5 : 1,
+        ),
       ),
       child: Row(
         children: [
-          Text(
-            widget.prefix,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: tokens.surface,
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+              border: Border.all(color: tokens.hairline),
+            ),
+            child: Text(
+              widget.prefix,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: accent,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
           ),
           const SizedBox(width: AppSpace.sm),
           Expanded(
@@ -116,16 +143,16 @@ class _SharedAmountFieldState extends State<SharedAmountField> {
               inputFormatters: [NormalizedDecimalFormatter()],
               style: AppTheme.tabular(
                 Theme.of(context).textTheme.headlineLarge?.copyWith(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
               decoration: InputDecoration(
                 hintText: widget.hint,
                 hintStyle: AppTheme.tabular(
                   Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w600,
                         color: tokens.inkMuted.withValues(alpha: 0.35),
                       ),
                 ),
@@ -133,19 +160,19 @@ class _SharedAmountFieldState extends State<SharedAmountField> {
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: AppSpace.xs),
+                contentPadding: const EdgeInsets.symmetric(vertical: 6),
               ),
             ),
           ),
           if (hasText)
             IconButton(
               tooltip: AppLocalizations.of(context)!.clear,
+              visualDensity: VisualDensity.compact,
               onPressed: () {
                 widget.controller.clear();
                 widget.focusNode?.requestFocus();
               },
-              icon: Icon(Icons.close_rounded, size: 18, color: tokens.inkMuted),
+              icon: Icon(Icons.close_rounded, size: 17, color: tokens.inkMuted),
             ),
         ],
       ),
@@ -193,7 +220,7 @@ class QuickDateSelector extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(width: AppSpace.xs),
+        const SizedBox(width: 6),
         Expanded(
           child: ChoiceChip(
             label: Center(child: Text(l10n.yesterday)),
@@ -205,7 +232,7 @@ class QuickDateSelector extends StatelessWidget {
             },
           ),
         ),
-        const SizedBox(width: AppSpace.xs),
+        const SizedBox(width: 6),
         Expanded(
           child: ChoiceChip(
             label: Center(
@@ -257,7 +284,7 @@ class SharedSaveButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 46,
       child: FilledButton(
         onPressed: onPressed != null && !isLoading
             ? () {
@@ -269,11 +296,13 @@ class SharedSaveButton extends StatelessWidget {
             ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(
-                    width: 18,
-                    height: 18,
+                  SizedBox(
+                    width: 17,
+                    height: 17,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                   const SizedBox(width: AppSpace.sm),
                   Text(label),

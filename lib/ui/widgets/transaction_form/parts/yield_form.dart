@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/enums.dart';
 import '../../../../core/models/yield_log.dart';
 import '../../../../core/providers/transactions_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/l10n_helpers.dart';
 import '../../../../core/utils/notifications.dart';
+import '../../app_controls.dart';
 import 'form_shared.dart';
 
 class YieldForm extends ConsumerStatefulWidget {
@@ -128,8 +129,11 @@ class _YieldFormState extends ConsumerState<YieldForm> {
       return true;
     } catch (e) {
       if (mounted) {
-        AppNotification.show(context, l10n.errorGeneral(e.toString()),
-            isError: true);
+        AppNotification.show(
+          context,
+          l10n.errorGeneral(e.toString()),
+          isError: true,
+        );
       }
       return false;
     }
@@ -174,50 +178,49 @@ class _YieldFormState extends ConsumerState<YieldForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(l10n.yield, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: AppSpace.xs),
+        const SizedBox(height: 6),
         SharedAmountField(
           controller: _weightController,
           focusNode: _weightFocusNode,
           autofocus: widget.yieldLog == null,
           prefix: L10nHelpers.yieldUnitLabel(context, _unit),
           hint: '0',
+          accentColor: AppColors.wheatFor(context),
         ),
-        const SizedBox(height: AppSpace.sm),
-        SegmentedButton<YieldUnit>(
-          showSelectedIcon: false,
-          segments: YieldUnit.values
-              .map((u) => ButtonSegment<YieldUnit>(
-                    value: u,
-                    label: Text(
-                      L10nHelpers.yieldUnitLabel(context, u),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ))
-              .toList(),
-          selected: {_unit},
-          onSelectionChanged: (set) {
-            HapticFeedback.selectionClick();
-            setState(() => _unit = set.first);
-          },
-        ),
-        const SizedBox(height: AppSpace.lg),
-        SegmentedButton<YieldDisposition>(
-          showSelectedIcon: false,
+        const SizedBox(height: AppSpace.xs),
+        AppSegmentedControl<YieldUnit>(
+          compact: true,
+          selected: _unit,
           segments: [
-            ButtonSegment(value: YieldDisposition.sold, label: Text(l10n.sold)),
-            ButtonSegment(
-                value: YieldDisposition.stored, label: Text(l10n.stored)),
-            ButtonSegment(
-                value: YieldDisposition.personal,
-                label: Text(l10n.personalUse)),
-          ],
-          selected: {_disposition},
-          onSelectionChanged: (set) {
-            HapticFeedback.selectionClick();
-            setState(() => _disposition = set.first);
-          },
+            YieldUnit.kg,
+            YieldUnit.mund,
+            YieldUnit.kharrar,
+            if (widget.yieldLog?.unit == YieldUnit.tons) YieldUnit.tons,
+          ]
+              .map(
+                (u) => AppSegment<YieldUnit>(
+                  value: u,
+                  label: L10nHelpers.yieldUnitLabel(context, u),
+                ),
+              )
+              .toList(),
+          onChanged: (next) => setState(() => _unit = next),
         ),
         const SizedBox(height: AppSpace.md),
+        AppSegmentedControl<YieldDisposition>(
+          compact: true,
+          selected: _disposition,
+          segments: [
+            AppSegment(value: YieldDisposition.sold, label: l10n.sold),
+            AppSegment(value: YieldDisposition.stored, label: l10n.stored),
+            AppSegment(
+              value: YieldDisposition.personal,
+              label: l10n.personalUse,
+            ),
+          ],
+          onChanged: (next) => setState(() => _disposition = next),
+        ),
+        const SizedBox(height: AppSpace.sm),
         if (_disposition == YieldDisposition.sold) ...[
           TextField(
             controller: _pricePerUnitController,
@@ -229,13 +232,15 @@ class _YieldFormState extends ConsumerState<YieldForm> {
               suffixText: 'Rs',
             ),
           ),
-          const SizedBox(height: AppSpace.sm),
+          const SizedBox(height: AppSpace.xs),
           Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpace.md, vertical: AppSpace.sm),
+              horizontal: AppSpace.sm,
+              vertical: 9,
+            ),
             decoration: BoxDecoration(
               color: tokens.well,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(color: tokens.hairline, width: 1),
             ),
             child: Row(
@@ -251,40 +256,40 @@ class _YieldFormState extends ConsumerState<YieldForm> {
                   currencyFormat.format(_totalPrice),
                   style: AppTheme.tabular(
                     Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w700,
+                          color: AppColors.revenueFor(context),
+                          fontWeight: FontWeight.w600,
                         ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.sm),
         ],
         if (_disposition == YieldDisposition.stored) ...[
           TextField(
             controller: _destinationController,
             decoration: InputDecoration(
               labelText: l10n.whereStored,
-              prefixIcon: const Icon(Icons.inventory_2_outlined, size: 20),
+              prefixIcon: const Icon(Icons.inventory_2_outlined, size: 18),
             ),
           ),
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.sm),
         ],
         Text(l10n.dateLabel, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: AppSpace.xs),
+        const SizedBox(height: 6),
         QuickDateSelector(
           selectedDate: _selectedDate,
           onDateChanged: (d) => setState(() => _selectedDate = d),
         ),
-        const SizedBox(height: AppSpace.xl),
+        const SizedBox(height: AppSpace.md),
         SharedSaveButton(
           onPressed: isValid ? _saveAndClose : null,
           isLoading: isLoading,
           label: isLoading ? l10n.loggingHarvest : l10n.saveHarvest,
         ),
         if (widget.yieldLog == null) ...[
-          const SizedBox(height: AppSpace.xs),
+          const SizedBox(height: 4),
           TextButton(
             onPressed: (isValid && !isLoading) ? _saveAndAddAnother : null,
             child: Text(l10n.saveAndAddAnother),

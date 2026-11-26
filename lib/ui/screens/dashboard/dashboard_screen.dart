@@ -3,22 +3,19 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:powersync/powersync.dart' hide Column;
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/enums.dart';
-import '../../../core/database/database_provider.dart';
-import '../../../core/database/supabase_connector.dart';
 import '../../../core/models/season.dart';
 import '../../../core/providers/active_season_provider.dart';
-import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/backup_providers.dart';
 import '../../../core/providers/comparison_provider.dart';
 import '../../../core/providers/financial_summary_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/providers/transactions_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/l10n_helpers.dart';
+import '../../widgets/app_controls.dart';
 import '../../widgets/app_selector.dart';
 import '../../widgets/app_surface.dart';
 import '../../widgets/transaction_actions.dart';
@@ -35,7 +32,6 @@ class DashboardScreen extends ConsumerWidget {
     final activeSeason = ref.watch(activeSeasonProvider).valueOrNull;
     final transactions =
         ref.watch(activeSeasonTransactionsProvider).valueOrNull ?? [];
-    final isAuthenticated = ref.watch(authStateProvider) != null;
     final seasonsList = ref.watch(seasonsProvider).valueOrNull ?? [];
     final comparisonAsync = activeSeason != null
         ? ref.watch(seasonComparisonProvider(activeSeason.id))
@@ -50,46 +46,39 @@ class DashboardScreen extends ConsumerWidget {
     if (seasonsList.isEmpty) {
       return Scaffold(
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpace.xl),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.sheet),
-                  child: Image.asset(
-                    'assets/logo.png',
-                    width: 88,
-                    height: 88,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.eco_rounded,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.primary,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpace.xl),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const AbadgarLogoBadge(size: 76, radius: AppRadius.lg),
+                    const SizedBox(height: AppSpace.xl),
+                    Text(
+                      l10n.welcomeTitle,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      textAlign: TextAlign.center,
                     ),
-                  ),
+                    const SizedBox(height: AppSpace.xs),
+                    Text(
+                      l10n.welcomeSubtext,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpace.xl),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () => context.push('/seasons'),
+                        icon: const Icon(Icons.add_rounded, size: 18),
+                        label: Text(l10n.startNewSeason),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: AppSpace.xl),
-                Text(
-                  l10n.welcomeTitle,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpace.sm),
-                Text(
-                  l10n.welcomeSubtext,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpace.xxl),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: () => context.push('/seasons'),
-                    icon: const Icon(Icons.add_rounded),
-                    label: Text(l10n.startNewSeason),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -103,17 +92,22 @@ class DashboardScreen extends ConsumerWidget {
             HapticFeedback.lightImpact();
             ref.invalidate(activeSeasonTransactionsProvider);
             ref.invalidate(financialSummaryProvider);
-            await Future.delayed(const Duration(milliseconds: 500));
+            await Future.delayed(const Duration(milliseconds: 450));
           },
           child: CustomScrollView(
             physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics()),
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
             slivers: [
-              // Editorial Top Bar: Custom Season Selector + Sync Status + Seasons
+              // Compact Console Top Bar: Season Selector + Sync + Seasons
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.sm),
+                    AppSpace.md,
+                    AppSpace.sm,
+                    AppSpace.md,
+                    AppSpace.sm,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -123,30 +117,48 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: AppSpace.xs),
-                      _SyncStatusBadge(
-                        isAuthenticated: isAuthenticated,
-                        db: ref.watch(powerSyncDatabaseProvider).valueOrNull,
-                        onTap: () => context.push('/auth'),
+                      _LocalStatusBadge(
+                        onTap: () => context.go('/settings'),
                       ),
-                      const SizedBox(width: 2),
-                      IconButton(
-                        tooltip: l10n.changeSeason,
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => context.push('/seasons'),
-                        icon:
-                            Icon(Icons.agriculture_outlined, color: tokens.ink),
+                      const SizedBox(width: AppSpace.xxs),
+                      SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: Material(
+                          color: tokens.surface,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            side: BorderSide(color: tokens.hairline, width: 1),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => context.push('/seasons'),
+                            child: Tooltip(
+                              message: l10n.changeSeason,
+                              child: Icon(
+                                Icons.agriculture_outlined,
+                                size: 18,
+                                color: tokens.ink,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
 
-              // Open Typographic Hero Ledger Band (unboxed, directly on canvas)
+              // Signature Console Margin & Cash-Flow Instrument Card
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.md),
-                  child: _HeroLedgerBand(
+                    AppSpace.md,
+                    AppSpace.xxs,
+                    AppSpace.md,
+                    AppSpace.sm,
+                  ),
+                  child: _ConsoleInstrumentCard(
                     activeSeason: activeSeason,
                     summary: summary,
                     comparisonAsync: comparisonAsync,
@@ -155,28 +167,38 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Unified 1-Tap Action Strip (single segmented bar, zero floating tiles)
+              // Compact 1-Tap Action Strip
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpace.lg, 0, AppSpace.lg, AppSpace.xl),
+                    AppSpace.md,
+                    0,
+                    AppSpace.md,
+                    AppSpace.lg,
+                  ),
                   child: _QuickActionStrip(
-                    onExpense: () => showTransactionSheet(context,
-                        initialMode: TransactionMode.expense),
-                    onRevenue: () => showTransactionSheet(context,
-                        initialMode: TransactionMode.revenue),
-                    onHarvest: () => showTransactionSheet(context,
-                        initialMode: TransactionMode.harvest),
+                    onExpense: () => showTransactionSheet(
+                      context,
+                      initialMode: TransactionMode.expense,
+                    ),
+                    onRevenue: () => showTransactionSheet(
+                      context,
+                      initialMode: TransactionMode.revenue,
+                    ),
+                    onHarvest: () => showTransactionSheet(
+                      context,
+                      initialMode: TransactionMode.harvest,
+                    ),
                   ),
                 ),
               ),
 
-              // Unboxed Proportional Spend Section
+              // Compact Spend Distribution Panel
               if (summary != null && summary.expenseByCategory.isNotEmpty) ...[
                 SliverToBoxAdapter(
                   child: Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        const EdgeInsets.symmetric(horizontal: AppSpace.md),
                     child: AppSectionHeader(
                       title: l10n.expenseBreakdown,
                       trailing: TextButton(
@@ -189,8 +211,12 @@ class DashboardScreen extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
-                        AppSpace.lg, AppSpace.xs, AppSpace.lg, AppSpace.xl),
-                    child: _SpendProportionStrip(
+                      AppSpace.md,
+                      AppSpace.xxs,
+                      AppSpace.md,
+                      AppSpace.lg,
+                    ),
+                    child: _SpendProportionPanel(
                       summary: summary,
                       currencyFormat: currencyFormat,
                     ),
@@ -201,7 +227,7 @@ class DashboardScreen extends ConsumerWidget {
               // Recent Activity Header
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.md),
                   child: AppSectionHeader(
                     title: l10n.ledger,
                     trailing: TextButton(
@@ -212,20 +238,20 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
 
-              // Flat Hairline Ledger Rows (unboxed, edge-aligned)
+              // Dense Hairline Ledger Rows
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpace.lg, AppSpace.xs, AppSpace.lg, 48),
+                  AppSpace.md,
+                  AppSpace.xxs,
+                  AppSpace.md,
+                  32,
+                ),
                 sliver: SliverToBoxAdapter(
                   child: transactions.isEmpty
-                      ? Container(
-                          padding:
-                              const EdgeInsets.symmetric(vertical: AppSpace.lg),
-                          decoration: BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: tokens.hairline),
-                              bottom: BorderSide(color: tokens.hairline),
-                            ),
+                      ? AppCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpace.md,
+                            vertical: AppSpace.md,
                           ),
                           child: Row(
                             children: [
@@ -242,13 +268,7 @@ class DashboardScreen extends ConsumerWidget {
                             ],
                           ),
                         )
-                      : Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: tokens.hairline),
-                              bottom: BorderSide(color: tokens.hairline),
-                            ),
-                          ),
+                      : AppCard(
                           child: Column(
                             children: [
                               for (int i = 0;
@@ -260,7 +280,7 @@ class DashboardScreen extends ConsumerWidget {
                                 TransactionTile(
                                   transaction: transactions[i],
                                   currencyFormat: currencyFormat,
-                                  horizontalPadding: 0,
+                                  horizontalPadding: AppSpace.md,
                                   showDivider: i <
                                       (transactions.length > 5
                                           ? 4
@@ -300,21 +320,13 @@ class _SeasonSelectorControl extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final cropColor = activeSeason?.cropType == CropType.wheat
-        ? AppColors.wheatFor(context)
-        : AppColors.riceFor(context);
 
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: AppSelectorTrigger(
+        compact: true,
         leading: activeSeason != null
-            ? Icon(
-                activeSeason!.cropType == CropType.wheat
-                    ? Icons.grass_rounded
-                    : Icons.water_drop_rounded,
-                size: 17,
-                color: cropColor,
-              )
+            ? CropGlyph(cropType: activeSeason!.cropType, size: 15)
             : null,
         label: activeSeason != null
             ? '${L10nHelpers.cropLabel(context, activeSeason!.cropType)} ${activeSeason!.startDate.year}'
@@ -329,13 +341,10 @@ class _SeasonSelectorControl extends ConsumerWidget {
                 Navigator.pop(context);
                 context.push('/seasons');
               },
-              icon: const Icon(Icons.tune_rounded, size: 16),
+              icon: const Icon(Icons.tune_rounded, size: 15),
               label: Text(l10n.seasons),
             ),
             options: seasonsList.map((s) {
-              final sColor = s.cropType == CropType.wheat
-                  ? AppColors.wheatFor(context)
-                  : AppColors.riceFor(context);
               return AppSelectorOption<String>(
                 value: s.id,
                 label:
@@ -343,13 +352,7 @@ class _SeasonSelectorControl extends ConsumerWidget {
                 subtitle:
                     '${l10n.seasonStarted} ${DateFormat.yMMMd(L10nHelpers.intlLocaleFor(context)).format(s.startDate)}',
                 badge: '${s.landArea} ${l10n.acresUnitShort}',
-                leading: Icon(
-                  s.cropType == CropType.wheat
-                      ? Icons.grass_rounded
-                      : Icons.water_drop_rounded,
-                  color: sColor,
-                  size: 20,
-                ),
+                leading: CropGlyph(cropType: s.cropType, size: 18),
               );
             }).toList(),
           );
@@ -362,13 +365,13 @@ class _SeasonSelectorControl extends ConsumerWidget {
   }
 }
 
-class _HeroLedgerBand extends StatelessWidget {
+class _ConsoleInstrumentCard extends StatelessWidget {
   final Season? activeSeason;
   final FinancialSummary? summary;
   final AsyncValue<SeasonComparison?>? comparisonAsync;
   final NumberFormat currencyFormat;
 
-  const _HeroLedgerBand({
+  const _ConsoleInstrumentCard({
     required this.activeSeason,
     required this.summary,
     required this.comparisonAsync,
@@ -379,159 +382,198 @@ class _HeroLedgerBand extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tokens = context.tokens;
+    final revenue = summary?.totalRevenue ?? 0;
+    final expenses = summary?.totalExpenses ?? 0;
     final profit = summary?.profit ?? 0;
     final isNegative = profit < 0;
     final profitColor = isNegative ? AppColors.expenseFor(context) : tokens.ink;
+    final acres = activeSeason?.landArea ?? 0;
 
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.netProfit,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (activeSeason != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tokens.well,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                    border: Border.all(color: tokens.hairline, width: 1),
+                  ),
+                  child: Text(
+                    '${activeSeason!.landArea} ${l10n.acresUnitShort}',
+                    style: AppTheme.tabular(
+                      Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: tokens.ink,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.xxs),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              '${isNegative ? '−' : ''}${currencyFormat.format(profit.abs())}',
+              style: AppTheme.tabular(
+                Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      color: profitColor,
+                      fontSize: 34,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.9,
+                    ),
+              ),
+            ),
+          ),
+          if (comparisonAsync != null)
+            comparisonAsync!.maybeWhen(
+              data: (comparison) {
+                if (comparison == null || comparison.previousSeason == null) {
+                  return const SizedBox.shrink();
+                }
+                final variance = comparison.profitVariance;
+                final isUp = variance >= 0;
+                final pct = (variance.abs() * 100).toStringAsFixed(1);
+                final trendColor = isUp
+                    ? AppColors.revenueFor(context)
+                    : AppColors.expenseFor(context);
+                final prevName =
+                    '${L10nHelpers.cropLabel(context, comparison.previousSeason!.cropType)} ${comparison.previousSeason!.startDate.year}';
+
+                return Padding(
+                  padding: const EdgeInsets.only(top: AppSpace.xxs),
+                  child: InkWell(
+                    onTap: () => context.go('/analytics'),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isUp
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                            size: 15,
+                            color: trendColor,
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              isUp
+                                  ? l10n.profitVarianceUp(pct, prevName)
+                                  : l10n.profitVarianceDown(pct, prevName),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: trendColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+              orElse: () => const SizedBox.shrink(),
+            ),
+          const SizedBox(height: AppSpace.sm),
+          PrecisionRatioBar(revenue: revenue, expenses: expenses),
+          const SizedBox(height: AppSpace.sm),
+          Divider(height: 1, color: tokens.hairline),
+          const SizedBox(height: AppSpace.sm),
+          IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _MetricPair(
+                    label: l10n.revenue,
+                    value: '+${currencyFormat.format(revenue)}',
+                    valueColor: AppColors.revenueFor(context),
+                  ),
+                ),
+                VerticalDivider(width: AppSpace.md, color: tokens.hairline),
+                Expanded(
+                  child: _MetricPair(
+                    label: l10n.expenses,
+                    value: '−${currencyFormat.format(expenses)}',
+                    valueColor: AppColors.expenseFor(context),
+                  ),
+                ),
+                if (acres > 0) ...[
+                  VerticalDivider(width: AppSpace.md, color: tokens.hairline),
+                  Expanded(
+                    child: _MetricPair(
+                      label: l10n.profitPerAcre,
+                      value: currencyFormat.format(profit / acres),
+                      valueColor: isNegative
+                          ? AppColors.expenseFor(context)
+                          : tokens.instrument,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricPair extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+
+  const _MetricPair({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                l10n.netProfit,
-                style: Theme.of(context).textTheme.bodyMedium,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (activeSeason != null)
-              Text(
-                '${activeSeason!.landArea} ${l10n.acresUnitShort}',
-                style: AppTheme.tabular(Theme.of(context).textTheme.bodySmall),
-              ),
-          ],
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: AppSpace.xxs),
+        const SizedBox(height: 2),
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: AlignmentDirectional.centerStart,
           child: Text(
-            '${isNegative ? '−' : ''}${currencyFormat.format(profit.abs())}',
+            value,
             style: AppTheme.tabular(
-              Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    color: profitColor,
-                    fontSize: 38,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -1.0,
+              Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: valueColor,
+                    fontWeight: FontWeight.w600,
                   ),
-            ),
-          ),
-        ),
-        if (comparisonAsync != null)
-          comparisonAsync!.maybeWhen(
-            data: (comparison) {
-              if (comparison == null || comparison.previousSeason == null) {
-                return const SizedBox.shrink();
-              }
-              final variance = comparison.profitVariance;
-              final isUp = variance >= 0;
-              final pct = (variance.abs() * 100).toStringAsFixed(1);
-              final trendColor = isUp
-                  ? AppColors.revenueFor(context)
-                  : AppColors.expenseFor(context);
-              final prevName =
-                  '${L10nHelpers.cropLabel(context, comparison.previousSeason!.cropType)} ${comparison.previousSeason!.startDate.year}';
-
-              return Padding(
-                padding: const EdgeInsets.only(top: AppSpace.xs),
-                child: InkWell(
-                  onTap: () => context.go('/analytics'),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          isUp
-                              ? Icons.trending_up_rounded
-                              : Icons.trending_down_rounded,
-                          size: 16,
-                          color: trendColor,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            isUp
-                                ? l10n.profitVarianceUp(pct, prevName)
-                                : l10n.profitVarianceDown(pct, prevName),
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: trendColor,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-            orElse: () => const SizedBox.shrink(),
-          ),
-        const SizedBox(height: AppSpace.md),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: AppSpace.sm),
-          decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(color: tokens.hairline),
-              bottom: BorderSide(color: tokens.hairline),
-            ),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.revenue,
-                          style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          '+${currencyFormat.format(summary?.totalRevenue ?? 0)}',
-                          style: AppTheme.tabular(
-                            Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  color: AppColors.revenueFor(context),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                VerticalDivider(width: AppSpace.lg, color: tokens.hairline),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.expenses,
-                          style: Theme.of(context).textTheme.bodySmall),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Text(
-                          '−${currencyFormat.format(summary?.totalExpenses ?? 0)}',
-                          style: AppTheme.tabular(
-                            Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  color: AppColors.expenseFor(context),
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
             ),
           ),
         ),
@@ -614,7 +656,7 @@ class _StripItem extends StatelessWidget {
         onTap();
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 4),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -638,11 +680,11 @@ class _StripItem extends StatelessWidget {
   }
 }
 
-class _SpendProportionStrip extends StatelessWidget {
+class _SpendProportionPanel extends StatelessWidget {
   final FinancialSummary summary;
   final NumberFormat currencyFormat;
 
-  const _SpendProportionStrip({
+  const _SpendProportionPanel({
     required this.summary,
     required this.currencyFormat,
   });
@@ -655,183 +697,147 @@ class _SpendProportionStrip extends StatelessWidget {
     final total = summary.totalExpenses > 0 ? summary.totalExpenses : 1.0;
     final topEntries = entries.take(4).toList();
 
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(5),
-          child: SizedBox(
-            height: 10,
-            child: Row(
-              children: [
-                for (int i = 0; i < entries.length; i++)
-                  Expanded(
-                    flex:
-                        (entries[i].value * 100 / total).round().clamp(1, 100),
-                    child: Container(
-                      margin: EdgeInsetsDirectional.only(
-                          end: i < entries.length - 1 ? 2 : 0),
-                      color: AppColors.forCategory(entries[i].key),
+    return AppCard(
+      padding: const EdgeInsets.all(AppSpace.md),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(3),
+            child: SizedBox(
+              height: 6,
+              child: Row(
+                children: [
+                  for (int i = 0; i < entries.length; i++)
+                    Expanded(
+                      flex: (entries[i].value * 100 / total)
+                          .round()
+                          .clamp(1, 100),
+                      child: Container(
+                        margin: EdgeInsetsDirectional.only(
+                          end: i < entries.length - 1 ? 2 : 0,
+                        ),
+                        color: AppColors.forCategory(entries[i].key),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpace.sm),
+          for (int i = 0; i < topEntries.length; i++) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              child: Row(
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: AppColors.forCategory(topEntries[i].key),
+                      shape: BoxShape.circle,
                     ),
                   ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpace.sm),
-        for (int i = 0; i < topEntries.length; i++) ...[
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              children: [
-                Container(
-                  width: 9,
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: AppColors.forCategory(topEntries[i].key),
-                    shape: BoxShape.circle,
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      L10nHelpers.categoryLabel(context, topEntries[i].key),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: tokens.ink),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpace.xs),
-                Expanded(
-                  child: Text(
-                    L10nHelpers.categoryLabel(context, topEntries[i].key),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium
-                        ?.copyWith(color: tokens.ink),
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 6),
+                  Text(
+                    '${((topEntries[i].value / total) * 100).round()}%',
+                    style: AppTheme.tabular(
+                      Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(fontSize: 11),
+                    ),
                   ),
-                ),
-                Text(
-                  '${((topEntries[i].value / total) * 100).round()}%',
-                  style:
-                      AppTheme.tabular(Theme.of(context).textTheme.bodySmall),
-                ),
-                const SizedBox(width: AppSpace.md),
-                Text(
-                  currencyFormat.format(topEntries[i].value),
-                  style: AppTheme.tabular(Theme.of(context)
-                      .textTheme
-                      .titleSmall
-                      ?.copyWith(color: tokens.ink)),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Text(
+                    currencyFormat.format(topEntries[i].value),
+                    style: AppTheme.tabular(
+                      Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: tokens.ink,
+                            fontSize: 12,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          if (i < topEntries.length - 1)
-            Divider(height: 1, color: tokens.hairline),
+            if (i < topEntries.length - 1)
+              Divider(height: 1, color: tokens.hairline),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
 
-class _SyncStatusBadge extends StatelessWidget {
-  final bool isAuthenticated;
-  final PowerSyncDatabase? db;
+class _LocalStatusBadge extends ConsumerWidget {
   final VoidCallback onTap;
 
-  const _SyncStatusBadge({
-    required this.isAuthenticated,
-    required this.db,
-    required this.onTap,
-  });
+  const _LocalStatusBadge({required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final tokens = context.tokens;
+    final backupStatus = ref.watch(backupStatusNotifierProvider).valueOrNull;
+    final overdue = backupStatus?.isExternalBackupOverdue ?? false;
+    final tint = overdue ? AppColors.wheatFor(context) : tokens.instrument;
 
-    if (!isAuthenticated || db == null) {
-      return Tooltip(
-        message: l10n.offlineAlert,
+    return Tooltip(
+      message: overdue ? l10n.backupGuideSubtitle : l10n.syncLocalOnly,
+      child: Material(
+        color: tokens.well,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          side: BorderSide(color: tokens.hairline, width: 1),
+        ),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            decoration: BoxDecoration(
-              color: tokens.well,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              border: Border.all(color: tokens.hairline, width: 1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.phone_android_rounded,
-                    size: 14, color: tokens.inkMuted),
-                const SizedBox(width: 4),
-                Text(
-                  l10n.offline,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return ValueListenableBuilder<String?>(
-      valueListenable: SupabaseConnector.lastSyncWarning,
-      builder: (context, syncWarning, _) {
-        return StreamBuilder<SyncStatus>(
-          stream: db!.statusStream,
-          initialData: db!.currentStatus,
-          builder: (context, snapshot) {
-            final status = snapshot.data;
-            final isSyncing = (status?.connecting ?? false) ||
-                (status?.downloading ?? false) ||
-                (status?.uploading ?? false);
-            final isConnected = status?.connected ?? false;
-
-            final IconData icon;
-            final String label;
-            final Color color;
-
-            if (syncWarning != null) {
-              icon = Icons.sync_problem_rounded;
-              label = l10n.offline;
-              color = AppColors.expenseFor(context);
-            } else if (isSyncing) {
-              icon = Icons.sync_rounded;
-              label = l10n.connecting;
-              color = Theme.of(context).colorScheme.primary;
-            } else if (isConnected) {
-              icon = Icons.cloud_done_rounded;
-              label = l10n.connected;
-              color = AppColors.revenueFor(context);
-            } else {
-              icon = Icons.cloud_off_rounded;
-              label = l10n.offline;
-              color = tokens.inkMuted;
-            }
-
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: tokens.well,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-                border: Border.all(color: tokens.hairline, width: 1),
-              ),
+          child: SizedBox(
+            height: 36,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(icon, size: 14, color: color),
+                  Icon(
+                    overdue
+                        ? Icons.shield_outlined
+                        : Icons.verified_user_outlined,
+                    size: 13,
+                    color: tint,
+                  ),
                   const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: color),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 105),
+                    child: Text(
+                      overdue ? l10n.backupDue : l10n.syncLocalOnly,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: overdue ? tint : tokens.ink,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
                   ),
                 ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

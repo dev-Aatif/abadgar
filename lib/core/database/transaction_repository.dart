@@ -1,10 +1,10 @@
-import 'package:powersync/powersync.dart';
+import 'package:sqlite_async/sqlite_async.dart';
 import 'package:uuid/uuid.dart';
 import '../models/transaction.dart' as model;
 import '../models/yield_log.dart';
 
 class TransactionRepository {
-  final PowerSyncDatabase _db;
+  final SqliteDatabase _db;
   final _uuid = const Uuid();
 
   TransactionRepository(this._db);

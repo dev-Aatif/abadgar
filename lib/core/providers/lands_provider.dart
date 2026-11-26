@@ -7,7 +7,7 @@ part 'lands_provider.g.dart';
 
 @riverpod
 Stream<List<Land>> lands(LandsRef ref) async* {
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   yield* db
       .watch('SELECT * FROM lands ORDER BY name ASC')
       .map((rows) => rows.map((row) => Land.fromRow(row)).toList());
@@ -24,7 +24,7 @@ class LandsNotifier extends _$LandsNotifier {
   }) async {
     state = const AsyncValue.loading();
     try {
-      final db = await ref.read(powerSyncDatabaseProvider.future);
+      final db = await ref.read(localDatabaseProvider.future);
       final id = const Uuid().v4();
       final now = DateTime.now();
 
@@ -55,7 +55,7 @@ class LandsNotifier extends _$LandsNotifier {
   }
 
   Future<void> deleteLand(String id) async {
-    final db = await ref.read(powerSyncDatabaseProvider.future);
+    final db = await ref.read(localDatabaseProvider.future);
     await db.execute('DELETE FROM lands WHERE id = ?', [id]);
   }
 }

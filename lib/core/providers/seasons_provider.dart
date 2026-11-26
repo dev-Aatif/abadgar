@@ -9,7 +9,7 @@ part 'seasons_provider.g.dart';
 
 @riverpod
 Stream<List<Season>> seasons(SeasonsRef ref) async* {
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   yield* db
       .watch('SELECT * FROM seasons ORDER BY start_date DESC')
       .map((rows) => rows.map((row) => Season.fromRow(row)).toList());
@@ -28,7 +28,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
   }) async {
     state = const AsyncValue.loading();
     try {
-      final db = await ref.read(powerSyncDatabaseProvider.future);
+      final db = await ref.read(localDatabaseProvider.future);
       final id = const Uuid().v4();
       final now = DateTime.now();
 
@@ -68,7 +68,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
   }
 
   Future<void> updateStatus(String id, SeasonStatus status) async {
-    final db = await ref.read(powerSyncDatabaseProvider.future);
+    final db = await ref.read(localDatabaseProvider.future);
     final isCompleted = status == SeasonStatus.completed;
     await db.execute(
       'UPDATE seasons SET status = ?, updated_at = ?, end_date = ? WHERE id = ?',
@@ -88,7 +88,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
     required double landArea,
     required DateTime startDate,
   }) async {
-    final db = await ref.read(powerSyncDatabaseProvider.future);
+    final db = await ref.read(localDatabaseProvider.future);
     await db.execute(
       'UPDATE seasons SET name = ?, crop_type = ?, land_area = ?, start_date = ?, updated_at = ? WHERE id = ?',
       [
@@ -103,7 +103,7 @@ class SeasonsNotifier extends _$SeasonsNotifier {
   }
 
   Future<void> deleteSeason(String id) async {
-    final db = await ref.read(powerSyncDatabaseProvider.future);
+    final db = await ref.read(localDatabaseProvider.future);
     await db.execute('DELETE FROM seasons WHERE id = ?', [id]);
 
     // Check if the deleted season was the active one

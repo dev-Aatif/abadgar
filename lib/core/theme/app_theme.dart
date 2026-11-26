@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// Granular spacing scale (4pt base).
+/// Granular spacing scale (4pt base with micro & compact nudges).
 class AppSpace {
   AppSpace._();
+  static const double micro = 2;
   static const double xxs = 4;
   static const double xs = 8;
+  static const double compact = 10;
   static const double sm = 12;
   static const double md = 16;
   static const double lg = 20;
@@ -12,50 +14,73 @@ class AppSpace {
   static const double xxl = 32;
 }
 
-/// Consistent corner radii per containment level.
+/// Crisp, architectural corner radii per containment level.
 class AppRadius {
   AppRadius._();
+  static const double xs = 6;
   static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double sheet = 24;
+  static const double md = 10;
+  static const double lg = 14;
+  static const double sheet = 20;
 }
 
-/// Tonal surface & ink tokens exposed via ThemeExtension.
+/// Motion discipline: brisk, silent, state-driven transitions.
+class AppMotion {
+  AppMotion._();
+  static const Duration micro = Duration(milliseconds: 120);
+  static const Duration short = Duration(milliseconds: 180);
+  static const Curve curve = Curves.easeOutCubic;
+}
+
+/// Tonal surface, hairline, and ink tokens exposed via ThemeExtension.
 @immutable
 class AppTokens extends ThemeExtension<AppTokens> {
   final Color canvas;
   final Color surface;
   final Color well;
+  final Color surfaceDeep;
   final Color hairline;
+  final Color hairlineStrong;
   final Color ink;
   final Color inkMuted;
+  final Color instrument;
 
   const AppTokens({
     required this.canvas,
     required this.surface,
     required this.well,
+    required this.surfaceDeep,
     required this.hairline,
+    required this.hairlineStrong,
     required this.ink,
     required this.inkMuted,
+    required this.instrument,
   });
 
+  /// Console Paper: warm alabaster ground for comfortable daylight legibility.
   static const light = AppTokens(
-    canvas: Color(0xFFF5F6F3),
-    surface: Color(0xFFFCFDFB),
-    well: Color(0xFFEAECE6),
-    hairline: Color(0xFFD7DBD2),
-    ink: Color(0xFF16201D),
-    inkMuted: Color(0xFF5A6661),
+    canvas: Color(0xFFF6F4EE),
+    surface: Color(0xFFFDFCF9),
+    well: Color(0xFFEDEAE1),
+    surfaceDeep: Color(0xFFE4E0D5),
+    hairline: Color(0xFFDEDAD0),
+    hairlineStrong: Color(0xFFC9C3B5),
+    ink: Color(0xFF1B1A17),
+    inkMuted: Color(0xFF656158),
+    instrument: Color(0xFF2F638D),
   );
 
+  /// Console Graphite: matte slate-graphite stepped in three lightness levels.
   static const dark = AppTokens(
-    canvas: Color(0xFF0F1412),
-    surface: Color(0xFF171F1C),
-    well: Color(0xFF202B27),
-    hairline: Color(0xFF2A3732),
-    ink: Color(0xFFECF1EE),
-    inkMuted: Color(0xFF98A6A0),
+    canvas: Color(0xFF15171A),
+    surface: Color(0xFF1C1F24),
+    well: Color(0xFF101214),
+    surfaceDeep: Color(0xFF252930),
+    hairline: Color(0xFF2B3038),
+    hairlineStrong: Color(0xFF3D4450),
+    ink: Color(0xFFECEEF2),
+    inkMuted: Color(0xFF949CA8),
+    instrument: Color(0xFF6CA5D4),
   );
 
   @override
@@ -63,17 +88,23 @@ class AppTokens extends ThemeExtension<AppTokens> {
     Color? canvas,
     Color? surface,
     Color? well,
+    Color? surfaceDeep,
     Color? hairline,
+    Color? hairlineStrong,
     Color? ink,
     Color? inkMuted,
+    Color? instrument,
   }) {
     return AppTokens(
       canvas: canvas ?? this.canvas,
       surface: surface ?? this.surface,
       well: well ?? this.well,
+      surfaceDeep: surfaceDeep ?? this.surfaceDeep,
       hairline: hairline ?? this.hairline,
+      hairlineStrong: hairlineStrong ?? this.hairlineStrong,
       ink: ink ?? this.ink,
       inkMuted: inkMuted ?? this.inkMuted,
+      instrument: instrument ?? this.instrument,
     );
   }
 
@@ -84,9 +115,12 @@ class AppTokens extends ThemeExtension<AppTokens> {
       canvas: Color.lerp(canvas, other.canvas, t)!,
       surface: Color.lerp(surface, other.surface, t)!,
       well: Color.lerp(well, other.well, t)!,
+      surfaceDeep: Color.lerp(surfaceDeep, other.surfaceDeep, t)!,
       hairline: Color.lerp(hairline, other.hairline, t)!,
+      hairlineStrong: Color.lerp(hairlineStrong, other.hairlineStrong, t)!,
       ink: Color.lerp(ink, other.ink, t)!,
       inkMuted: Color.lerp(inkMuted, other.inkMuted, t)!,
+      instrument: Color.lerp(instrument, other.instrument, t)!,
     );
   }
 }
@@ -100,8 +134,8 @@ extension AppTokensContext on BuildContext {
 }
 
 class AppTheme {
-  static const Color primaryTeal = Color(0xFF0D7377);
-  static const Color primaryTealDark = Color(0xFF2BA89F);
+  static const Color primaryAmber = Color(0xFFB45F16);
+  static const Color primaryAmberDark = Color(0xFFE09846);
 
   static final ThemeData light = _base(Brightness.light);
   static final ThemeData dark = _base(Brightness.dark);
@@ -116,78 +150,97 @@ class AppTheme {
   static ThemeData _base(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final tokens = isDark ? AppTokens.dark : AppTokens.light;
-    final primary = isDark ? primaryTealDark : primaryTeal;
+    final primary = isDark ? primaryAmberDark : primaryAmber;
     final onPrimary =
-        isDark ? const Color(0xFF081C1A) : const Color(0xFFF6FAF9);
+        isDark ? const Color(0xFF17130E) : const Color(0xFFFDFCF9);
 
     final baseTextTheme = TextTheme(
       headlineLarge: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: tokens.ink,
-          height: 1.15),
+        fontSize: 30,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.6,
+        color: tokens.ink,
+        height: 1.08,
+      ),
       headlineMedium: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: tokens.ink,
-          height: 1.2),
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.35,
+        color: tokens.ink,
+        height: 1.15,
+      ),
       headlineSmall: TextStyle(
-          fontSize: 19,
-          fontWeight: FontWeight.w700,
-          color: tokens.ink,
-          height: 1.25),
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+        color: tokens.ink,
+        height: 1.2,
+      ),
       titleLarge: TextStyle(
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
-          color: tokens.ink,
-          height: 1.25),
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.15,
+        color: tokens.ink,
+        height: 1.25,
+      ),
       titleMedium: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: tokens.ink,
-          height: 1.3),
+        fontSize: 14.5,
+        fontWeight: FontWeight.w600,
+        color: tokens.ink,
+        height: 1.28,
+      ),
       titleSmall: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: tokens.inkMuted,
-          height: 1.3),
+        fontSize: 12.5,
+        fontWeight: FontWeight.w600,
+        color: tokens.inkMuted,
+        height: 1.3,
+      ),
       bodyLarge: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: tokens.ink,
-          height: 1.45),
+        fontSize: 15.5,
+        fontWeight: isDark ? FontWeight.w400 : FontWeight.w400,
+        color: tokens.ink,
+        height: 1.45,
+      ),
       bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: tokens.inkMuted,
-          height: 1.45),
+        fontSize: 13.5,
+        fontWeight: FontWeight.w400,
+        color: tokens.inkMuted,
+        height: 1.4,
+      ),
       bodySmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: tokens.inkMuted,
-          height: 1.4),
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: tokens.inkMuted,
+        height: 1.35,
+      ),
       labelLarge: TextStyle(
-          fontSize: 14, fontWeight: FontWeight.w600, color: tokens.ink),
+        fontSize: 13.5,
+        fontWeight: FontWeight.w600,
+        color: tokens.ink,
+      ),
       labelMedium: TextStyle(
-          fontSize: 12, fontWeight: FontWeight.w500, color: tokens.inkMuted),
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: tokens.inkMuted,
+      ),
     );
 
     final colorScheme = ColorScheme(
       brightness: brightness,
       primary: primary,
       onPrimary: onPrimary,
-      primaryContainer: primary.withValues(alpha: isDark ? 0.18 : 0.10),
-      onPrimaryContainer: isDark ? primary : const Color(0xFF094F52),
-      secondary: const Color(0xFFB45309),
-      onSecondary: Colors.white,
+      primaryContainer: primary.withValues(alpha: isDark ? 0.16 : 0.10),
+      onPrimaryContainer: isDark ? primary : const Color(0xFF7D3F0B),
+      secondary: tokens.instrument,
+      onSecondary: isDark ? const Color(0xFF0E161E) : const Color(0xFFFDFCF9),
       surface: tokens.surface,
       onSurface: tokens.ink,
       onSurfaceVariant: tokens.inkMuted,
       surfaceContainerHighest: tokens.well,
-      outline: tokens.inkMuted.withValues(alpha: 0.4),
+      outline: tokens.hairlineStrong,
       outlineVariant: tokens.hairline,
-      error: isDark ? const Color(0xFFF87171) : const Color(0xFFC83E3B),
-      onError: isDark ? const Color(0xFF1F0A0A) : Colors.white,
+      error: isDark ? const Color(0xFFE0786E) : const Color(0xFFB5443A),
+      onError: isDark ? const Color(0xFF1E0D0C) : const Color(0xFFFDFCF9),
     );
 
     return ThemeData(
@@ -197,14 +250,18 @@ class AppTheme {
       scaffoldBackgroundColor: tokens.canvas,
       extensions: [tokens],
       textTheme: baseTextTheme,
+      splashFactory: InkSparkle.splashFactory,
       appBarTheme: AppBarTheme(
         backgroundColor: tokens.canvas,
         foregroundColor: tokens.ink,
         elevation: 0,
         scrolledUnderElevation: 0,
+        toolbarHeight: 52,
         centerTitle: false,
-        titleTextStyle: baseTextTheme.titleLarge
-            ?.copyWith(fontSize: 20, fontWeight: FontWeight.w700),
+        titleTextStyle: baseTextTheme.titleLarge?.copyWith(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       dividerTheme: DividerThemeData(
         color: tokens.hairline,
@@ -224,8 +281,9 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: tokens.well,
-        hintStyle: TextStyle(color: tokens.inkMuted),
-        labelStyle: TextStyle(color: tokens.inkMuted),
+        isDense: true,
+        hintStyle: TextStyle(color: tokens.inkMuted.withValues(alpha: 0.7)),
+        labelStyle: TextStyle(color: tokens.inkMuted, fontSize: 13.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide(color: tokens.hairline, width: 1),
@@ -243,17 +301,18 @@ class AppTheme {
           borderSide: BorderSide(color: colorScheme.error, width: 1),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primary,
           foregroundColor: onPrimary,
           elevation: 0,
-          minimumSize: const Size(0, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md)),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
           textStyle: baseTextTheme.labelLarge,
         ),
       ),
@@ -262,80 +321,100 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: onPrimary,
           elevation: 0,
-          minimumSize: const Size(0, 48),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md)),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
           textStyle: baseTextTheme.labelLarge,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: tokens.ink,
-          minimumSize: const Size(0, 48),
-          side: BorderSide(color: tokens.hairline, width: 1),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          backgroundColor: tokens.surface,
+          minimumSize: const Size(0, 44),
+          side: BorderSide(color: tokens.hairlineStrong, width: 1),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md)),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
           textStyle: baseTextTheme.labelLarge,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
-          minimumSize: const Size(44, 44),
+          minimumSize: const Size(40, 38),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md)),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+          ),
+          textStyle: baseTextTheme.labelLarge,
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: tokens.well,
-        selectedColor: primary.withValues(alpha: isDark ? 0.22 : 0.12),
+        selectedColor: primary.withValues(alpha: isDark ? 0.18 : 0.11),
         side: BorderSide(color: tokens.hairline, width: 1),
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md)),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+        ),
         labelStyle: baseTextTheme.labelMedium?.copyWith(color: tokens.ink),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
-      navigationBarTheme: NavigationBarThemeData(
-        height: 68,
-        backgroundColor: tokens.surface,
-        elevation: 0,
-        indicatorColor: primary.withValues(alpha: isDark ? 0.20 : 0.12),
-        iconTheme: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return IconThemeData(color: primary, size: 22);
-          }
-          return IconThemeData(color: tokens.inkMuted, size: 22);
-        }),
-        labelTextStyle: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return TextStyle(
-                color: primary, fontSize: 12, fontWeight: FontWeight.w600);
-          }
-          return TextStyle(
-              color: tokens.inkMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w500);
-        }),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: primary,
-        foregroundColor: onPrimary,
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg)),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          tapTargetSize: MaterialTapTargetSize.padded,
+          minimumSize: const WidgetStatePropertyAll(Size(0, 38)),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          ),
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return primary.withValues(alpha: isDark ? 0.18 : 0.12);
+            }
+            return tokens.well;
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return primary;
+            }
+            return tokens.inkMuted;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return BorderSide(
+                  color: primary.withValues(alpha: 0.45), width: 1);
+            }
+            return BorderSide(color: tokens.hairline, width: 1);
+          }),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            baseTextTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor:
-            isDark ? const Color(0xFF24302C) : const Color(0xFF1A2421),
+            isDark ? const Color(0xFF252930) : const Color(0xFF1B1A17),
         contentTextStyle: const TextStyle(
-            color: Color(0xFFF5F7F6),
-            fontSize: 14,
-            fontWeight: FontWeight.w500),
+          color: Color(0xFFECEEF2),
+          fontSize: 13.5,
+          fontWeight: FontWeight.w500,
+        ),
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md)),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF3D4450) : const Color(0xFF33302A),
+          ),
+        ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: tokens.surface,

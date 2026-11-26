@@ -1,13 +1,17 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:powersync/powersync.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqlite_async/sqlite_async.dart';
+import 'backup_crypto.dart';
 
 class ExportService {
-  final PowerSyncDatabase db;
+  static const String lastExternalBackupKey = 'last_external_backup_at';
+
+  final SqliteDatabase db;
 
   ExportService(this.db);
 
@@ -27,20 +31,24 @@ class ExportService {
     };
   }
 
-  Future<String> getBackupData() async {
+  Future<String> getBackupData({String? passphrase}) async {
     final data = await prepareData();
-    return jsonEncode(data);
+    final plainJson = jsonEncode(data);
+    if (passphrase != null && passphrase.isNotEmpty) {
+      return BackupCrypto.encryptJson(plainJson, passphrase);
+    }
+    return plainJson;
   }
 
-  Future<void> exportDatabase() async {
-    final data = await prepareData();
-    final jsonString = jsonEncode(data);
+  Future<void> exportDatabase({String? passphrase}) async {
+    final payload = await getBackupData(passphrase: passphrase);
+    final isEncrypted = passphrase != null && passphrase.isNotEmpty;
+    final ext = isEncrypted ? 'abadgar' : 'json';
 
     final tempDir = await getTemporaryDirectory();
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-    final file = File('${tempDir.path}/abadgar_backup_$timestamp.json');
+    final file = File('${tempDir.path}/abadgar_backup_$timestamp.$ext');
 
-    // Remove older temporary backup files to keep cache bounded
     await for (final entity in tempDir.list()) {
       if (entity is File &&
           entity.path.contains('abadgar_backup_') &&
@@ -49,35 +57,46 @@ class ExportService {
       }
     }
 
-    await file.writeAsString(jsonString);
+    await file.writeAsString(payload);
 
     await Share.shareXFiles(
       [XFile(file.path)],
-      subject: 'Abadgar Data Backup $timestamp',
+      subject: 'Abadgar Backup $timestamp',
     );
+    await _recordExternalBackupTimestamp();
   }
 
-  Future<void> downloadDatabase() async {
-    final data = await prepareData();
-    final jsonString = jsonEncode(data);
+  Future<bool> downloadDatabase({String? passphrase}) async {
+    final payload = await getBackupData(passphrase: passphrase);
+    final isEncrypted = passphrase != null && passphrase.isNotEmpty;
+    final ext = isEncrypted ? 'abadgar' : 'json';
     final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-
-    final fileName = 'abadgar_backup_$timestamp.json';
+    final fileName = 'abadgar_backup_$timestamp.$ext';
 
     final result = await FilePicker.platform.saveFile(
       dialogTitle: 'Save Backup',
       fileName: fileName,
-      type: FileType.custom,
-      allowedExtensions: ['json'],
-      bytes: utf8.encode(jsonString),
+      type: FileType.any,
+      bytes: utf8.encode(payload),
     );
 
-    if (result != null && !result.startsWith('content://')) {
-      // On desktop platforms saveFile returns a filesystem path without writing bytes.
+    if (result == null) return false;
+
+    if (!result.startsWith('content://')) {
       final file = File(result);
       if (!await file.exists()) {
-        await file.writeAsString(jsonString);
+        await file.writeAsString(payload);
       }
     }
+    await _recordExternalBackupTimestamp();
+    return true;
+  }
+
+  Future<void> _recordExternalBackupTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      lastExternalBackupKey,
+      DateTime.now().toIso8601String(),
+    );
   }
 }

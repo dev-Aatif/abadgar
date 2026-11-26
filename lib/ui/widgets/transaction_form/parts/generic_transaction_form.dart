@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
@@ -12,6 +11,7 @@ import '../../../../core/providers/transactions_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/l10n_helpers.dart';
 import '../../../../core/utils/notifications.dart';
+import '../../app_controls.dart';
 import 'form_shared.dart';
 
 class GenericTransactionForm extends ConsumerStatefulWidget {
@@ -109,8 +109,11 @@ class _GenericTransactionFormState
       return true;
     } catch (e) {
       if (mounted) {
-        AppNotification.show(context, l10n.errorGeneral(e.toString()),
-            isError: true);
+        AppNotification.show(
+          context,
+          l10n.errorGeneral(e.toString()),
+          isError: true,
+        );
       }
       return false;
     }
@@ -157,6 +160,9 @@ class _GenericTransactionFormState
     final isValid = amount > 0 && _selectedCategory != null;
     final isLoading = ref.watch(transactionsNotifierProvider).isLoading;
     final isEditing = widget.transaction != null;
+    final accentColor = widget.type == TransactionType.expense
+        ? AppColors.expenseFor(context)
+        : AppColors.revenueFor(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -165,59 +171,51 @@ class _GenericTransactionFormState
           controller: _amountController,
           focusNode: _amountFocusNode,
           autofocus: !isEditing,
+          accentColor: accentColor,
         ),
-        const SizedBox(height: AppSpace.lg),
+        const SizedBox(height: AppSpace.md),
         Text(l10n.category, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: AppSpace.xs),
+        const SizedBox(height: 6),
         Wrap(
-          spacing: AppSpace.xs,
-          runSpacing: AppSpace.xs,
+          spacing: 6,
+          runSpacing: 6,
           children: categories.map((cat) {
             final isSelected = _selectedCategory == cat;
-            return ChoiceChip(
-              avatar: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: AppColors.forCategory(cat),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              label: Text(L10nHelpers.categoryLabel(context, cat)),
+            return AppFilterPill(
+              label: L10nHelpers.categoryLabel(context, cat),
+              dotColor: AppColors.forCategory(cat),
               selected: isSelected,
-              showCheckmark: false,
-              onSelected: (val) {
-                HapticFeedback.selectionClick();
+              onTap: () {
                 FocusScope.of(context).unfocus();
-                setState(() => _selectedCategory = val ? cat : null);
+                setState(() => _selectedCategory = isSelected ? null : cat);
               },
             );
           }).toList(),
         ),
-        const SizedBox(height: AppSpace.lg),
+        const SizedBox(height: AppSpace.md),
         Text(l10n.dateLabel, style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: AppSpace.xs),
+        const SizedBox(height: 6),
         QuickDateSelector(
           selectedDate: _selectedDate,
           onDateChanged: (d) => setState(() => _selectedDate = d),
         ),
-        const SizedBox(height: AppSpace.md),
+        const SizedBox(height: AppSpace.sm),
         TextField(
           controller: _notesController,
           textInputAction: TextInputAction.done,
           decoration: InputDecoration(
             labelText: l10n.notes,
-            prefixIcon: const Icon(Icons.notes_rounded, size: 20),
+            prefixIcon: const Icon(Icons.notes_rounded, size: 18),
           ),
         ),
-        const SizedBox(height: AppSpace.xl),
+        const SizedBox(height: AppSpace.md),
         SharedSaveButton(
           onPressed: isValid ? _saveAndClose : null,
           isLoading: isLoading,
           label: isLoading ? l10n.saving : l10n.save,
         ),
         if (!isEditing) ...[
-          const SizedBox(height: AppSpace.xs),
+          const SizedBox(height: 4),
           TextButton(
             onPressed: (isValid && !isLoading) ? _saveAndAddAnother : null,
             child: Text(l10n.saveAndAddAnother),

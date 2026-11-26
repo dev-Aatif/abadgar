@@ -16,7 +16,7 @@ Stream<List<Transaction>> activeSeasonTransactions(
     return;
   }
 
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   yield* db.watch(
       'SELECT * FROM transactions WHERE season_id = ? ORDER BY date DESC',
       parameters: [
@@ -33,7 +33,7 @@ Stream<List<YieldLog>> activeSeasonYieldLogs(
     return;
   }
 
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   yield* db.watch(
       'SELECT * FROM yield_logs WHERE season_id = ? ORDER BY date DESC',
       parameters: [
@@ -43,7 +43,7 @@ Stream<List<YieldLog>> activeSeasonYieldLogs(
 
 @riverpod
 Stream<List<Transaction>> allTransactions(AllTransactionsRef ref) async* {
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   yield* db
       .watch('SELECT * FROM transactions ORDER BY date DESC')
       .map((rows) => rows.map((row) => Transaction.fromRow(row)).toList());

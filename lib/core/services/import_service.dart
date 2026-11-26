@@ -1,18 +1,26 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:powersync/powersync.dart';
+import 'package:sqlite_async/sqlite_async.dart';
 import '../constants/enums.dart';
+import 'autosave_service.dart';
+import 'backup_crypto.dart';
+
+typedef PassphrasePrompt = Future<String?> Function();
+typedef RestoreConfirmPrompt = Future<bool> Function();
 
 class ImportService {
   static const int maxBackupBytes = 10 * 1024 * 1024; // 10 MB guard
 
-  final PowerSyncDatabase db;
+  final SqliteDatabase db;
 
   ImportService(this.db);
 
-  Future<bool> importDatabase() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+  Future<bool> importDatabase({
+    PassphrasePrompt? onPassphraseRequired,
+    RestoreConfirmPrompt? onConfirmRestore,
+  }) async {
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       withData: true,
     );
@@ -37,12 +45,70 @@ class ImportService {
       return false;
     }
 
-    final parsed = parseAndValidateBackup(content);
+    var jsonToParse = content;
+    if (BackupCrypto.isEncryptedEnvelope(content)) {
+      final passphrase = await onPassphraseRequired?.call();
+      if (passphrase == null || passphrase.isEmpty) {
+        return false;
+      }
+      jsonToParse = BackupCrypto.decryptJson(content, passphrase);
+    }
 
+    final parsed = parseAndValidateBackup(jsonToParse);
+
+    if (onConfirmRestore != null) {
+      final confirmed = await onConfirmRestore();
+      if (!confirmed) return false;
+    }
+
+    // Take a local safety snapshot before replacing tables.
+    await AutoSaveService(db).triggerBackup(force: true);
+    await restoreValidatedPayload(parsed);
+
+    return true;
+  }
+
+  Future<void> restoreFromJsonString(
+    String content, {
+    bool replaceExisting = true,
+  }) async {
+    final parsed = parseAndValidateBackup(content);
+    await restoreValidatedPayload(parsed, replaceExisting: replaceExisting);
+  }
+
+  Future<void> restoreValidatedPayload(
+    ({
+      List<Map<String, dynamic>> seasons,
+      List<Map<String, dynamic>> transactions,
+      List<Map<String, dynamic>> yieldLogs,
+      List<Map<String, dynamic>> lands,
+    }) parsed, {
+    bool replaceExisting = true,
+  }) async {
+    // Use ON CONFLICT DO UPDATE (never INSERT OR REPLACE) so SQLite foreign-key
+    // ON DELETE CASCADE never wipes child transactions/yields during merge restores.
     await db.writeTransaction((tx) async {
+      if (replaceExisting) {
+        await tx.execute('DELETE FROM yield_logs');
+        await tx.execute('DELETE FROM transactions');
+        await tx.execute('DELETE FROM seasons');
+        await tx.execute('DELETE FROM lands');
+      }
       for (final season in parsed.seasons) {
         await tx.execute(
-          'INSERT OR REPLACE INTO seasons(id, name, crop_type, land_area, start_date, end_date, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          '''
+          INSERT INTO seasons(id, name, crop_type, land_area, start_date, end_date, status, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            crop_type = excluded.crop_type,
+            land_area = excluded.land_area,
+            start_date = excluded.start_date,
+            end_date = excluded.end_date,
+            status = excluded.status,
+            created_at = excluded.created_at,
+            updated_at = excluded.updated_at
+          ''',
           [
             season['id'],
             season['name'],
@@ -59,7 +125,21 @@ class ImportService {
 
       for (final txn in parsed.transactions) {
         await tx.execute(
-          'INSERT OR REPLACE INTO transactions(id, season_id, amount, category, date, type, notes, quantity, buyer_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          '''
+          INSERT INTO transactions(id, season_id, amount, category, date, type, notes, quantity, buyer_name, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            season_id = excluded.season_id,
+            amount = excluded.amount,
+            category = excluded.category,
+            date = excluded.date,
+            type = excluded.type,
+            notes = excluded.notes,
+            quantity = excluded.quantity,
+            buyer_name = excluded.buyer_name,
+            created_at = excluded.created_at,
+            updated_at = excluded.updated_at
+          ''',
           [
             txn['id'],
             txn['season_id'],
@@ -78,7 +158,21 @@ class ImportService {
 
       for (final log in parsed.yieldLogs) {
         await tx.execute(
-          'INSERT OR REPLACE INTO yield_logs(id, season_id, total_weight, unit, disposition, sale_price, destination, transaction_id, date, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          '''
+          INSERT INTO yield_logs(id, season_id, total_weight, unit, disposition, sale_price, destination, transaction_id, date, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            season_id = excluded.season_id,
+            total_weight = excluded.total_weight,
+            unit = excluded.unit,
+            disposition = excluded.disposition,
+            sale_price = excluded.sale_price,
+            destination = excluded.destination,
+            transaction_id = excluded.transaction_id,
+            date = excluded.date,
+            created_at = excluded.created_at,
+            updated_at = excluded.updated_at
+          ''',
           [
             log['id'],
             log['season_id'],
@@ -97,7 +191,15 @@ class ImportService {
 
       for (final land in parsed.lands) {
         await tx.execute(
-          'INSERT OR REPLACE INTO lands(id, name, area, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+          '''
+          INSERT INTO lands(id, name, area, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            name = excluded.name,
+            area = excluded.area,
+            created_at = excluded.created_at,
+            updated_at = excluded.updated_at
+          ''',
           [
             land['id'],
             land['name'],
@@ -108,8 +210,6 @@ class ImportService {
         );
       }
     });
-
-    return true;
   }
 
   static ({

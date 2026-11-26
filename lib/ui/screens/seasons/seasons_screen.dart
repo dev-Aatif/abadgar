@@ -15,6 +15,7 @@ import '../../../core/providers/seasons_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/l10n_helpers.dart';
 import '../../../core/utils/notifications.dart';
+import '../../widgets/app_controls.dart';
 import '../../widgets/app_selector.dart';
 import '../../widgets/app_surface.dart';
 import '../../widgets/transaction_form/parts/form_shared.dart';
@@ -35,7 +36,7 @@ class SeasonsScreen extends ConsumerWidget {
           IconButton(
             tooltip: l10n.newCycle,
             onPressed: () => _showCreateSeasonSheet(context),
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(Icons.add_rounded, size: 22),
           ),
         ],
       ),
@@ -68,12 +69,16 @@ class SeasonsScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpace.lg, AppSpace.md, AppSpace.lg, AppSpace.lg),
+                    AppSpace.md,
+                    AppSpace.xs,
+                    AppSpace.md,
+                    AppSpace.md,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AppSectionHeader(title: l10n.activeSeason),
-                      const SizedBox(height: AppSpace.sm),
+                      const SizedBox(height: AppSpace.xs),
                       _ActiveSeasonCard(season: activeSeason),
                     ],
                   ),
@@ -83,13 +88,17 @@ class SeasonsScreen extends ConsumerWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: AppSpace.lg),
+                        const EdgeInsets.symmetric(horizontal: AppSpace.md),
                     child: AppSectionHeader(title: l10n.previousHarvests),
                   ),
                 ),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(
-                      AppSpace.lg, AppSpace.sm, AppSpace.lg, 100),
+                    AppSpace.md,
+                    AppSpace.xs,
+                    AppSpace.md,
+                    48,
+                  ),
                   sliver: SliverToBoxAdapter(
                     child: AppCard(
                       child: Column(
@@ -139,7 +148,7 @@ class _ActiveSeasonCard extends ConsumerWidget {
         isWheat ? AppColors.wheatFor(context) : AppColors.riceFor(context);
 
     return AppCard(
-      padding: const EdgeInsets.all(AppSpace.lg),
+      padding: const EdgeInsets.all(AppSpace.md),
       borderColor: cropColor.withValues(alpha: 0.45),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,21 +156,16 @@ class _ActiveSeasonCard extends ConsumerWidget {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: cropColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      isWheat ? Icons.grass_rounded : Icons.water_drop_rounded,
-                      size: 14,
-                      color: cropColor,
-                    ),
-                    const SizedBox(width: 6),
+                    CropGlyph(cropType: season.cropType, size: 13),
+                    const SizedBox(width: 5),
                     Text(
                       L10nHelpers.cropLabel(context, season.cropType),
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
@@ -174,32 +178,38 @@ class _ActiveSeasonCard extends ConsumerWidget {
               ),
               const Spacer(),
               PopupMenuButton<String>(
-                icon: Icon(Icons.more_horiz_rounded, color: tokens.inkMuted),
+                icon: Icon(
+                  Icons.more_horiz_rounded,
+                  color: tokens.inkMuted,
+                  size: 20,
+                ),
                 onSelected: (value) => _handleMenuAction(context, ref, value),
                 itemBuilder: (context) => [
                   PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
                   PopupMenuItem(
                     value: 'delete',
-                    child: Text(l10n.delete,
-                        style: TextStyle(
-                            color: Theme.of(context).colorScheme.error)),
+                    child: Text(
+                      l10n.delete,
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: AppSpace.sm),
+          const SizedBox(height: AppSpace.xs),
           Text(
             '${L10nHelpers.cropLabel(context, season.cropType)} ${season.startDate.year}',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          const SizedBox(height: AppSpace.xxs),
+          const SizedBox(height: 2),
           Text(
-            '${season.landArea} ${l10n.acresUnit} — ${l10n.seasonStarted} ${DateFormat.yMMMd(L10nHelpers.intlLocaleFor(context)).format(season.startDate)}',
+            '${season.landArea} ${l10n.acresUnit} · ${l10n.seasonStarted} ${DateFormat.yMMMd(L10nHelpers.intlLocaleFor(context)).format(season.startDate)}',
             style: AppTheme.tabular(Theme.of(context).textTheme.bodyMedium),
           ),
           if (season.status != SeasonStatus.completed) ...[
-            const SizedBox(height: AppSpace.lg),
+            const SizedBox(height: AppSpace.md),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -222,11 +232,13 @@ class _ActiveSeasonCard extends ConsumerWidget {
         content: Text(l10n.completeSeasonContent),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(l10n.cancel)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
           FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.completeSeason)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.completeSeason),
+          ),
         ],
       ),
     );
@@ -258,12 +270,15 @@ class _ActiveSeasonCard extends ConsumerWidget {
           content: Text(l10n.deleteConfirmation),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: Text(l10n.cancel)),
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l10n.cancel),
+            ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text(l10n.delete,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              child: Text(
+                l10n.delete,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ),
           ],
         ),
@@ -288,97 +303,124 @@ class _SeasonListRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final tokens = context.tokens;
-    final isWheat = season.cropType == CropType.wheat;
-    final cropColor =
-        isWheat ? AppColors.wheatFor(context) : AppColors.riceFor(context);
 
     final subtitleParts = ['${season.landArea} ${l10n.acresUnit}'];
     if (season.status == SeasonStatus.completed) {
       subtitleParts.add(
-          '${l10n.seasonFinished} ${DateFormat.yMMMd(L10nHelpers.intlLocaleFor(context)).format(season.endDate ?? season.startDate)}');
+        '${l10n.seasonFinished} ${DateFormat.yMMMd(L10nHelpers.intlLocaleFor(context)).format(season.endDate ?? season.startDate)}',
+      );
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: AppSpace.md, vertical: 6),
-          leading: Icon(
-            isWheat ? Icons.grass_rounded : Icons.water_drop_rounded,
-            color: cropColor,
-          ),
-          title: Text(
-            '${L10nHelpers.cropLabel(context, season.cropType)} ${season.startDate.year}',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          subtitle: Text(
-            subtitleParts.join(' — '),
-            style: AppTheme.tabular(Theme.of(context).textTheme.bodySmall),
-          ),
-          trailing: PopupMenuButton<String>(
-            icon: Icon(Icons.more_horiz_rounded, color: tokens.inkMuted),
-            onSelected: (value) async {
-              if (value == 'edit') {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  useSafeArea: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => CreateSeasonSheet(season: season),
-                );
-              } else if (value == 'delete') {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: Text(l10n.confirmDelete),
-                    content: Text(l10n.deleteConfirmation),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(ctx, false),
-                          child: Text(l10n.cancel)),
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx, true),
-                        child: Text(l10n.delete,
-                            style: TextStyle(
-                                color: Theme.of(context).colorScheme.error)),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  ref
-                      .read(seasonsNotifierProvider.notifier)
-                      .deleteSeason(season.id);
-                }
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
-              PopupMenuItem(
-                value: 'delete',
-                child: Text(l10n.delete,
-                    style:
-                        TextStyle(color: Theme.of(context).colorScheme.error)),
-              ),
-            ],
-          ),
+        InkWell(
           onTap: () {
             HapticFeedback.selectionClick();
             ref.read(activeSeasonIdProvider.notifier).set(season.id);
             AppNotification.show(
               context,
               l10n.switchedFocus(
-                  '${L10nHelpers.cropLabel(context, season.cropType)} ${season.startDate.year}'),
+                '${L10nHelpers.cropLabel(context, season.cropType)} ${season.startDate.year}',
+              ),
             );
           },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpace.md,
+              vertical: 11,
+            ),
+            child: Row(
+              children: [
+                CropGlyph(cropType: season.cropType, size: 18),
+                const SizedBox(width: AppSpace.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${L10nHelpers.cropLabel(context, season.cropType)} ${season.startDate.year}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        subtitleParts.join(' · '),
+                        style: AppTheme.tabular(
+                          Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.more_horiz_rounded,
+                    color: tokens.inkMuted,
+                    size: 18,
+                  ),
+                  onSelected: (value) async {
+                    if (value == 'edit') {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        useSafeArea: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => CreateSeasonSheet(season: season),
+                      );
+                    } else if (value == 'delete') {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: Text(l10n.confirmDelete),
+                          content: Text(l10n.deleteConfirmation),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text(l10n.cancel),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: Text(
+                                l10n.delete,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirm == true) {
+                        ref
+                            .read(seasonsNotifierProvider.notifier)
+                            .deleteSeason(season.id);
+                      }
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(value: 'edit', child: Text(l10n.edit)),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Text(
+                        l10n.delete,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
         if (showDivider)
           Divider(
-              height: 1,
-              indent: AppSpace.md,
-              endIndent: AppSpace.md,
-              color: tokens.hairline),
+            height: 1,
+            indent: AppSpace.md,
+            endIndent: AppSpace.md,
+            color: tokens.hairline,
+          ),
       ],
     );
   }
@@ -418,6 +460,16 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
     return area != null && area > 0;
   }
 
+  void _nudgeArea(double delta) {
+    final current = double.tryParse(_areaController.text) ?? 0;
+    final next = (current + delta).clamp(0.5, 9999.0);
+    setState(() {
+      _areaController.text = next == next.roundToDouble()
+          ? next.toInt().toString()
+          : next.toString();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -426,15 +478,16 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
 
     return Container(
       padding: EdgeInsetsDirectional.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpace.xl,
-        start: AppSpace.lg,
-        end: AppSpace.lg,
-        top: AppSpace.sm,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpace.lg,
+        start: AppSpace.md,
+        end: AppSpace.md,
+        top: AppSpace.xs,
       ),
       decoration: BoxDecoration(
         color: tokens.surface,
         borderRadius:
             const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+        border: Border(top: BorderSide(color: tokens.hairline, width: 1)),
       ),
       child: SingleChildScrollView(
         child: Column(
@@ -443,75 +496,86 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
           children: [
             Center(
               child: Container(
-                width: 36,
-                height: 4,
+                width: 32,
+                height: 3.5,
                 decoration: BoxDecoration(
-                  color: tokens.hairline,
+                  color: tokens.hairlineStrong,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const SizedBox(height: AppSpace.md),
+            const SizedBox(height: AppSpace.sm),
             Text(
               widget.season != null ? l10n.edit : l10n.newCycle,
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: AppSpace.lg),
-            SegmentedButton<CropType>(
-              showSelectedIcon: false,
+            const SizedBox(height: AppSpace.md),
+            AppSegmentedControl<CropType>(
+              selected: _cropType,
               segments: [
-                ButtonSegment(
+                AppSegment(
                   value: CropType.wheat,
-                  label: Text(l10n.wheat),
-                  icon: const Icon(Icons.grass_rounded, size: 18),
+                  label: l10n.wheat,
+                  icon: Icons.grass_rounded,
+                  activeColor: AppColors.wheatFor(context),
                 ),
-                ButtonSegment(
+                AppSegment(
                   value: CropType.rice,
-                  label: Text(l10n.rice),
-                  icon: const Icon(Icons.water_drop_rounded, size: 18),
+                  label: l10n.rice,
+                  icon: Icons.water_drop_rounded,
+                  activeColor: AppColors.riceFor(context),
                 ),
               ],
-              selected: {_cropType},
-              onSelectionChanged: (set) {
-                HapticFeedback.selectionClick();
-                setState(() => _cropType = set.first);
-              },
+              onChanged: (crop) => setState(() => _cropType = crop),
             ),
             const SizedBox(height: AppSpace.md),
             Text(l10n.year, style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: AppSpace.xs),
+            const SizedBox(height: 6),
             _YearSelectorRow(
               selectedYear: _selectedYear,
               onChanged: (y) => setState(() => _selectedYear = y),
             ),
             const SizedBox(height: AppSpace.md),
-            TextField(
-              controller: _areaController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [NormalizedDecimalFormatter()],
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                labelText: l10n.totalArea,
-                prefixIcon: const Icon(Icons.square_foot_rounded, size: 20),
-                suffixText: l10n.acresUnit,
-                hintText: '12.5',
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _areaController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [NormalizedDecimalFormatter()],
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      labelText: l10n.totalArea,
+                      prefixIcon:
+                          const Icon(Icons.square_foot_rounded, size: 18),
+                      suffixText: l10n.acresUnitShort,
+                      hintText: '12.5',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpace.xs),
+                CompactStepperCluster(
+                  stepLabel: '0.5',
+                  onDecrement: () => _nudgeArea(-0.5),
+                  onIncrement: () => _nudgeArea(0.5),
+                ),
+              ],
             ),
             if (lands.isNotEmpty) ...[
               const SizedBox(height: AppSpace.sm),
               Text(l10n.savedLands,
                   style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: AppSpace.xs),
+              const SizedBox(height: 6),
               Wrap(
-                spacing: AppSpace.xs,
-                runSpacing: AppSpace.xs,
+                spacing: 6,
+                runSpacing: 6,
                 children: lands.map((land) {
-                  return ActionChip(
-                    label: Text(
-                        '${land.name} (${land.area} ${l10n.acresUnitShort})'),
-                    onPressed: () {
-                      HapticFeedback.selectionClick();
+                  return AppFilterPill(
+                    label: '${land.name} (${land.area} ${l10n.acresUnitShort})',
+                    selected: _areaController.text == land.area.toString(),
+                    onTap: () {
                       setState(() {
                         _areaController.text = land.area.toString();
                       });
@@ -520,9 +584,9 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
                 }).toList(),
               ),
             ],
-            const SizedBox(height: AppSpace.xl),
+            const SizedBox(height: AppSpace.lg),
             SizedBox(
-              height: 52,
+              height: 46,
               child: FilledButton(
                 onPressed: _isValid ? _save : null,
                 child: Text(l10n.save),
@@ -561,8 +625,11 @@ class _CreateSeasonSheetState extends ConsumerState<CreateSeasonSheet> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        AppNotification.show(context, l10n.saveFailed(e.toString()),
-            isError: true);
+        AppNotification.show(
+          context,
+          l10n.saveFailed(e.toString()),
+          isError: true,
+        );
       }
     }
   }
@@ -588,22 +655,13 @@ class _YearSelectorRow extends StatelessWidget {
       children: [
         for (final year in quickYears) ...[
           Expanded(
-            child: ChoiceChip(
-              label: Center(
-                child: Text(
-                  '$year',
-                  style: AppTheme.tabular(null),
-                ),
-              ),
+            child: AppFilterPill(
+              label: '$year',
               selected: selectedYear == year,
-              showCheckmark: false,
-              onSelected: (_) {
-                HapticFeedback.selectionClick();
-                onChanged(year);
-              },
+              onTap: () => onChanged(year),
             ),
           ),
-          const SizedBox(width: AppSpace.xs),
+          const SizedBox(width: 6),
         ],
         AppSelectorTrigger(
           compact: true,

@@ -33,7 +33,7 @@ class MainShell extends ConsumerWidget {
         child: SafeArea(
           top: false,
           child: SizedBox(
-            height: 62,
+            height: 58,
             child: Row(
               children: [
                 _NavTabItem(
@@ -56,7 +56,7 @@ class MainShell extends ConsumerWidget {
                     message: l10n.addTransaction,
                     child: Material(
                       color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
                         onTap: () {
@@ -64,12 +64,12 @@ class MainShell extends ConsumerWidget {
                           showTransactionSheet(context);
                         },
                         child: SizedBox(
-                          width: 48,
-                          height: 44,
+                          width: 44,
+                          height: 38,
                           child: Icon(
                             Icons.add_rounded,
                             color: Theme.of(context).colorScheme.onPrimary,
-                            size: 24,
+                            size: 22,
                           ),
                         ),
                       ),
@@ -131,29 +131,38 @@ class _NavTabItem extends StatelessWidget {
     return Expanded(
       child: InkWell(
         onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          alignment: Alignment.topCenter,
           children: [
-            Icon(isSelected ? selectedIcon : icon, color: color, size: 22),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color,
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 2),
             AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              width: isSelected ? 16 : 0,
+              duration: AppMotion.micro,
+              curve: AppMotion.curve,
+              width: isSelected ? 22 : 0,
               height: 2,
               decoration: BoxDecoration(
                 color: isSelected ? primary : Colors.transparent,
                 borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(isSelected ? selectedIcon : icon,
+                      color: color, size: 20),
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected ? tokens.ink : tokens.inkMuted,
+                      fontSize: 11,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

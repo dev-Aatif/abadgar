@@ -51,6 +51,7 @@ enum CropType {
 enum YieldUnit {
   kg('Kg', 1.0),
   mund('Mund (40kg)', 40.0),
+  kharrar('Kharrar (800kg)', 800.0),
   tons('Tons', 1000.0);
 
   final String value;

@@ -9,6 +9,7 @@ class AppNotification {
 
     final colorScheme = Theme.of(context).colorScheme;
     final bgColor = isError ? colorScheme.error : AppColors.profitFor(context);
+    final fgColor = isError ? colorScheme.onError : const Color(0xFFFDFCF9);
 
     messenger.showSnackBar(
       SnackBar(
@@ -18,17 +19,18 @@ class AppNotification {
               isError
                   ? Icons.error_outline_rounded
                   : Icons.check_circle_outline_rounded,
-              color: Colors.white,
-              size: 20,
+              color: fgColor,
+              size: 18,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14),
+                style: TextStyle(
+                  color: fgColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.5,
+                ),
               ),
             ),
           ],
@@ -57,7 +59,7 @@ class AppNotification {
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         action: SnackBarAction(
           label: undoLabel,
-          textColor: AppColors.wheatDark,
+          textColor: AppColors.amberDark,
           onPressed: onUndo,
         ),
       ),

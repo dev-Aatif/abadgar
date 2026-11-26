@@ -26,7 +26,7 @@ class ActiveSeasonId extends _$ActiveSeasonId {
     if (_disposed || _userMutated) return;
 
     final savedId = prefs.getString('active_season_id');
-    final db = await ref.read(powerSyncDatabaseProvider.future);
+    final db = await ref.read(localDatabaseProvider.future);
     if (_disposed || _userMutated) return;
 
     if (savedId != null) {
@@ -83,7 +83,7 @@ Stream<Season?> activeSeason(ActiveSeasonRef ref) async* {
     return;
   }
 
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   yield* db.watch('SELECT * FROM seasons WHERE id = ?', parameters: [id]).map(
       (rows) => rows.isEmpty ? null : Season.fromRow(rows.first));
 }

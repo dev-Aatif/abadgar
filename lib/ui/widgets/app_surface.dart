@@ -6,7 +6,7 @@ import '../../core/models/transaction.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/l10n_helpers.dart';
 
-/// Single-containment hairline card used across all screens.
+/// Single-containment hairline panel used across all screens.
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -26,25 +26,29 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final decoration = BoxDecoration(
-      color: color ?? tokens.surface,
-      borderRadius: BorderRadius.circular(AppRadius.lg),
-      border: Border.all(color: borderColor ?? tokens.hairline, width: 1),
-    );
+    final fill = color ?? tokens.surface;
+    final border = borderColor ?? tokens.hairline;
 
     final body =
         padding != null ? Padding(padding: padding!, child: child) : child;
 
     if (onTap == null) {
       return Container(
-          decoration: decoration, clipBehavior: Clip.antiAlias, child: body);
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: border, width: 1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: body,
+      );
     }
 
     return Material(
-      color: color ?? tokens.surface,
+      color: fill,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        side: BorderSide(color: borderColor ?? tokens.hairline, width: 1),
+        side: BorderSide(color: border, width: 1),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(onTap: onTap, child: body),
@@ -81,7 +85,7 @@ class AppSectionHeader extends StatelessWidget {
   }
 }
 
-/// Unified, micro-engineered transaction row shared across Home and Ledger.
+/// Compact, hairline-aligned transaction row shared across Dashboard and Ledger.
 class TransactionTile extends StatelessWidget {
   final Transaction transaction;
   final NumberFormat currencyFormat;
@@ -123,7 +127,11 @@ class TransactionTile extends StatelessWidget {
         alignment: AlignmentDirectional.centerEnd,
         padding: const EdgeInsetsDirectional.only(end: AppSpace.lg),
         color: AppColors.expenseFor(context),
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: Color(0xFFFDFCF9),
+          size: 20,
+        ),
       ),
       onDismissed: (_) => onDelete(),
       child: Column(
@@ -133,18 +141,20 @@ class TransactionTile extends StatelessWidget {
             onTap: onTap,
             child: Padding(
               padding: EdgeInsets.symmetric(
-                  horizontal: horizontalPadding, vertical: 14),
+                horizontal: horizontalPadding,
+                vertical: 11,
+              ),
               child: Row(
                 children: [
                   Container(
-                    width: 4,
-                    height: 36,
+                    width: 3,
+                    height: 30,
                     decoration: BoxDecoration(
                       color: categoryColor,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(1.5),
                     ),
                   ),
-                  const SizedBox(width: AppSpace.sm),
+                  const SizedBox(width: AppSpace.compact),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,10 +165,10 @@ class TransactionTile extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 1),
                         Text(
                           note != null && note.isNotEmpty
-                              ? '$dateText — $note'
+                              ? '$dateText · $note'
                               : dateText,
                           style: Theme.of(context).textTheme.bodySmall,
                           maxLines: 1,
@@ -173,7 +183,7 @@ class TransactionTile extends StatelessWidget {
                     style: AppTheme.tabular(
                       Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: amountColor,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                           ),
                     ),
                   ),
@@ -194,7 +204,7 @@ class TransactionTile extends StatelessWidget {
   }
 }
 
-/// Actionable, calm empty state.
+/// Calm, hairline-framed empty state with a single clear action.
 class AppEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -220,7 +230,16 @@ class AppEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 44, color: tokens.inkMuted),
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: tokens.well,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: tokens.hairline, width: 1),
+              ),
+              child: Icon(icon, size: 24, color: tokens.inkMuted),
+            ),
             const SizedBox(height: AppSpace.md),
             Text(
               title,
@@ -228,7 +247,7 @@ class AppEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: AppSpace.xs),
+              const SizedBox(height: AppSpace.xxs),
               Text(
                 subtitle!,
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -236,7 +255,7 @@ class AppEmptyState extends StatelessWidget {
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: AppSpace.lg),
+              const SizedBox(height: AppSpace.md),
               OutlinedButton(
                 onPressed: onAction,
                 child: Text(actionLabel!),

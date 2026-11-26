@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sqlite_async/sqlite_async.dart';
 import 'seasons_provider.dart';
 import 'financial_summary_provider.dart';
 import 'transactions_provider.dart';
@@ -109,7 +109,7 @@ Future<SeasonComparison?> seasonComparison(
 }
 
 Stream<FinancialSummary> _watchSeasonSummary(
-    PowerSyncDatabase db, String seasonId) {
+    SqliteDatabase db, String seasonId) {
   late StreamController<FinancialSummary> controller;
   StreamSubscription? txSub;
   StreamSubscription? yieldSub;
@@ -163,7 +163,7 @@ Stream<FinancialSummary> _watchSeasonSummary(
 @riverpod
 Stream<FinancialSummary> seasonSummary(
     SeasonSummaryRef ref, String seasonId) async* {
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   yield* _watchSeasonSummary(db, seasonId);
 }
 
@@ -185,7 +185,7 @@ Future<List<SeasonTrendData>> multiYearTrend(MultiYearTrendRef ref) async {
 
   completedSeasons.sort((a, b) => a.startDate.compareTo(b.startDate));
 
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final db = await ref.watch(localDatabaseProvider.future);
   final txAggRows = await db.getAll('''
     SELECT season_id,
            SUM(CASE WHEN type IN ('Revenue', 'Yield') THEN amount ELSE 0 END) AS total_revenue,

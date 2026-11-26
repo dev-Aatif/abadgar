@@ -1,18 +1,44 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
+import 'core/providers/backup_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/router/app_router.dart';
 
-class AbadgarApp extends ConsumerWidget {
+class AbadgarApp extends ConsumerStatefulWidget {
   const AbadgarApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AbadgarApp> createState() => _AbadgarAppState();
+}
+
+class _AbadgarAppState extends ConsumerState<AbadgarApp> {
+  late final AppLifecycleListener _lifecycleListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycleListener = AppLifecycleListener(
+      onPause: () {
+        unawaited(ref.read(autoSaveControllerProvider.notifier).triggerNow());
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycleListener.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    ref.watch(autoSaveControllerProvider);
     final themeMode =
         ref.watch(themeModeNotifierProvider).value ?? ThemeMode.system;
     final locale =
@@ -30,7 +56,7 @@ class AbadgarApp extends ConsumerWidget {
         AppLocalizations.delegate,
         FallbackMaterialLocalizationDelegate(),
         FallbackCupertinoLocalizationDelegate(),
-        GlobalWidgetsLocalizations.delegate,
+        FallbackWidgetsLocalizationDelegate(),
       ],
       supportedLocales: const [
         Locale('en'),
@@ -77,4 +103,23 @@ class FallbackCupertinoLocalizationDelegate
 
   @override
   bool shouldReload(FallbackCupertinoLocalizationDelegate old) => false;
+}
+
+class FallbackWidgetsLocalizationDelegate
+    extends LocalizationsDelegate<WidgetsLocalizations> {
+  const FallbackWidgetsLocalizationDelegate();
+
+  @override
+  bool isSupported(Locale locale) => true;
+
+  @override
+  Future<WidgetsLocalizations> load(Locale locale) async {
+    if (locale.languageCode == 'sd') {
+      return GlobalWidgetsLocalizations.delegate.load(const Locale('ur'));
+    }
+    return GlobalWidgetsLocalizations.delegate.load(locale);
+  }
+
+  @override
+  bool shouldReload(FallbackWidgetsLocalizationDelegate old) => false;
 }

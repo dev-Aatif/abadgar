@@ -82,6 +82,9 @@ ios/DerivedData/
 *.mocks.dart
 lib/l10n/generated/
 
+# Design tooling state
+.hallmark/
+
 # Supabase
 # Note: Migrations are generally committed to version control. 
 # Uncomment below if you explicitly want to ignore them.

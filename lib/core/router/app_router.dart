@@ -9,7 +9,6 @@ import '../../ui/screens/ledger/ledger_screen.dart';
 import '../../ui/screens/seasons/seasons_screen.dart';
 import '../../ui/screens/settings/settings_screen.dart';
 import '../../ui/screens/analytics/analytics_screen.dart';
-import '../../ui/screens/auth/auth_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -24,11 +23,8 @@ GoRouter appRouter(AppRouterRef ref) {
     initialLocation: '/dashboard',
     navigatorKey: _rootNavigatorKey,
     debugLogDiagnostics: kDebugMode,
+    errorBuilder: (context, state) => const DashboardScreen(),
     routes: [
-      GoRoute(
-        path: '/auth',
-        builder: (context, state) => const AuthScreen(),
-      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);

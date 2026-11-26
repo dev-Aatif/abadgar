@@ -6,12 +6,6 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# PowerSync
--keep class io.powersync.** { *; }
-
-# Supabase
--keep class io.supabase.** { *; }
-
 # JSON Serialization
 -keepclassmembers class * {
   @com.google.gson.annotations.SerializedName <fields>;

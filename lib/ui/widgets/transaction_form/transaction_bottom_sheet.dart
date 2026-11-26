@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:abadgar/l10n/generated/app_localizations.dart';
@@ -12,6 +11,7 @@ import '../../../core/providers/active_season_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/l10n_helpers.dart';
+import '../../widgets/app_controls.dart';
 import 'parts/generic_transaction_form.dart';
 import 'parts/yield_form.dart';
 
@@ -68,15 +68,16 @@ class _TransactionBottomSheetState
 
     return Container(
       padding: EdgeInsetsDirectional.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpace.xl,
-        start: AppSpace.lg,
-        end: AppSpace.lg,
-        top: AppSpace.sm,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpace.md,
+        start: AppSpace.md,
+        end: AppSpace.md,
+        top: AppSpace.xs,
       ),
       decoration: BoxDecoration(
         color: tokens.surface,
         borderRadius:
             const BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+        border: Border(top: BorderSide(color: tokens.hairline, width: 1)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -84,27 +85,28 @@ class _TransactionBottomSheetState
         children: [
           Center(
             child: Container(
-              width: 36,
-              height: 4,
+              width: 32,
+              height: 3.5,
               decoration: BoxDecoration(
-                color: tokens.hairline,
+                color: tokens.hairlineStrong,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
-          const SizedBox(height: AppSpace.md),
+          const SizedBox(height: AppSpace.sm),
           if (_selectingSeason)
             _buildSeasonSelector()
           else ...[
             _buildHeaderNavigator(),
-            const SizedBox(height: AppSpace.sm),
+            const SizedBox(height: AppSpace.xs),
             _buildModeToggle(),
-            const SizedBox(height: AppSpace.lg),
+            const SizedBox(height: AppSpace.md),
             Flexible(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 180),
+                  duration: AppMotion.short,
+                  switchInCurve: AppMotion.curve,
                   child: _buildForm(seasonId: _sessionSeasonId!),
                 ),
               ),
@@ -124,48 +126,46 @@ class _TransactionBottomSheetState
       orElse: () => seasons.first,
     );
     final tokens = context.tokens;
-    final cropColor = selectedSeason.cropType == CropType.wheat
-        ? AppColors.wheatFor(context)
-        : AppColors.riceFor(context);
 
     return Align(
       alignment: AlignmentDirectional.centerStart,
-      child: InkWell(
-        onTap: (widget.transaction != null || widget.yieldLog != null)
-            ? null
-            : () => setState(() => _selectingSeason = true),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: tokens.well,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: Border.all(color: tokens.hairline, width: 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                selectedSeason.cropType == CropType.wheat
-                    ? Icons.grass_rounded
-                    : Icons.water_drop_rounded,
-                size: 16,
-                color: cropColor,
-              ),
-              const SizedBox(width: AppSpace.xs),
-              Flexible(
-                child: Text(
-                  '${L10nHelpers.cropLabel(context, selectedSeason.cropType)} ${selectedSeason.startDate.year}',
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge,
+      child: Material(
+        color: tokens.well,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          side: BorderSide(color: tokens.hairline, width: 1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: (widget.transaction != null || widget.yieldLog != null)
+              ? null
+              : () => setState(() => _selectingSeason = true),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CropGlyph(cropType: selectedSeason.cropType, size: 15),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    '${L10nHelpers.cropLabel(context, selectedSeason.cropType)} ${selectedSeason.startDate.year}',
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: tokens.ink,
+                        ),
+                  ),
                 ),
-              ),
-              if (widget.transaction == null && widget.yieldLog == null) ...[
-                const SizedBox(width: 4),
-                Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 18, color: tokens.inkMuted),
+                if (widget.transaction == null && widget.yieldLog == null) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.unfold_more_rounded,
+                    size: 15,
+                    color: tokens.inkMuted,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -182,7 +182,8 @@ class _TransactionBottomSheetState
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(l10n.whichSeason, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: AppSpace.sm),
+        const SizedBox(height: AppSpace.xs),
+        Divider(height: 1, color: tokens.hairline),
         if (seasons.isEmpty)
           Padding(
             padding: const EdgeInsets.all(AppSpace.lg),
@@ -198,28 +199,25 @@ class _TransactionBottomSheetState
               itemBuilder: (_, index) {
                 final s = seasons[index];
                 return ListTile(
+                  dense: true,
                   contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    s.cropType == CropType.wheat
-                        ? Icons.grass_rounded
-                        : Icons.water_drop_rounded,
-                    color: s.cropType == CropType.wheat
-                        ? AppColors.wheatFor(context)
-                        : AppColors.riceFor(context),
-                  ),
+                  leading: CropGlyph(cropType: s.cropType, size: 18),
                   title: Text(
                     '${L10nHelpers.cropLabel(context, s.cropType)} ${s.startDate.year}',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   subtitle: Text(
                     '${s.landArea} ${l10n.acresUnit}, ${DateFormat.yMMMd(L10nHelpers.intlLocaleFor(context)).format(s.startDate)}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: AppTheme.tabular(
+                      Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                   trailing: Icon(
                     Directionality.of(context) == TextDirection.rtl
                         ? Icons.chevron_left_rounded
                         : Icons.chevron_right_rounded,
                     color: tokens.inkMuted,
+                    size: 18,
                   ),
                   onTap: () {
                     ref.read(activeSeasonIdProvider.notifier).set(s.id);
@@ -240,29 +238,28 @@ class _TransactionBottomSheetState
     final l10n = AppLocalizations.of(context)!;
     final isLocked = widget.transaction != null || widget.yieldLog != null;
 
-    return SegmentedButton<TransactionMode>(
-      showSelectedIcon: false,
+    return AppSegmentedControl<TransactionMode>(
+      compact: true,
+      enabled: !isLocked,
+      selected: _mode,
       segments: [
-        ButtonSegment(
+        AppSegment(
           value: TransactionMode.expense,
-          label: Text(l10n.expense),
+          label: l10n.expense,
+          activeColor: AppColors.expenseFor(context),
         ),
-        ButtonSegment(
+        AppSegment(
           value: TransactionMode.revenue,
-          label: Text(l10n.revenue),
+          label: l10n.revenue,
+          activeColor: AppColors.revenueFor(context),
         ),
-        ButtonSegment(
+        AppSegment(
           value: TransactionMode.harvest,
-          label: Text(l10n.harvest),
+          label: l10n.harvest,
+          activeColor: AppColors.wheatFor(context),
         ),
       ],
-      selected: {_mode},
-      onSelectionChanged: isLocked
-          ? null
-          : (selection) {
-              HapticFeedback.selectionClick();
-              setState(() => _mode = selection.first);
-            },
+      onChanged: (next) => setState(() => _mode = next),
     );
   }
 

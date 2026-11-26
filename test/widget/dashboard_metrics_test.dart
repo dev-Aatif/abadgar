@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 import 'package:abadgar/app.dart';
 import 'package:abadgar/core/constants/enums.dart';
 import 'package:abadgar/core/models/season.dart';
 import 'package:abadgar/core/models/transaction.dart';
 import 'package:abadgar/core/providers/active_season_provider.dart';
-import 'package:abadgar/core/providers/auth_provider.dart';
+import 'package:abadgar/core/providers/backup_providers.dart';
 import 'package:abadgar/core/providers/comparison_provider.dart';
 import 'package:abadgar/core/providers/financial_summary_provider.dart';
 import 'package:abadgar/core/providers/seasons_provider.dart';
@@ -24,9 +22,13 @@ class _StubActiveSeasonId extends ActiveSeasonId {
   String? build() => _id;
 }
 
-class _StubAuthState extends AuthState {
+class _StubBackupStatusNotifier extends BackupStatusNotifier {
   @override
-  Session? build() => null;
+  Future<BackupStatus> build() async => const BackupStatus(
+        autoBackupEnabled: true,
+        lastAutoBackupAt: null,
+        lastExternalBackupAt: null,
+      );
 }
 
 void main() {
@@ -56,7 +58,7 @@ void main() {
           AppLocalizations.delegate,
           FallbackMaterialLocalizationDelegate(),
           FallbackCupertinoLocalizationDelegate(),
-          GlobalWidgetsLocalizations.delegate,
+          FallbackWidgetsLocalizationDelegate(),
         ],
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(
@@ -85,7 +87,9 @@ void main() {
             activeSeasonYieldLogsProvider
                 .overrideWith((ref) => Stream.value(const [])),
             financialSummaryProvider.overrideWithValue(null),
-            authStateProvider.overrideWith(() => _StubAuthState()),
+            backupStatusNotifierProvider.overrideWith(
+              () => _StubBackupStatusNotifier(),
+            ),
           ],
         ),
       );
@@ -142,13 +146,15 @@ void main() {
             activeSeasonYieldLogsProvider
                 .overrideWith((ref) => Stream.value(const [])),
             financialSummaryProvider.overrideWithValue(summary),
+            backupStatusNotifierProvider.overrideWith(
+              () => _StubBackupStatusNotifier(),
+            ),
             seasonComparisonProvider('s1').overrideWith(
               (ref) async => SeasonComparison(
                 currentSeason: sampleSeason,
                 currentSummary: summary,
               ),
             ),
-            authStateProvider.overrideWith(() => _StubAuthState()),
           ],
         ),
       );

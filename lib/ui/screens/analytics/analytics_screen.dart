@@ -6,12 +6,12 @@ import 'package:share_plus/share_plus.dart';
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/enums.dart';
 import '../../../core/providers/analytics_selection_provider.dart';
 import '../../../core/providers/comparison_provider.dart';
 import '../../../core/providers/seasons_provider.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/l10n_helpers.dart';
+import '../../widgets/app_controls.dart';
 import '../../widgets/app_selector.dart';
 import '../../widgets/app_surface.dart';
 
@@ -39,7 +39,7 @@ class AnalyticsScreen extends ConsumerWidget {
           if (comparisonAsync.value != null)
             IconButton(
               tooltip: l10n.exportData,
-              icon: const Icon(Icons.share_outlined),
+              icon: const Icon(Icons.share_outlined, size: 20),
               onPressed: () => _shareReport(context, comparisonAsync.value),
             ),
           seasonsAsync.when(
@@ -49,22 +49,13 @@ class AnalyticsScreen extends ConsumerWidget {
                 (s) => s.id == selectedSeasonId,
                 orElse: () => seasons.first,
               );
-              final cropColor = current.cropType == CropType.wheat
-                  ? AppColors.wheatFor(context)
-                  : AppColors.riceFor(context);
 
               return Padding(
                 padding: const EdgeInsetsDirectional.only(end: AppSpace.sm),
                 child: Center(
                   child: AppSelectorTrigger(
                     compact: true,
-                    leading: Icon(
-                      current.cropType == CropType.wheat
-                          ? Icons.grass_rounded
-                          : Icons.water_drop_rounded,
-                      size: 15,
-                      color: cropColor,
-                    ),
+                    leading: CropGlyph(cropType: current.cropType, size: 15),
                     label:
                         '${L10nHelpers.cropLabel(context, current.cropType)} ${current.startDate.year}',
                     onTap: () async {
@@ -73,21 +64,12 @@ class AnalyticsScreen extends ConsumerWidget {
                         title: l10n.whichSeason,
                         selectedValue: current.id,
                         options: seasons.map((s) {
-                          final sColor = s.cropType == CropType.wheat
-                              ? AppColors.wheatFor(context)
-                              : AppColors.riceFor(context);
                           return AppSelectorOption<String>(
                             value: s.id,
                             label:
                                 '${L10nHelpers.cropLabel(context, s.cropType)} ${s.startDate.year}',
                             badge: '${s.landArea} ${l10n.acresUnitShort}',
-                            leading: Icon(
-                              s.cropType == CropType.wheat
-                                  ? Icons.grass_rounded
-                                  : Icons.water_drop_rounded,
-                              color: sColor,
-                              size: 20,
-                            ),
+                            leading: CropGlyph(cropType: s.cropType, size: 18),
                           );
                         }).toList(),
                       );
@@ -133,7 +115,10 @@ class AnalyticsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final intlLocale = L10nHelpers.intlLocaleFor(context);
     final format = NumberFormat.currency(
-        locale: intlLocale, symbol: 'Rs ', decimalDigits: 0);
+      locale: intlLocale,
+      symbol: 'Rs ',
+      decimalDigits: 0,
+    );
     final weightFormat = NumberFormat.decimalPattern(intlLocale);
     final summary = comparison.currentSummary;
     final season = comparison.currentSeason;
@@ -183,27 +168,61 @@ class _AnalyticsBody extends ConsumerWidget {
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
-      padding:
-          const EdgeInsets.fromLTRB(AppSpace.lg, AppSpace.md, AppSpace.lg, 100),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpace.md,
+        AppSpace.xs,
+        AppSpace.md,
+        48,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Season header
-          Text(
-            '${L10nHelpers.cropLabel(context, comparison.currentSeason.cropType)} ${comparison.currentSeason.startDate.year}',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: AppSpace.xxs),
-          Text(
-            '${comparison.currentSeason.landArea} ${l10n.acresUnit}',
-            style: AppTheme.tabular(Theme.of(context).textTheme.bodyMedium),
-          ),
-          const SizedBox(height: AppSpace.lg),
-
-          // Unit Economics 2x2 hairline ledger grid
+          // Season Identity + Totals Summary Strip
           AppCard(
+            padding: const EdgeInsets.all(AppSpace.md),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    CropGlyph(
+                      cropType: comparison.currentSeason.cropType,
+                      size: 18,
+                    ),
+                    const SizedBox(width: AppSpace.xs),
+                    Expanded(
+                      child: Text(
+                        '${L10nHelpers.cropLabel(context, comparison.currentSeason.cropType)} ${comparison.currentSeason.startDate.year}',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: tokens.well,
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
+                        border: Border.all(color: tokens.hairline),
+                      ),
+                      child: Text(
+                        '${comparison.currentSeason.landArea} ${l10n.acresUnit}',
+                        style: AppTheme.tabular(
+                          Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpace.sm),
+                PrecisionRatioBar(
+                  revenue: summary.totalRevenue,
+                  expenses: summary.totalExpenses,
+                ),
+                const SizedBox(height: AppSpace.sm),
+                Divider(height: 1, color: tokens.hairline),
                 IntrinsicHeight(
                   child: Row(
                     children: [
@@ -246,7 +265,7 @@ class _AnalyticsBody extends ConsumerWidget {
                           label: l10n.yieldPerAcre,
                           value: weightFormat
                               .format(summary.totalYieldWeight / acres),
-                          valueColor: tokens.ink,
+                          valueColor: tokens.instrument,
                         ),
                       ),
                     ],
@@ -255,11 +274,11 @@ class _AnalyticsBody extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppSpace.xl),
+          const SizedBox(height: AppSpace.lg),
 
           // Season Comparison
           AppSectionHeader(title: l10n.yoyComparison),
-          const SizedBox(height: AppSpace.sm),
+          const SizedBox(height: AppSpace.xs),
           if (comparison.previousSeason == null)
             AppCard(
               padding: const EdgeInsets.all(AppSpace.md),
@@ -271,20 +290,25 @@ class _AnalyticsBody extends ConsumerWidget {
           else ...[
             _ComparisonCard(comparison: comparison),
             if (comparison.previousSummary != null) ...[
-              const SizedBox(height: AppSpace.md),
-              _ComparisonBarChart(comparison: comparison),
+              const SizedBox(height: AppSpace.sm),
+              _ComparisonBarChart(
+                comparison: comparison,
+                currencyFormat: currencyFormat,
+              ),
             ],
           ],
-          const SizedBox(height: AppSpace.xl),
+          const SizedBox(height: AppSpace.lg),
 
           // Expense Breakdown
           AppSectionHeader(title: l10n.expenseBreakdown),
-          const SizedBox(height: AppSpace.sm),
+          const SizedBox(height: AppSpace.xs),
           if (sortedExpenses.isEmpty)
             AppCard(
               padding: const EdgeInsets.all(AppSpace.md),
-              child: Text(l10n.noExpenses,
-                  style: Theme.of(context).textTheme.bodyMedium),
+              child: Text(
+                l10n.noExpenses,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             )
           else
             AppCard(
@@ -301,15 +325,15 @@ class _AnalyticsBody extends ConsumerWidget {
                       format: currencyFormat,
                     ),
                     if (i < sortedExpenses.length - 1)
-                      const SizedBox(height: AppSpace.md),
+                      const SizedBox(height: AppSpace.sm),
                   ],
                 ],
               ),
             ),
 
           // Multi-year Trend
-          const SizedBox(height: AppSpace.xl),
-          _MultiYearTrendSection(),
+          const SizedBox(height: AppSpace.lg),
+          _MultiYearTrendSection(currencyFormat: currencyFormat),
         ],
       ),
     );
@@ -330,21 +354,24 @@ class _UnitCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpace.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpace.sm,
+        vertical: AppSpace.compact,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: AppSpace.xxs),
+          const SizedBox(height: 2),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               value,
               style: AppTheme.tabular(
-                Theme.of(context).textTheme.titleLarge?.copyWith(
+                Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: valueColor,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
             ),
@@ -377,7 +404,7 @@ class _ComparisonCard extends StatelessWidget {
           Icon(
             isUp ? Icons.trending_up_rounded : Icons.trending_down_rounded,
             color: trendColor,
-            size: 22,
+            size: 20,
           ),
           const SizedBox(width: AppSpace.sm),
           Expanded(
@@ -385,8 +412,9 @@ class _ComparisonCard extends StatelessWidget {
               isUp
                   ? l10n.profitVarianceUp(pct, prevName)
                   : l10n.profitVarianceDown(pct, prevName),
-              style:
-                  Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 15),
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontSize: 14,
+                  ),
             ),
           ),
         ],
@@ -397,8 +425,12 @@ class _ComparisonCard extends StatelessWidget {
 
 class _ComparisonBarChart extends StatelessWidget {
   final SeasonComparison comparison;
+  final NumberFormat currencyFormat;
 
-  const _ComparisonBarChart({required this.comparison});
+  const _ComparisonBarChart({
+    required this.comparison,
+    required this.currencyFormat,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -428,23 +460,43 @@ class _ComparisonBarChart extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 210,
+            height: 196,
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: maxY * 1.2,
-                barTouchData: BarTouchData(enabled: false),
+                maxY: maxY * 1.18,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (_) => tokens.surfaceDeep,
+                    tooltipBorder: BorderSide(color: tokens.hairlineStrong),
+                    tooltipRoundedRadius: AppRadius.xs,
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        currencyFormat.format(rod.toY),
+                        AppTheme.tabular(
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: tokens.ink,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
                 titlesData: FlTitlesData(
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 28,
+                      reservedSize: 26,
                       getTitlesWidget: (value, meta) {
                         final text = value.toInt() == 0 ? prevLabel : curLabel;
                         return SideTitleWidget(
                           meta: meta,
-                          child: Text(text,
-                              style: Theme.of(context).textTheme.bodySmall),
+                          child: Text(
+                            text,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         );
                       },
                     ),
@@ -452,23 +504,26 @@ class _ComparisonBarChart extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 52,
+                      reservedSize: 48,
                       getTitlesWidget: (value, meta) {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
                           NumberFormat.compact(
-                                  locale: L10nHelpers.intlLocaleFor(context))
-                              .format(value),
+                            locale: L10nHelpers.intlLocaleFor(context),
+                          ).format(value),
                           style: AppTheme.tabular(
-                              Theme.of(context).textTheme.bodySmall),
+                            Theme.of(context).textTheme.bodySmall,
+                          ),
                         );
                       },
                     ),
                   ),
                   topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false)),
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 gridData: FlGridData(
                   show: true,
@@ -480,34 +535,46 @@ class _ComparisonBarChart extends StatelessWidget {
                 barGroups: [
                   BarChartGroupData(
                     x: 0,
-                    barsSpace: 6,
+                    barsSpace: 4,
                     barRods: [
                       BarChartRodData(
-                          toY: prev.totalRevenue,
-                          color: revColor,
-                          width: 16,
-                          borderRadius: BorderRadius.circular(4)),
+                        toY: prev.totalRevenue,
+                        color: revColor,
+                        width: 14,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(2),
+                        ),
+                      ),
                       BarChartRodData(
-                          toY: prev.totalExpenses,
-                          color: expColor,
-                          width: 16,
-                          borderRadius: BorderRadius.circular(4)),
+                        toY: prev.totalExpenses,
+                        color: expColor,
+                        width: 14,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(2),
+                        ),
+                      ),
                     ],
                   ),
                   BarChartGroupData(
                     x: 1,
-                    barsSpace: 6,
+                    barsSpace: 4,
                     barRods: [
                       BarChartRodData(
-                          toY: cur.totalRevenue,
-                          color: revColor,
-                          width: 16,
-                          borderRadius: BorderRadius.circular(4)),
+                        toY: cur.totalRevenue,
+                        color: revColor,
+                        width: 14,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(2),
+                        ),
+                      ),
                       BarChartRodData(
-                          toY: cur.totalExpenses,
-                          color: expColor,
-                          width: 16,
-                          borderRadius: BorderRadius.circular(4)),
+                        toY: cur.totalExpenses,
+                        color: expColor,
+                        width: 14,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(2),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -540,9 +607,10 @@ class _LegendDot extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
@@ -574,8 +642,8 @@ class _ExpenseRow extends StatelessWidget {
         Row(
           children: [
             Container(
-              width: 10,
-              height: 10,
+              width: 8,
+              height: 8,
               decoration:
                   BoxDecoration(color: catColor, shape: BoxShape.circle),
             ),
@@ -597,19 +665,21 @@ class _ExpenseRow extends StatelessWidget {
             const SizedBox(width: AppSpace.sm),
             Text(
               format.format(amount),
-              style: AppTheme.tabular(Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(color: tokens.ink)),
+              style: AppTheme.tabular(
+                Theme.of(context)
+                    .textTheme
+                    .titleSmall
+                    ?.copyWith(color: tokens.ink),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpace.xs),
+        const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(2.5),
           child: LinearProgressIndicator(
             value: pct,
-            minHeight: 6,
+            minHeight: 5,
             valueColor: AlwaysStoppedAnimation(catColor),
             backgroundColor: tokens.well,
           ),
@@ -620,6 +690,10 @@ class _ExpenseRow extends StatelessWidget {
 }
 
 class _MultiYearTrendSection extends ConsumerWidget {
+  final NumberFormat currencyFormat;
+
+  const _MultiYearTrendSection({required this.currencyFormat});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -654,29 +728,59 @@ class _MultiYearTrendSection extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AppSectionHeader(title: l10n.multiYearTrend),
-            const SizedBox(height: AppSpace.sm),
+            const SizedBox(height: AppSpace.xs),
             AppCard(
               padding: const EdgeInsets.all(AppSpace.md),
               child: SizedBox(
-                height: 200,
+                height: 192,
                 child: LineChart(
                   LineChartData(
                     minY: minY,
                     maxY: maxY,
+                    lineTouchData: LineTouchData(
+                      enabled: true,
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipColor: (_) => tokens.surfaceDeep,
+                        tooltipBorder: BorderSide(color: tokens.hairlineStrong),
+                        tooltipRoundedRadius: AppRadius.xs,
+                        getTooltipItems: (touchedSpots) => touchedSpots
+                            .map(
+                              (s) => LineTooltipItem(
+                                currencyFormat.format(s.y),
+                                AppTheme.tabular(
+                                  Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: tokens.ink,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
                     lineBarsData: [
                       LineChartBarData(
                         spots: spots,
                         isCurved: true,
-                        color: Theme.of(context).colorScheme.primary,
-                        barWidth: 2.5,
+                        color: tokens.instrument,
+                        barWidth: 2,
                         isStrokeCapRound: true,
-                        dotData: const FlDotData(show: true),
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (_, __, ___, ____) =>
+                              FlDotCirclePainter(
+                            radius: 3.5,
+                            color: tokens.instrument,
+                            strokeWidth: 1.5,
+                            strokeColor: tokens.surface,
+                          ),
+                        ),
                         belowBarData: BarAreaData(
                           show: true,
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withValues(alpha: 0.08),
+                          color: tokens.instrument.withValues(alpha: 0.08),
                         ),
                       ),
                     ],
@@ -684,7 +788,7 @@ class _MultiYearTrendSection extends ConsumerWidget {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 28,
+                          reservedSize: 26,
                           interval: 1,
                           getTitlesWidget: (value, meta) {
                             final idx = value.toInt();
@@ -697,7 +801,8 @@ class _MultiYearTrendSection extends ConsumerWidget {
                               child: Text(
                                 '${s.startDate.year}',
                                 style: AppTheme.tabular(
-                                    Theme.of(context).textTheme.bodySmall),
+                                  Theme.of(context).textTheme.bodySmall,
+                                ),
                               ),
                             );
                           },
@@ -706,28 +811,33 @@ class _MultiYearTrendSection extends ConsumerWidget {
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 52,
+                          reservedSize: 48,
                           getTitlesWidget: (value, meta) {
                             if (value == 0) {
-                              return Text('0',
-                                  style: AppTheme.tabular(
-                                      Theme.of(context).textTheme.bodySmall));
+                              return Text(
+                                '0',
+                                style: AppTheme.tabular(
+                                  Theme.of(context).textTheme.bodySmall,
+                                ),
+                              );
                             }
                             return Text(
                               NumberFormat.compact(
-                                      locale:
-                                          L10nHelpers.intlLocaleFor(context))
-                                  .format(value),
+                                locale: L10nHelpers.intlLocaleFor(context),
+                              ).format(value),
                               style: AppTheme.tabular(
-                                  Theme.of(context).textTheme.bodySmall),
+                                Theme.of(context).textTheme.bodySmall,
+                              ),
                             );
                           },
                         ),
                       ),
                       rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     gridData: FlGridData(
                       show: true,
