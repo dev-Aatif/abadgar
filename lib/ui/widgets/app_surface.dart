@@ -91,6 +91,7 @@ class TransactionTile extends StatelessWidget {
   final NumberFormat currencyFormat;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final Future<bool> Function()? confirmDelete;
   final bool showDivider;
   final double horizontalPadding;
 
@@ -100,6 +101,7 @@ class TransactionTile extends StatelessWidget {
     required this.currencyFormat,
     required this.onTap,
     required this.onDelete,
+    this.confirmDelete,
     this.showDivider = false,
     this.horizontalPadding = AppSpace.md,
   });
@@ -133,6 +135,7 @@ class TransactionTile extends StatelessWidget {
           size: 20,
         ),
       ),
+      confirmDismiss: confirmDelete != null ? (_) => confirmDelete!() : null,
       onDismissed: (_) => onDelete(),
       child: Column(
         mainAxisSize: MainAxisSize.min,

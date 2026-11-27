@@ -312,6 +312,11 @@ class DashboardScreen extends ConsumerWidget {
                                         context,
                                         transaction: transactions[i],
                                       ),
+                                      confirmDelete: () => confirmDeleteDialog(
+                                        context,
+                                        title: l10n.confirmDelete,
+                                        content: l10n.confirmDeleteTransaction,
+                                      ),
                                       onDelete: () => deleteTransactionWithUndo(
                                         context,
                                         ref,

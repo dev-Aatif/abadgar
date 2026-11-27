@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sqlite_async/sqlite_async.dart';
+import 'active_season_provider.dart';
 import 'seasons_provider.dart';
 import 'financial_summary_provider.dart';
 import '../models/season.dart';
@@ -42,7 +43,16 @@ class SeasonComparison {
 @riverpod
 Future<SeasonComparison?> seasonComparison(
     SeasonComparisonRef ref, String seasonId) async {
-  final seasons = await ref.watch(seasonsProvider.future);
+  final activeId = ref.watch(activeSeasonIdProvider);
+  final activeSummary =
+      seasonId == activeId ? ref.watch(financialSummaryProvider) : null;
+  final seasonsFuture = ref.watch(seasonsProvider.future);
+  final currentSummaryFuture = activeSummary == null
+      ? ref.watch(seasonSummaryProvider(seasonId).future)
+      : null;
+  final dbFuture = ref.watch(localDatabaseProvider.future);
+
+  final seasons = await seasonsFuture;
   if (seasons.isEmpty) return null;
 
   final currentSeason = seasons.where((s) => s.id == seasonId).firstOrNull;
@@ -60,12 +70,12 @@ Future<SeasonComparison?> seasonComparison(
       )
       .firstOrNull;
 
-  final currentSummary =
-      await ref.watch(seasonSummaryProvider(seasonId).future);
+  final FinancialSummary currentSummary =
+      activeSummary ?? await currentSummaryFuture!;
   FinancialSummary? previousSummary;
   if (previousSeason != null) {
-    previousSummary =
-        await ref.watch(seasonSummaryProvider(previousSeason.id).future);
+    final db = await dbFuture;
+    previousSummary = await _loadSeasonSummaryOnce(db, previousSeason.id);
   }
 
   return SeasonComparison(
@@ -73,6 +83,22 @@ Future<SeasonComparison?> seasonComparison(
     previousSeason: previousSeason,
     currentSummary: currentSummary,
     previousSummary: previousSummary,
+  );
+}
+
+Future<FinancialSummary> _loadSeasonSummaryOnce(
+    SqliteDatabase db, String seasonId) async {
+  final txRows = await db.getAll(
+    'SELECT * FROM transactions WHERE season_id = ?',
+    [seasonId],
+  );
+  final yieldRows = await db.getAll(
+    'SELECT * FROM yield_logs WHERE season_id = ?',
+    [seasonId],
+  );
+  return summarizeSeasonRows(
+    txRows.map(Transaction.fromRow).toList(),
+    yieldRows.map(YieldLog.fromRow).toList(),
   );
 }
 

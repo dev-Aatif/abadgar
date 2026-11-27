@@ -29,6 +29,36 @@ Future<void> showTransactionSheet(
   );
 }
 
+/// Prompts for confirmation before deleting a record via swipe.
+Future<bool> confirmDeleteDialog(
+  BuildContext context, {
+  required String title,
+  required String content,
+}) async {
+  final l10n = AppLocalizations.of(context)!;
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(
+            l10n.delete,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}
+
 /// Immediately deletes a transaction and offers a 5-second Undo snackbar.
 Future<void> deleteTransactionWithUndo(
   BuildContext context,

@@ -485,6 +485,11 @@ class _FinancialsTab extends ConsumerWidget {
                                 context,
                                 transaction: txItem.tx,
                               ),
+                              confirmDelete: () => confirmDeleteDialog(
+                                context,
+                                title: l10n.confirmDelete,
+                                content: l10n.confirmDeleteTransaction,
+                              ),
                               onDelete: () => deleteTransactionWithUndo(
                                 context,
                                 ref,
@@ -611,6 +616,11 @@ class _HarvestsTab extends ConsumerWidget {
                     context,
                     yieldLog: yieldLogs[index],
                   ),
+                  confirmDelete: () => confirmDeleteDialog(
+                    context,
+                    title: l10n.confirmDelete,
+                    content: l10n.confirmDeleteHarvest,
+                  ),
                   onDelete: () =>
                       deleteYieldLogWithUndo(context, ref, yieldLogs[index]),
                   hairlineColor: tokens.hairline,
@@ -633,6 +643,7 @@ class _HarvestTile extends StatelessWidget {
   final bool showDivider;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final Future<bool> Function()? confirmDelete;
   final Color hairlineColor;
 
   const _HarvestTile({
@@ -641,6 +652,7 @@ class _HarvestTile extends StatelessWidget {
     required this.showDivider,
     required this.onTap,
     required this.onDelete,
+    this.confirmDelete,
     required this.hairlineColor,
   });
 
@@ -667,6 +679,7 @@ class _HarvestTile extends StatelessWidget {
           size: 20,
         ),
       ),
+      confirmDismiss: confirmDelete != null ? (_) => confirmDelete!() : null,
       onDismissed: (_) => onDelete(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
