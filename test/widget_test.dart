@@ -65,5 +65,34 @@ void main() {
         isFalse,
       );
     });
+
+    test('parseReleaseData prefers APK asset and rejects untrusted URLs', () {
+      final info = GithubUpdater.parseReleaseData({
+        'tag_name': 'v1.1.0',
+        'body': 'Bug fixes',
+        'html_url': 'https://github.com/dev-aatif/abadgar/releases/tag/v1.1.0',
+        'assets': [
+          {
+            'name': 'abadgar-release.apk',
+            'browser_download_url':
+                'https://github.com/dev-aatif/abadgar/releases/download/v1.1.0/abadgar.apk',
+          }
+        ],
+      }, 'v1.0.0');
+      expect(info.isUpdateAvailable, isTrue);
+      expect(info.downloadUrl, endsWith('abadgar.apk'));
+
+      final untrusted = GithubUpdater.parseReleaseData({
+        'tag_name': 'v1.1.0',
+        'assets': [
+          {
+            'name': 'abadgar.apk',
+            'browser_download_url': 'https://evil.example.com/abadgar.apk',
+          }
+        ],
+      }, 'v1.0.0');
+      expect(untrusted.isUpdateAvailable, isFalse);
+      expect(untrusted.downloadUrl, isEmpty);
+    });
   });
 }

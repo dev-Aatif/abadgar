@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../constants/enums.dart';
+import '../utils/logger.dart';
 
 part 'yield_log.freezed.dart';
 part 'yield_log.g.dart';
@@ -14,6 +15,7 @@ class YieldLog with _$YieldLog {
     required YieldDisposition disposition,
     double? salePrice,
     String? destination,
+    String? transactionId,
     required DateTime date,
     required DateTime createdAt,
     required DateTime updatedAt,
@@ -27,29 +29,21 @@ class YieldLog with _$YieldLog {
       return YieldLog(
         id: row['id'] as String,
         seasonId: row['season_id'] as String,
-        totalWeight: (row['total_weight'] as num?)?.toDouble() ?? 0.0,
+        totalWeight: (row['total_weight'] as num).toDouble(),
         unit: YieldUnit.fromString(row['unit'] as String? ?? 'Kg'),
         disposition: YieldDisposition.fromString(
             row['disposition'] as String? ?? 'Sold'),
         salePrice: (row['sale_price'] as num?)?.toDouble(),
         destination: row['destination'] as String?,
-        date: DateTime.tryParse(row['date'] as String? ?? '') ?? DateTime.now(),
-        createdAt: DateTime.tryParse(row['created_at'] as String? ?? '') ??
-            DateTime.now(),
-        updatedAt: DateTime.tryParse(row['updated_at'] as String? ?? '') ??
-            DateTime.now(),
+        transactionId: row['transaction_id'] as String?,
+        date: DateTime.parse(row['date'] as String),
+        createdAt: DateTime.parse(row['created_at'] as String),
+        updatedAt: DateTime.parse(row['updated_at'] as String),
       );
-    } catch (e) {
-      return YieldLog(
-        id: row['id'] as String? ?? 'error',
-        seasonId: row['season_id'] as String? ?? '',
-        totalWeight: 0.0,
-        unit: YieldUnit.kg,
-        disposition: YieldDisposition.sold,
-        date: DateTime.now(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+    } catch (e, st) {
+      appLogger.e('Corrupt yield_logs row (${row['id']})',
+          error: e, stackTrace: st);
+      rethrow;
     }
   }
 
@@ -62,6 +56,7 @@ class YieldLog with _$YieldLog {
       'disposition': log.disposition.value,
       'sale_price': log.salePrice,
       'destination': log.destination,
+      'transaction_id': log.transactionId,
       'date': log.date.toIso8601String(),
       'created_at': log.createdAt.toIso8601String(),
       'updated_at': log.updatedAt.toIso8601String(),

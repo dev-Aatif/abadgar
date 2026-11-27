@@ -32,65 +32,68 @@ class MainShell extends ConsumerWidget {
         ),
         child: SafeArea(
           top: false,
-          child: SizedBox(
-            height: 58,
-            child: Row(
-              children: [
-                _NavTabItem(
-                  icon: Icons.home_outlined,
-                  selectedIcon: Icons.home_rounded,
-                  label: l10n.home,
-                  isSelected: current == 0,
-                  onTap: () => _selectTab(0),
-                ),
-                _NavTabItem(
-                  icon: Icons.receipt_long_outlined,
-                  selectedIcon: Icons.receipt_long_rounded,
-                  label: l10n.ledger,
-                  isSelected: current == 1,
-                  onTap: () => _selectTab(1),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.xs),
-                  child: Tooltip(
-                    message: l10n.addTransaction,
-                    child: Material(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                      clipBehavior: Clip.antiAlias,
-                      child: InkWell(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          showTransactionSheet(context);
-                        },
-                        child: SizedBox(
-                          width: 44,
-                          height: 38,
-                          child: Icon(
-                            Icons.add_rounded,
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            size: 22,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 58),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  _NavTabItem(
+                    icon: Icons.home_outlined,
+                    selectedIcon: Icons.home_rounded,
+                    label: l10n.home,
+                    isSelected: current == 0,
+                    onTap: () => _selectTab(0),
+                  ),
+                  _NavTabItem(
+                    icon: Icons.receipt_long_outlined,
+                    selectedIcon: Icons.receipt_long_rounded,
+                    label: l10n.ledger,
+                    isSelected: current == 1,
+                    onTap: () => _selectTab(1),
+                  ),
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: AppSpace.xs),
+                    child: Tooltip(
+                      message: l10n.addTransaction,
+                      child: Material(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            showTransactionSheet(context);
+                          },
+                          child: SizedBox(
+                            width: 44,
+                            height: 44,
+                            child: Icon(
+                              Icons.add_rounded,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 22,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                _NavTabItem(
-                  icon: Icons.insights_outlined,
-                  selectedIcon: Icons.insights_rounded,
-                  label: l10n.insights,
-                  isSelected: current == 2,
-                  onTap: () => _selectTab(2),
-                ),
-                _NavTabItem(
-                  icon: Icons.tune_outlined,
-                  selectedIcon: Icons.tune_rounded,
-                  label: l10n.settings,
-                  isSelected: current == 3,
-                  onTap: () => _selectTab(3),
-                ),
-              ],
+                  _NavTabItem(
+                    icon: Icons.insights_outlined,
+                    selectedIcon: Icons.insights_rounded,
+                    label: l10n.insights,
+                    isSelected: current == 2,
+                    onTap: () => _selectTab(2),
+                  ),
+                  _NavTabItem(
+                    icon: Icons.tune_outlined,
+                    selectedIcon: Icons.tune_rounded,
+                    label: l10n.settings,
+                    isSelected: current == 3,
+                    onTap: () => _selectTab(3),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -145,24 +148,28 @@ class _NavTabItem extends StatelessWidget {
               ),
             ),
             Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(isSelected ? selectedIcon : icon,
-                      color: color, size: 20),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: isSelected ? tokens.ink : tokens.inkMuted,
-                      fontSize: 11,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w500,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(isSelected ? selectedIcon : icon,
+                        color: color, size: 20),
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: isSelected ? tokens.ink : tokens.inkMuted,
+                        fontSize: 11,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

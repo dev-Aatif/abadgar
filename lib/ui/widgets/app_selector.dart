@@ -53,7 +53,7 @@ class AppSelectorTrigger extends StatelessWidget {
           onTap();
         },
         child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: compact ? 34 : 38),
+          constraints: BoxConstraints(minHeight: compact ? 40 : 44),
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: compact ? 8 : 12,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:abadgar/l10n/generated/app_localizations.dart';
 
@@ -46,7 +47,8 @@ class _TransactionBottomSheetState
     if (widget.transaction != null) {
       _sessionSeasonId = widget.transaction!.seasonId;
       _selectingSeason = false;
-      _mode = widget.transaction!.type == TransactionType.revenue
+      _mode = (widget.transaction!.type == TransactionType.revenue ||
+              widget.transaction!.type == TransactionType.yield_)
           ? TransactionMode.revenue
           : TransactionMode.expense;
     } else if (widget.yieldLog != null) {
@@ -187,7 +189,21 @@ class _TransactionBottomSheetState
         if (seasons.isEmpty)
           Padding(
             padding: const EdgeInsets.all(AppSpace.lg),
-            child: Text(l10n.emptyCycles, textAlign: TextAlign.center),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(l10n.emptyCycles, textAlign: TextAlign.center),
+                const SizedBox(height: AppSpace.md),
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.push('/seasons');
+                  },
+                  icon: const Icon(Icons.add_rounded, size: 18),
+                  label: Text(l10n.startNewSeason),
+                ),
+              ],
+            ),
           )
         else
           Flexible(

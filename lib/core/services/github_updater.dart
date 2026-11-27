@@ -19,22 +19,63 @@ class UpdateInfo {
 class GithubUpdater {
   static const Duration _requestTimeout = Duration(seconds: 10);
 
-  static Future<UpdateInfo> checkForUpdates() async {
+  static Future<UpdateInfo> checkForUpdates({http.Client? client}) async {
     const repo = String.fromEnvironment('GITHUB_REPO',
         defaultValue: 'dev-aatif/abadgar');
-    final response = await http
-        .get(Uri.parse('https://api.github.com/repos/$repo/releases/latest'))
-        .timeout(_requestTimeout);
+    final httpClient = client ?? http.Client();
+    try {
+      final initialUri =
+          Uri.parse('https://api.github.com/repos/$repo/releases/latest');
+      final response = await _getWithTrustedRedirects(httpClient, initialUri);
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to check for updates (${response.statusCode})');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to check for updates (${response.statusCode})');
+      }
+
+      final data = jsonDecode(response.body);
+      if (data is! Map<String, dynamic>) {
+        throw Exception('Invalid update response');
+      }
+
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = 'v${packageInfo.version}';
+      return parseReleaseData(data, currentVersion);
+    } finally {
+      if (client == null) {
+        httpClient.close();
+      }
     }
+  }
 
-    final data = jsonDecode(response.body);
-    if (data is! Map<String, dynamic>) {
-      throw Exception('Invalid update response');
+  static Future<http.Response> _getWithTrustedRedirects(
+    http.Client client,
+    Uri uri, {
+    int maxRedirects = 3,
+  }) async {
+    var current = uri;
+    for (var i = 0; i <= maxRedirects; i++) {
+      final req = http.Request('GET', current)..followRedirects = false;
+      final streamed = await client.send(req).timeout(_requestTimeout);
+      final response = await http.Response.fromStream(streamed);
+      if (response.statusCode >= 300 &&
+          response.statusCode < 400 &&
+          response.headers['location'] != null) {
+        final next = current.resolve(response.headers['location']!);
+        if (!isTrustedApiOrDownloadUrl(next.toString())) {
+          throw Exception('Untrusted update redirect blocked');
+        }
+        current = next;
+        continue;
+      }
+      return response;
     }
+    throw Exception('Too many update redirects');
+  }
 
+  static UpdateInfo parseReleaseData(
+    Map<String, dynamic> data,
+    String currentVersion,
+  ) {
     final String latestTag = data['tag_name']?.toString() ?? 'v0.0.0';
     final assets = data['assets'] as List<dynamic>?;
     String rawUrl = data['html_url']?.toString() ?? '';
@@ -56,9 +97,6 @@ class GithubUpdater {
     final String downloadUrl = isTrustedDownloadUrl(rawUrl) ? rawUrl : '';
     final String body = data['body']?.toString() ?? '';
 
-    final packageInfo = await PackageInfo.fromPlatform();
-    final currentVersion = 'v${packageInfo.version}';
-
     return UpdateInfo(
       latestVersion: latestTag,
       downloadUrl: downloadUrl,
@@ -66,6 +104,13 @@ class GithubUpdater {
       isUpdateAvailable:
           isNewerVersion(latestTag, currentVersion) && downloadUrl.isNotEmpty,
     );
+  }
+
+  static bool isTrustedApiOrDownloadUrl(String rawUrl) {
+    final uri = Uri.tryParse(rawUrl);
+    if (uri == null || uri.scheme != 'https') return false;
+    final host = uri.host.toLowerCase();
+    return host == 'api.github.com' || isTrustedDownloadUrl(rawUrl);
   }
 
   static bool isTrustedDownloadUrl(String rawUrl) {

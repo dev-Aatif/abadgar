@@ -40,36 +40,40 @@ class AppSegmentedControl<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final primary = Theme.of(context).colorScheme.primary;
-    final height = compact ? 34.0 : 38.0;
+    final minHeight = compact ? 40.0 : 44.0;
 
     return Opacity(
       opacity: enabled ? 1.0 : 0.55,
-      child: Container(
-        height: height,
-        padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: tokens.well,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: tokens.hairline, width: 1),
-        ),
-        child: Row(
-          children: [
-            for (final seg in segments)
-              Expanded(
-                child: _SegmentTile<T>(
-                  segment: seg,
-                  isSelected: seg.value == selected,
-                  primary: seg.activeColor ?? primary,
-                  enabled: enabled,
-                  compact: compact,
-                  onTap: () {
-                    if (!enabled || seg.value == selected) return;
-                    HapticFeedback.selectionClick();
-                    onChanged(seg.value);
-                  },
-                ),
-              ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minHeight),
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: tokens.well,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(color: tokens.hairline, width: 1),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                for (final seg in segments)
+                  Expanded(
+                    child: _SegmentTile<T>(
+                      segment: seg,
+                      isSelected: seg.value == selected,
+                      primary: seg.activeColor ?? primary,
+                      enabled: enabled,
+                      compact: compact,
+                      onTap: () {
+                        if (!enabled || seg.value == selected) return;
+                        HapticFeedback.selectionClick();
+                        onChanged(seg.value);
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -115,7 +119,7 @@ class _SegmentTile<T> extends StatelessWidget {
           onTap: enabled ? onTap : null,
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -492,40 +496,44 @@ class CompactStepperCluster extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
 
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: tokens.well,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: tokens.hairline, width: 1),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _StepperButton(
-            icon: Icons.remove_rounded,
-            onTap: onDecrement,
-          ),
-          VerticalDivider(width: 1, color: tokens.hairline),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              stepLabel,
-              style: AppTheme.tabular(
-                Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: tokens.ink,
-                    ),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44),
+      child: Container(
+        decoration: BoxDecoration(
+          color: tokens.well,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(color: tokens.hairline, width: 1),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _StepperButton(
+                icon: Icons.remove_rounded,
+                onTap: onDecrement,
               ),
-            ),
+              VerticalDivider(width: 1, color: tokens.hairline),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  stepLabel,
+                  style: AppTheme.tabular(
+                    Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: tokens.ink,
+                        ),
+                  ),
+                ),
+              ),
+              VerticalDivider(width: 1, color: tokens.hairline),
+              _StepperButton(
+                icon: Icons.add_rounded,
+                onTap: onIncrement,
+              ),
+            ],
           ),
-          VerticalDivider(width: 1, color: tokens.hairline),
-          _StepperButton(
-            icon: Icons.add_rounded,
-            onTap: onIncrement,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -546,9 +554,11 @@ class _StepperButton extends StatelessWidget {
         onTap();
       },
       child: SizedBox(
-        width: 34,
-        height: 36,
-        child: Icon(icon, size: 16, color: tokens.ink),
+        width: 44,
+        height: 44,
+        child: Center(
+          child: Icon(icon, size: 16, color: tokens.ink),
+        ),
       ),
     );
   }

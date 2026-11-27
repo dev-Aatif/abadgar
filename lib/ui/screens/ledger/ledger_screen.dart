@@ -325,21 +325,22 @@ class _FinancialsTab extends ConsumerWidget {
 
               final localeCode = L10nHelpers.intlLocaleFor(context);
               final monthFormat = DateFormat('MMMM yyyy', localeCode);
-              final Map<String, List<Transaction>> grouped = {};
+              final Map<int, List<Transaction>> grouped = {};
               for (final tx in filtered) {
-                final month = monthFormat.format(tx.date);
-                grouped.putIfAbsent(month, () => []).add(tx);
+                final key = tx.date.year * 100 + tx.date.month;
+                grouped.putIfAbsent(key, () => []).add(tx);
               }
 
               final flatItems = <_LedgerItem>[];
               for (final entry in grouped.entries) {
+                final monthTitle = monthFormat.format(entry.value.first.date);
                 final monthNet = entry.value.fold<double>(0, (sum, tx) {
                   final isRev = tx.type == TransactionType.revenue ||
                       tx.type == TransactionType.yield_;
                   return sum + (isRev ? tx.amount : -tx.amount);
                 });
                 flatItems.add(_LedgerHeaderItem(
-                  title: entry.key,
+                  title: monthTitle,
                   net: monthNet,
                   isFirst: flatItems.isEmpty,
                 ));
@@ -534,7 +535,10 @@ class _HarvestsTab extends ConsumerWidget {
                 L10nHelpers.dispositionLabel(context, yl.disposition)
                     .toLowerCase()
                     .contains(q);
-            final matchUnit = yl.unit.value.toLowerCase().contains(q);
+            final matchUnit = yl.unit.value.toLowerCase().contains(q) ||
+                L10nHelpers.yieldUnitLabel(context, yl.unit)
+                    .toLowerCase()
+                    .contains(q);
             final matchAmount = yl.totalWeight.toString().contains(q) ||
                 (yl.salePrice?.toString().contains(q) ?? false);
             if (!matchDest && !matchDisp && !matchUnit && !matchAmount) {
@@ -562,7 +566,7 @@ class _HarvestsTab extends ConsumerWidget {
             ref.invalidate(activeSeasonYieldLogsProvider);
             await Future.delayed(const Duration(milliseconds: 450));
           },
-          child: ListView(
+          child: ListView.builder(
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),
@@ -572,27 +576,47 @@ class _HarvestsTab extends ConsumerWidget {
               AppSpace.md,
               80,
             ),
-            children: [
-              AppCard(
-                child: Column(
-                  children: [
-                    for (int i = 0; i < yieldLogs.length; i++)
-                      _HarvestTile(
-                        log: yieldLogs[i],
-                        currencyFormat: currencyFormat,
-                        showDivider: i < yieldLogs.length - 1,
-                        onTap: () => showTransactionSheet(
-                          context,
-                          yieldLog: yieldLogs[i],
-                        ),
-                        onDelete: () =>
-                            deleteYieldLogWithUndo(context, ref, yieldLogs[i]),
-                        hairlineColor: tokens.hairline,
-                      ),
-                  ],
+            itemCount: yieldLogs.length,
+            itemBuilder: (context, index) {
+              final isFirst = index == 0;
+              final isLast = index == yieldLogs.length - 1;
+              return Container(
+                decoration: BoxDecoration(
+                  color: tokens.surface,
+                  borderRadius: BorderRadius.vertical(
+                    top: isFirst
+                        ? const Radius.circular(AppRadius.lg)
+                        : Radius.zero,
+                    bottom: isLast
+                        ? const Radius.circular(AppRadius.lg)
+                        : Radius.zero,
+                  ),
+                  border: Border(
+                    left: BorderSide(color: tokens.hairline),
+                    right: BorderSide(color: tokens.hairline),
+                    top: isFirst
+                        ? BorderSide(color: tokens.hairline)
+                        : BorderSide.none,
+                    bottom: isLast
+                        ? BorderSide(color: tokens.hairline)
+                        : BorderSide.none,
+                  ),
                 ),
-              ),
-            ],
+                clipBehavior: Clip.antiAlias,
+                child: _HarvestTile(
+                  log: yieldLogs[index],
+                  currencyFormat: currencyFormat,
+                  showDivider: !isLast,
+                  onTap: () => showTransactionSheet(
+                    context,
+                    yieldLog: yieldLogs[index],
+                  ),
+                  onDelete: () =>
+                      deleteYieldLogWithUndo(context, ref, yieldLogs[index]),
+                  hairlineColor: tokens.hairline,
+                ),
+              );
+            },
           ),
         );
       },

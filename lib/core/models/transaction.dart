@@ -1,5 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '../constants/enums.dart';
+import '../utils/logger.dart';
 
 part 'transaction.freezed.dart';
 part 'transaction.g.dart';
@@ -24,12 +25,17 @@ class Transaction with _$Transaction {
       _$TransactionFromJson(json);
 
   factory Transaction.fromRow(Map<String, dynamic> row) {
+    final parsedDate = DateTime.tryParse(row['date'] as String? ?? '');
+    if (parsedDate == null) {
+      appLogger
+          .w('Invalid date in transactions row (${row['id']}): ${row['date']}');
+    }
     return Transaction(
       id: row['id'] as String,
       seasonId: row['season_id'] as String,
       amount: (row['amount'] as num?)?.toDouble() ?? 0.0,
       category: row['category'] as String?,
-      date: DateTime.tryParse(row['date'] as String? ?? '') ?? DateTime.now(),
+      date: parsedDate ?? DateTime.now(),
       type: TransactionType.fromString(row['type'] as String? ?? 'Expense'),
       notes: row['notes'] as String?,
       quantity: (row['quantity'] as num?)?.toDouble(),

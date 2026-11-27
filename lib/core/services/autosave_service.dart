@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqlite_async/sqlite_async.dart';
@@ -77,17 +78,18 @@ class AutoSaveService {
       await file.writeAsString(jsonEncode(mapData));
       await prefs.setString(lastAutoBackupKey, now.toIso8601String());
 
-      final files = backupDir
-          .listSync()
-          .whereType<File>()
-          .where((f) => f.path.endsWith('.json'))
-          .toList()
-        ..sort(
-            (a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+      final filesWithStat = <({File file, DateTime modified})>[];
+      await for (final entity in backupDir.list()) {
+        if (entity is File && entity.path.endsWith('.json')) {
+          final stat = await entity.stat();
+          filesWithStat.add((file: entity, modified: stat.modified));
+        }
+      }
+      filesWithStat.sort((a, b) => b.modified.compareTo(a.modified));
 
-      if (files.length > maxSnapshots) {
-        for (var i = maxSnapshots; i < files.length; i++) {
-          await files[i].delete();
+      if (filesWithStat.length > maxSnapshots) {
+        for (var i = maxSnapshots; i < filesWithStat.length; i++) {
+          await filesWithStat[i].file.delete();
         }
       }
       return true;
@@ -99,31 +101,30 @@ class AutoSaveService {
 
   Future<List<AutoBackupEntry>> listBackups() async {
     final backupDir = await _backupsDir();
-    final files = backupDir
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))
-        .toList()
-      ..sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+    final filesWithStat = <({File file, DateTime modified, int size})>[];
+    await for (final entity in backupDir.list()) {
+      if (entity is File && entity.path.endsWith('.json')) {
+        final stat = await entity.stat();
+        filesWithStat
+            .add((file: entity, modified: stat.modified, size: stat.size));
+      }
+    }
+    filesWithStat.sort((a, b) => b.modified.compareTo(a.modified));
 
     final entries = <AutoBackupEntry>[];
-    for (final file in files) {
+    for (final item in filesWithStat) {
       try {
-        final raw = await file.readAsString();
-        final decoded = jsonDecode(raw);
-        if (decoded is! Map<String, dynamic>) continue;
-        final exportedAt =
-            DateTime.tryParse(decoded['exported_at']?.toString() ?? '');
-        final stat = await file.stat();
+        final raw = await item.file.readAsString();
+        final summary = await Isolate.run(() => _parseBackupSummary(raw));
+        if (summary == null) continue;
         entries.add(
           AutoBackupEntry(
-            file: file,
-            createdAt: exportedAt ?? stat.modified,
-            seasonCount: (decoded['seasons'] as List<dynamic>?)?.length ?? 0,
-            transactionCount:
-                (decoded['transactions'] as List<dynamic>?)?.length ?? 0,
-            yieldCount: (decoded['yield_logs'] as List<dynamic>?)?.length ?? 0,
-            sizeBytes: stat.size,
+            file: item.file,
+            createdAt: summary.exportedAt ?? item.modified,
+            seasonCount: summary.seasonCount,
+            transactionCount: summary.transactionCount,
+            yieldCount: summary.yieldCount,
+            sizeBytes: item.size,
           ),
         );
       } catch (_) {
@@ -131,6 +132,23 @@ class AutoSaveService {
       }
     }
     return entries;
+  }
+
+  static ({
+    DateTime? exportedAt,
+    int seasonCount,
+    int transactionCount,
+    int yieldCount,
+  })? _parseBackupSummary(String raw) {
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map<String, dynamic>) return null;
+    return (
+      exportedAt: DateTime.tryParse(decoded['exported_at']?.toString() ?? ''),
+      seasonCount: (decoded['seasons'] as List<dynamic>?)?.length ?? 0,
+      transactionCount:
+          (decoded['transactions'] as List<dynamic>?)?.length ?? 0,
+      yieldCount: (decoded['yield_logs'] as List<dynamic>?)?.length ?? 0,
+    );
   }
 
   Future<void> restoreBackup(File file) async {

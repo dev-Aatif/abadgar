@@ -138,8 +138,8 @@ class DashboardScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: AppSpace.xxs),
                           SizedBox(
-                            width: 36,
-                            height: 36,
+                            width: 44,
+                            height: 44,
                             child: Material(
                               color: tokens.surface,
                               shape: RoundedRectangleBorder(
@@ -830,8 +830,8 @@ class _LocalStatusBadge extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          child: SizedBox(
-            height: 36,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 44),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Row(

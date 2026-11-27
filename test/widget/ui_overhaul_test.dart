@@ -16,6 +16,15 @@ import 'package:abadgar/ui/widgets/app_surface.dart';
 import 'package:abadgar/ui/widgets/transaction_form/parts/form_shared.dart';
 import 'package:abadgar/ui/widgets/transaction_form/parts/generic_transaction_form.dart';
 import 'package:abadgar/ui/widgets/transaction_form/parts/yield_form.dart';
+import 'package:abadgar/ui/widgets/transaction_form/transaction_bottom_sheet.dart';
+
+class _StubActiveSeasonId extends ActiveSeasonId {
+  final String? _id;
+  _StubActiveSeasonId(this._id);
+
+  @override
+  String? build() => _id;
+}
 
 void main() {
   group('AppTheme tokens', () {
@@ -258,6 +267,67 @@ void main() {
 
       expect(find.text('Rice Sale'), findsOneWidget);
       expect(find.text('Wheat Sale'), findsNothing);
+    });
+
+    testWidgets(
+        'TransactionBottomSheet shows Start New Season CTA when empty and routes yield_ to revenue mode',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            activeSeasonIdProvider
+                .overrideWith(() => _StubActiveSeasonId(null)),
+            seasonsProvider.overrideWith((ref) => Stream.value(const [])),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Scaffold(
+              body: TransactionBottomSheet(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Start New Season'), findsOneWidget);
+
+      final now = DateTime(2026, 6, 1);
+      final yieldTx = Transaction(
+        id: 'tx-yield',
+        seasonId: 's-1',
+        amount: 50000,
+        type: TransactionType.yield_,
+        category: 'Harvest Sale',
+        date: now,
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            activeSeasonIdProvider
+                .overrideWith(() => _StubActiveSeasonId('s-1')),
+            seasonsProvider.overrideWith((ref) => Stream.value(const [])),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.light,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: Scaffold(
+              body: TransactionBottomSheet(
+                key: const ValueKey('yield-edit'),
+                transaction: yieldTx,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Harvest Sale'), findsOneWidget);
     });
 
     testWidgets(

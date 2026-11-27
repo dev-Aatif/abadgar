@@ -42,6 +42,25 @@ class ExportService {
     return plainJson;
   }
 
+  static Future<void> cleanupStaleTempBackups({
+    Duration maxAge = const Duration(minutes: 5),
+  }) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final cutoff = DateTime.now().subtract(maxAge);
+      await for (final entity in tempDir.list()) {
+        if (entity is File && entity.path.contains('abadgar_backup_')) {
+          final stat = await entity.stat();
+          if (stat.modified.isBefore(cutoff)) {
+            await entity.delete();
+          }
+        }
+      }
+    } catch (_) {
+      // Best-effort temp cleanup.
+    }
+  }
+
   Future<void> exportDatabase({String? passphrase}) async {
     final payload = await getBackupData(passphrase: passphrase);
     final isEncrypted = passphrase != null && passphrase.isNotEmpty;

@@ -133,5 +133,52 @@ void main() {
         throwsException,
       );
     });
+
+    test('rejects non-map entries and duplicate IDs in backup arrays', () {
+      const nonMapJson = '''
+      {
+        "version": 1,
+        "seasons": ["not-a-map"],
+        "transactions": []
+      }
+      ''';
+      expect(
+        () => ImportService.parseAndValidateBackup(nonMapJson),
+        throwsException,
+      );
+
+      const duplicateSeasonJson = '''
+      {
+        "version": 1,
+        "seasons": [
+          {
+            "id": "s1",
+            "name": "Wheat 2024",
+            "crop_type": "Wheat",
+            "land_area": 5,
+            "start_date": "2024-01-01T00:00:00Z",
+            "status": "Active",
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z"
+          },
+          {
+            "id": "s1",
+            "name": "Wheat 2025",
+            "crop_type": "Wheat",
+            "land_area": 5,
+            "start_date": "2025-01-01T00:00:00Z",
+            "status": "Active",
+            "created_at": "2025-01-01T00:00:00Z",
+            "updated_at": "2025-01-01T00:00:00Z"
+          }
+        ],
+        "transactions": []
+      }
+      ''';
+      expect(
+        () => ImportService.parseAndValidateBackup(duplicateSeasonJson),
+        throwsException,
+      );
+    });
   });
 }

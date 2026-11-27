@@ -116,6 +116,7 @@ class BackupCrypto {
     if (decoded is! Map<String, dynamic> ||
         decoded['format'] != formatId ||
         decoded['version'] != formatVersion ||
+        decoded['kdf'] != 'PBKDF2-HMAC-SHA256' ||
         decoded['cipher'] != 'AES-256-GCM') {
       throw const BackupDecryptionException(
           'Unsupported encrypted backup format');

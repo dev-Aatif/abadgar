@@ -24,18 +24,10 @@ class FinancialSummary {
   });
 }
 
-@riverpod
-FinancialSummary? financialSummary(FinancialSummaryRef ref) {
-  final transactionsAsync = ref.watch(activeSeasonTransactionsProvider);
-  final yieldLogsAsync = ref.watch(activeSeasonYieldLogsProvider);
-
-  if (transactionsAsync is! AsyncData || yieldLogsAsync is! AsyncData) {
-    return null;
-  }
-
-  final List<Transaction> transactions = transactionsAsync.value ?? [];
-  final List<YieldLog> yieldLogs = yieldLogsAsync.value ?? [];
-
+FinancialSummary summarizeSeasonRows(
+  List<Transaction> transactions,
+  List<YieldLog> yieldLogs,
+) {
   double revenue = 0;
   double expenses = 0;
   final Map<String, double> catExpenses = {};
@@ -46,15 +38,12 @@ FinancialSummary? financialSummary(FinancialSummaryRef ref) {
       revenue += tx.amount;
     } else {
       expenses += tx.amount;
-      catExpenses[tx.category ?? 'Other'] =
-          (catExpenses[tx.category ?? 'Other'] ?? 0) + tx.amount;
+      final cat = tx.category ?? 'Other';
+      catExpenses[cat] = (catExpenses[cat] ?? 0) + tx.amount;
     }
   }
 
-  // NOTE: We no longer add yieldLogs.salePrice here because the Log Harvest workflow
-  // already creates a corresponding 'revenue' transaction to ensure ledger consistency.
-  // YieldLogs are now strictly for physical harvest tracking.
-
+  // YieldLogs track physical harvest output; revenue is recorded via linked transactions.
   double totalWeightKg = 0;
   for (final yl in yieldLogs) {
     totalWeightKg += yl.unit.toKg(yl.totalWeight);
@@ -66,5 +55,20 @@ FinancialSummary? financialSummary(FinancialSummaryRef ref) {
     expenseByCategory: catExpenses,
     transactionCount: transactions.length + yieldLogs.length,
     totalYieldWeight: totalWeightKg,
+  );
+}
+
+@riverpod
+FinancialSummary? financialSummary(FinancialSummaryRef ref) {
+  final transactionsAsync = ref.watch(activeSeasonTransactionsProvider);
+  final yieldLogsAsync = ref.watch(activeSeasonYieldLogsProvider);
+
+  if (transactionsAsync is! AsyncData || yieldLogsAsync is! AsyncData) {
+    return null;
+  }
+
+  return summarizeSeasonRows(
+    transactionsAsync.value ?? const [],
+    yieldLogsAsync.value ?? const [],
   );
 }

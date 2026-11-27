@@ -42,6 +42,12 @@ void main() {
         () => BackupCrypto.decryptJson(jsonEncode(map), 'correct-pass'),
         throwsA(isA<BackupDecryptionException>()),
       );
+      final tamperedMap = jsonDecode(envelope) as Map<String, dynamic>;
+      tamperedMap['kdf'] = 'NONE';
+      expect(
+        () => BackupCrypto.decryptJson(jsonEncode(tamperedMap), 'correct-pass'),
+        throwsA(isA<BackupDecryptionException>()),
+      );
     });
     test('encrypts and decrypts JSON round-trip asynchronously via isolate',
         () async {

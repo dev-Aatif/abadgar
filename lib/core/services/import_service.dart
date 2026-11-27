@@ -234,8 +234,15 @@ class ImportService {
     }
 
     final seasonsOut = <Map<String, dynamic>>[];
+    final seasonIds = <String>{};
     for (final season in data['seasons'] as List<dynamic>) {
-      if (season is! Map<String, dynamic>) continue;
+      if (season is! Map<String, dynamic>) {
+        throw Exception('Invalid season entry format in backup');
+      }
+      final id = validateString(season['id'], 'Season ID');
+      if (!seasonIds.add(id)) {
+        throw Exception('Duplicate season ID "$id" in backup');
+      }
       final cropType = validateEnum(
         season['crop_type'],
         CropType.values.map((e) => e.value).toSet(),
@@ -248,7 +255,7 @@ class ImportService {
       );
       final landArea = validatePositiveNum(season['land_area'], 'Land Area');
       seasonsOut.add({
-        'id': validateString(season['id'], 'Season ID'),
+        'id': id,
         'name': validateString(season['name'], 'Season Name'),
         'crop_type': cropType,
         'land_area': landArea,
@@ -262,10 +269,16 @@ class ImportService {
       });
     }
 
-    final seasonIds = seasonsOut.map((s) => s['id'] as String).toSet();
     final txOut = <Map<String, dynamic>>[];
+    final txIds = <String>{};
     for (final txn in data['transactions'] as List<dynamic>) {
-      if (txn is! Map<String, dynamic>) continue;
+      if (txn is! Map<String, dynamic>) {
+        throw Exception('Invalid transaction entry format in backup');
+      }
+      final id = validateString(txn['id'], 'Transaction ID');
+      if (!txIds.add(id)) {
+        throw Exception('Duplicate transaction ID "$id" in backup');
+      }
       final amount = validateNonNegativeNum(txn['amount'], 'Amount');
       final type = validateEnum(
         txn['type'],
@@ -278,7 +291,7 @@ class ImportService {
             'Orphaned transaction references unknown season "$seasonId"');
       }
       txOut.add({
-        'id': validateString(txn['id'], 'Transaction ID'),
+        'id': id,
         'season_id': seasonId,
         'amount': amount,
         'category': txn['category']?.toString() ?? 'Other',
@@ -294,11 +307,17 @@ class ImportService {
       });
     }
 
-    final txIds = txOut.map((t) => t['id'] as String).toSet();
     final yieldOut = <Map<String, dynamic>>[];
+    final yieldIds = <String>{};
     final rawYields = (data['yield_logs'] as List<dynamic>?) ?? [];
     for (final log in rawYields) {
-      if (log is! Map<String, dynamic>) continue;
+      if (log is! Map<String, dynamic>) {
+        throw Exception('Invalid yield log entry format in backup');
+      }
+      final id = validateString(log['id'], 'Yield Log ID');
+      if (!yieldIds.add(id)) {
+        throw Exception('Duplicate yield log ID "$id" in backup');
+      }
       final totalWeight =
           validatePositiveNum(log['total_weight'], 'Total Weight');
       final unit = validateEnum(
@@ -324,7 +343,7 @@ class ImportService {
             'Yield log references missing transaction "$linkedTxId"');
       }
       yieldOut.add({
-        'id': validateString(log['id'], 'Yield Log ID'),
+        'id': id,
         'season_id': seasonId,
         'total_weight': totalWeight,
         'unit': unit,
@@ -342,11 +361,18 @@ class ImportService {
     }
 
     final landsOut = <Map<String, dynamic>>[];
+    final landIds = <String>{};
     final rawLands = (data['lands'] as List<dynamic>?) ?? [];
     for (final land in rawLands) {
-      if (land is! Map<String, dynamic>) continue;
+      if (land is! Map<String, dynamic>) {
+        throw Exception('Invalid land entry format in backup');
+      }
+      final id = validateString(land['id'], 'Land ID');
+      if (!landIds.add(id)) {
+        throw Exception('Duplicate land ID "$id" in backup');
+      }
       landsOut.add({
-        'id': validateString(land['id'], 'Land ID'),
+        'id': id,
         'name': validateString(land['name'], 'Land Name'),
         'area': validatePositiveNum(land['area'], 'Land Area'),
         'created_at': validateIsoDate(land['created_at'], 'Created At'),

@@ -36,11 +36,12 @@ class AnalyticsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.seasonInsights),
         actions: [
-          if (comparisonAsync.value != null)
+          if (comparisonAsync.valueOrNull != null)
             IconButton(
               tooltip: l10n.exportData,
               icon: const Icon(Icons.share_outlined, size: 20),
-              onPressed: () => _shareReport(context, comparisonAsync.value),
+              onPressed: () =>
+                  _shareReport(context, comparisonAsync.valueOrNull),
             ),
           seasonsAsync.when(
             data: (seasons) {
@@ -134,7 +135,7 @@ ${l10n.netProfit}: ${format.format(summary.profit)}
 
 ${l10n.costPerAcre}: ${format.format(summary.totalExpenses / acres)}
 ${l10n.revenuePerAcre}: ${format.format(summary.totalRevenue / acres)}
-${l10n.yieldPerAcre}: ${weightFormat.format(summary.totalYieldWeight / acres)}
+${l10n.yieldPerAcre}: ${weightFormat.format(summary.totalYieldWeight / acres)} ${l10n.unitKg}
 
 ${l10n.expenseBreakdown}:
 ${summary.expenseByCategory.entries.map((e) => '- ${L10nHelpers.categoryLabel(context, e.key)}: ${format.format(e.value)}').join('\n')}
@@ -263,8 +264,8 @@ class _AnalyticsBody extends ConsumerWidget {
                       Expanded(
                         child: _UnitCell(
                           label: l10n.yieldPerAcre,
-                          value: weightFormat
-                              .format(summary.totalYieldWeight / acres),
+                          value:
+                              '${weightFormat.format(summary.totalYieldWeight / acres)} ${l10n.unitKg}',
                           valueColor: tokens.instrument,
                         ),
                       ),
@@ -454,13 +455,15 @@ class _ComparisonBarChart extends StatelessWidget {
 
     final revColor = AppColors.revenueFor(context);
     final expColor = AppColors.expenseFor(context);
+    final textScale =
+        MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
 
     return AppCard(
       padding: const EdgeInsets.all(AppSpace.md),
       child: Column(
         children: [
           SizedBox(
-            height: 196,
+            height: 196 * textScale.clamp(1.0, 1.25),
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
@@ -488,13 +491,14 @@ class _ComparisonBarChart extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 26,
+                      reservedSize: 28 * textScale,
                       getTitlesWidget: (value, meta) {
                         final text = value.toInt() == 0 ? prevLabel : curLabel;
                         return SideTitleWidget(
                           meta: meta,
                           child: Text(
                             text,
+                            overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         );
@@ -504,7 +508,7 @@ class _ComparisonBarChart extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 48,
+                      reservedSize: 52 * textScale,
                       getTitlesWidget: (value, meta) {
                         if (value == 0) return const SizedBox.shrink();
                         return Text(
@@ -723,6 +727,9 @@ class _MultiYearTrendSection extends ConsumerWidget {
         final minY = minProfit >= 0 ? 0.0 : (highest == 0 ? -1.0 : -maxY);
         final gridInterval =
             ((maxY - minY) / 4).abs().clamp(0.25, double.infinity);
+        final textScale =
+            MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
+        final xStep = (trendData.length / 4).ceil().clamp(1, trendData.length);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,7 +739,7 @@ class _MultiYearTrendSection extends ConsumerWidget {
             AppCard(
               padding: const EdgeInsets.all(AppSpace.md),
               child: SizedBox(
-                height: 192,
+                height: 192 * textScale.clamp(1.0, 1.25),
                 child: LineChart(
                   LineChartData(
                     minY: minY,
@@ -788,18 +795,27 @@ class _MultiYearTrendSection extends ConsumerWidget {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 26,
+                          reservedSize: 28 * textScale,
                           interval: 1,
                           getTitlesWidget: (value, meta) {
                             final idx = value.toInt();
                             if (idx < 0 || idx >= trendData.length) {
                               return const SizedBox.shrink();
                             }
+                            if (idx % xStep != 0 &&
+                                idx != trendData.length - 1) {
+                              return const SizedBox.shrink();
+                            }
                             final s = trendData[idx].season;
+                            final shortYear = (s.startDate.year % 100)
+                                .toString()
+                                .padLeft(2, '0');
                             return Padding(
                               padding: const EdgeInsets.only(top: 6),
                               child: Text(
-                                '${s.startDate.year}',
+                                '${L10nHelpers.cropLabel(context, s.cropType)} \'$shortYear',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: AppTheme.tabular(
                                   Theme.of(context).textTheme.bodySmall,
                                 ),
@@ -811,7 +827,7 @@ class _MultiYearTrendSection extends ConsumerWidget {
                       leftTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          reservedSize: 48,
+                          reservedSize: 52 * textScale,
                           getTitlesWidget: (value, meta) {
                             if (value == 0) {
                               return Text(
